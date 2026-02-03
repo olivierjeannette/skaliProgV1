@@ -30,11 +30,13 @@ import Link from 'next/link';
 
 // Category configuration
 const CATEGORY_CONFIG: Record<SessionCategory, { name: string; color: string; icon: typeof Flame }> = {
-  crosstraining: { name: 'CrossTraining', color: '#22c55e', icon: Flame },
-  musculation: { name: 'Musculation', color: '#3b82f6', icon: Dumbbell },
-  cardio: { name: 'Cardio', color: '#ef4444', icon: Heart },
+  crossnfit: { name: "Cross'N Fit", color: '#ef4444', icon: Flame },
   hyrox: { name: 'Hyrox', color: '#f97316', icon: Footprints },
-  recovery: { name: 'Récupération', color: '#8b5cf6', icon: Leaf },
+  hyrox_long: { name: 'Hyrox Long', color: '#d97706', icon: Footprints },
+  power: { name: 'Power', color: '#2563eb', icon: Dumbbell },
+  build: { name: 'Build', color: '#a855f7', icon: Dumbbell },
+  tactical: { name: 'Tactical', color: '#334155', icon: Footprints },
+  hyrox_team: { name: 'Hyrox Team', color: '#22c55e', icon: Heart },
 };
 
 // Block type colors for TV mode (hex values for inline styles)
@@ -154,7 +156,7 @@ function TVModeContent() {
             id: 'demo',
             date: today,
             title: 'Séance Demo',
-            category: 'crosstraining',
+            category: 'crossnfit',
             description: 'Mode TV prêt',
             blocks: [
               { id: 'demo-1', type: 'warmup', title: 'Échauffement', content: '5 min course\n3 min étirements dynamiques\n2 min mobilité', order: 0 },

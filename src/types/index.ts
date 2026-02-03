@@ -13,7 +13,7 @@ export interface AuthSession {
 export type Session = AuthSession;
 
 // Training session (from Supabase)
-export type SessionCategory = 'crosstraining' | 'musculation' | 'cardio' | 'hyrox' | 'recovery';
+export type SessionCategory = 'crossnfit' | 'hyrox' | 'hyrox_long' | 'power' | 'build' | 'tactical' | 'hyrox_team';
 
 export interface TrainingSession {
   id: string;
