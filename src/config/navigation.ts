@@ -25,6 +25,7 @@ export interface NavItem {
   badge?: string;
   children?: NavItem[];
   isSection?: boolean; // Pour les titres de section
+  openInNewWindow?: boolean; // Ouvre dans une nouvelle fenêtre (ex: TV Mode)
 }
 
 export const ADMIN_NAV: NavItem[] = [
@@ -61,6 +62,7 @@ export const ADMIN_NAV: NavItem[] = [
         title: 'TV Mode',
         href: '/tv',
         icon: Tv,
+        openInNewWindow: true, // S'ouvre dans une nouvelle fenêtre pour affichage TV
       },
       {
         title: 'Performance',

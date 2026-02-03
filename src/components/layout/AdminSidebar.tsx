@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { ADMIN_NAV } from '@/config/navigation';
 import { useAuthStore } from '@/stores/auth-store';
 import { ROLES } from '@/config/roles';
-import { LogOut, ChevronDown } from 'lucide-react';
+import { LogOut, ChevronDown, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -123,6 +123,28 @@ export function AdminSidebar() {
                         {item.children.map((child) => {
                           const isChildActive =
                             pathname === child.href || pathname.startsWith(child.href + '/');
+
+                          // Si openInNewWindow, utiliser un <a> avec target="_blank"
+                          if (child.openInNewWindow) {
+                            return (
+                              <li key={child.href}>
+                                <a
+                                  href={child.href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={cn(
+                                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+                                    'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                                  )}
+                                >
+                                  <child.icon className="h-4 w-4" />
+                                  {child.title}
+                                  <ExternalLink className="h-3 w-3 ml-auto opacity-50" />
+                                </a>
+                              </li>
+                            );
+                          }
+
                           return (
                             <li key={child.href}>
                               <Link

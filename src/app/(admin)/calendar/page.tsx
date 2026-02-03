@@ -793,11 +793,14 @@ export default function CalendarPage() {
                       )}
                       {blocks.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2">
-                          {blocks.map((block) => (
-                            <Badge key={block.id} variant="outline" className="text-[10px]">
-                              {BLOCK_TYPE_CONFIG[block.type]?.icon} {block.title}
-                            </Badge>
-                          ))}
+                          {blocks.map((block) => {
+                            const blockConfig = block.type ? BLOCK_TYPE_CONFIG[block.type] : null;
+                            return (
+                              <Badge key={block.id} variant="outline" className="text-[10px]">
+                                {blockConfig?.icon || '📝'} {block.title || 'Bloc'}
+                              </Badge>
+                            );
+                          })}
                         </div>
                       )}
                       {session.description && (
@@ -908,15 +911,15 @@ export default function CalendarPage() {
               ) : (
                 <div className="space-y-3">
                   {formData.blocks.sort((a, b) => a.order - b.order).map((block, index) => {
-                    const config = BLOCK_TYPE_CONFIG[block.type];
+                    const config = block.type ? BLOCK_TYPE_CONFIG[block.type] : BLOCK_TYPE_CONFIG.custom;
                     return (
                       <div
                         key={block.id}
-                        className={`p-3 rounded-lg border ${config.color}`}
+                        className={`p-3 rounded-lg border ${config?.color || ''}`}
                       >
                         <div className="flex items-center gap-2 mb-2">
                           <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
-                          <span className="text-lg">{config.icon}</span>
+                          <span className="text-lg">{config?.icon || '📝'}</span>
                           <Input
                             value={block.title}
                             onChange={(e) => updateBlock(block.id, { title: e.target.value })}
