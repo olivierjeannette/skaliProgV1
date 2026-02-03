@@ -32,9 +32,10 @@
 | Admin Layout + Sidebar | ✅ | `skali-admin/src/components/layout/AdminSidebar.tsx` | 2026-02-03 |
 | Settings > API Keys | ✅ | `skali-admin/src/app/(admin)/settings/api-keys/page.tsx` | 2026-02-03 |
 | Discord Unified (4 tabs) | ✅ | `skali-admin/src/app/(admin)/discord/page.tsx` | 2026-02-03 |
-| Placeholder: Inventory | ✅ | `skali-admin/src/app/(admin)/inventory/page.tsx` | 2026-02-03 |
+| Inventory (4 tabs, CRUD) | ✅ | `skali-admin/src/app/(admin)/inventory/page.tsx` | 2026-02-03 |
 | Placeholder: Members | ✅ | `skali-admin/src/app/(admin)/members/page.tsx` | 2026-02-03 |
 | Placeholder: Calendar | ✅ | `skali-admin/src/app/(admin)/calendar/page.tsx` | 2026-02-03 |
+| SSH + GitHub CLI | ✅ | `~/.ssh/id_ed25519` configuré | 2026-02-03 |
 
 ## ❌ MODULES EXCLUS (Supprimés du scope)
 
@@ -49,7 +50,7 @@
 |--------|----------|--------|
 | Admin (Settings, API Keys) | P0 - MVP | ✅ Complet |
 | Admin (Discord Unified) | P0 - MVP | ✅ Complet (UI + liaison membres) |
-| Admin (Inventory) | P0 - MVP | ⏳ Placeholder créé |
+| Admin (Inventory) | P0 - MVP | ✅ Complet (4 tabs, CRUD équipements) |
 | Members | P1 | ⏳ Placeholder créé |
 | Calendar | P1 | ⏳ Placeholder créé |
 | Performance | P2 | ⏳ Pending |
@@ -79,8 +80,9 @@
 - [x] Setup Next.js (`skali-admin/`) ✅
 - [x] Module Discord Unified (4 onglets) ✅
 - [x] Module API Keys ✅
-- [ ] **🚧 EN COURS: Module Inventory (fonctionnel)**
-- [ ] Module Members (fonctionnel)
+- [x] Module Inventory (4 onglets, CRUD équipements) ✅
+- [x] SSH + GitHub configuré ✅
+- [ ] **🚧 NEXT: Module Members (fonctionnel)**
 - [ ] Module Calendar (fonctionnel)
 
 ---
@@ -162,7 +164,18 @@ skali-admin/
 - Module Discord Unified migré (4 onglets: Notifications, Morning, Liaison, Bot)
 - Placeholders créés pour Inventory, Members, Calendar
 - Navigation corrigée (routes sans /admin prefix)
-- **NEXT:** Implémenter module Inventory fonctionnel
+
+### Session 3 - 2026-02-03 (Suite)
+- CLAUDE.md: Ajout Mode Autonome + Git Auto-Push
+- SSH configuré pour GitHub (clé ed25519)
+- GitHub CLI installé (gh v2.86.0)
+- Module Inventory complet:
+  - 4 onglets: Config, Inventaire, Méthodologie, Mouvements
+  - CRUD équipements (add, edit, delete)
+  - Filtrage par catégorie + recherche
+  - Stats cards (total, quantité, alertes)
+- **MVP Admin P0 COMPLET** 🎉
+- **NEXT:** Module Members ou Calendar
 
 ---
 
