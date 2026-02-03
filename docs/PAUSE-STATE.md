@@ -3,7 +3,7 @@
 > Dernier update: 2026-02-03
 > Phase actuelle: **4 - IMPLEMENTATION** (Dev en cours)
 > Agent actif: **@DEV**
-> Prochain: Module Calendar (fonctionnel)
+> Prochain: Modules P2 (Performance, Teams, CRM)
 
 ---
 
@@ -34,7 +34,7 @@
 | Discord Unified (4 tabs) | ✅ | `skali-admin/src/app/(admin)/discord/page.tsx` | 2026-02-03 |
 | Inventory (4 tabs, CRUD) | ✅ | `skali-admin/src/app/(admin)/inventory/page.tsx` | 2026-02-03 |
 | Members (liste, fiche, édition) | ✅ | `skali-admin/src/app/(admin)/members/page.tsx` | 2026-02-03 |
-| Placeholder: Calendar | ✅ | `skali-admin/src/app/(admin)/calendar/page.tsx` | 2026-02-03 |
+| Calendar (vue mois, CRUD sessions) | ✅ | `skali-admin/src/app/(admin)/calendar/page.tsx` | 2026-02-03 |
 | SSH + GitHub CLI | ✅ | `~/.ssh/id_ed25519` configuré | 2026-02-03 |
 
 ## ❌ MODULES EXCLUS (Supprimés du scope)
@@ -52,7 +52,7 @@
 | Admin (Discord Unified) | P0 - MVP | ✅ Complet (UI + liaison membres) |
 | Admin (Inventory) | P0 - MVP | ✅ Complet (4 tabs, CRUD équipements) |
 | Members | P1 | ✅ Complet (liste, fiche détaillée, édition) |
-| Calendar | P1 | ⏳ Placeholder créé |
+| Calendar | P1 | ✅ Complet (vue mois, CRUD sessions) |
 | Performance | P2 | ⏳ Pending |
 | Teams | P2 | ⏳ Pending |
 | CRM | P2 | ⏳ Pending |
@@ -83,7 +83,8 @@
 - [x] Module Inventory (4 onglets, CRUD équipements) ✅
 - [x] SSH + GitHub configuré ✅
 - [x] Module Members (liste, fiche, édition) ✅
-- [ ] **🚧 NEXT: Module Calendar (fonctionnel)**
+- [x] Module Calendar (vue mois, CRUD sessions) ✅
+- [ ] **🚧 NEXT: Modules P2 (Performance, Teams, CRM)**
 
 ---
 
@@ -126,7 +127,7 @@ skali-admin/
 │   │   │   ├── discord/page.tsx      ← Module Discord (4 tabs)
 │   │   │   ├── inventory/page.tsx    ← Module Inventory (4 tabs)
 │   │   │   ├── members/page.tsx      ← Module Members (liste, fiche, édition)
-│   │   │   ├── calendar/page.tsx     ← Placeholder
+│   │   │   ├── calendar/page.tsx     ← Module Calendar (vue mois, CRUD)
 │   │   │   ├── settings/
 │   │   │   │   └── api-keys/page.tsx ← Module API Keys
 │   │   │   └── layout.tsx
@@ -187,7 +188,20 @@ skali-admin/
   - Dialog édition membre (CRUD)
   - Composant Select shadcn/ui ajouté
 - Type Member étendu avec tous les champs
-- **NEXT:** Module Calendar
+
+### Session 5 - 2026-02-03 (Suite)
+- Module Calendar complet:
+  - Vue calendrier mensuel interactif
+  - Navigation mois/aujourd'hui
+  - Stats par catégorie (CrossTraining, Musculation, Cardio, Hyrox, Récupération)
+  - Liste sessions du jour sélectionné
+  - Dialog création/édition session avec catégorie, description, durées, rounds
+  - Suppression session
+  - Indicateurs visuels par catégorie sur le calendrier
+  - Type TrainingSession ajouté
+  - Composant Textarea ajouté
+- **P1 COMPLET (Members + Calendar)** 🎉
+- **NEXT:** Modules P2 (Performance, Teams, CRM)
 
 ---
 

@@ -2,11 +2,33 @@
 
 export type UserRole = 'ADMIN' | 'COACH' | 'ATHLETE';
 
-export interface Session {
+export interface AuthSession {
   isAuthenticated: boolean;
   role: UserRole;
   userId?: string;
   expiresAt?: number;
+}
+
+// Alias for backward compatibility
+export type Session = AuthSession;
+
+// Training session (from Supabase)
+export type SessionCategory = 'crosstraining' | 'musculation' | 'cardio' | 'hyrox' | 'recovery';
+
+export interface TrainingSession {
+  id: string;
+  date: string; // Format: YYYY-MM-DD
+  title: string;
+  category?: SessionCategory;
+  description?: string;
+  blocks?: unknown; // JSONB structure
+  rfid_enabled?: boolean;
+  rfid_mode?: string;
+  work_duration?: number;
+  rest_duration?: number;
+  rounds?: number;
+  created_at: string;
+  updated_at?: string;
 }
 
 export interface Member {
