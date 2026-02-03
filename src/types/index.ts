@@ -232,3 +232,54 @@ export interface Lead {
   contacted_at?: string;
   converted_at?: string;
 }
+
+// ================================
+// SESSION TEMPLATES (Weekly)
+// ================================
+
+export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6; // 0 = Lundi, 6 = Dimanche
+
+export interface WeekTemplateDay {
+  dayOfWeek: DayOfWeek;
+  title: string;
+  category: SessionCategory;
+}
+
+export interface WeekTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  days: WeekTemplateDay[];
+  created_at: string;
+  updated_at?: string;
+}
+
+// ================================
+// SESSION BLOCKS (Modular)
+// ================================
+
+export type BlockType = 'warmup' | 'strength' | 'wod' | 'skill' | 'accessory' | 'cooldown' | 'custom';
+
+export const BLOCK_TYPE_CONFIG: Record<BlockType, { name: string; color: string; icon: string }> = {
+  warmup: { name: 'Échauffement', color: 'bg-yellow-500/20 text-yellow-600', icon: '🔥' },
+  strength: { name: 'Force', color: 'bg-blue-500/20 text-blue-600', icon: '💪' },
+  wod: { name: 'WOD', color: 'bg-red-500/20 text-red-600', icon: '⏱️' },
+  skill: { name: 'Skill', color: 'bg-purple-500/20 text-purple-600', icon: '🎯' },
+  accessory: { name: 'Accessoire', color: 'bg-green-500/20 text-green-600', icon: '🔧' },
+  cooldown: { name: 'Retour au calme', color: 'bg-cyan-500/20 text-cyan-600', icon: '❄️' },
+  custom: { name: 'Personnalisé', color: 'bg-gray-500/20 text-gray-600', icon: '📝' },
+};
+
+export interface SessionBlock {
+  id: string;
+  type: BlockType;
+  title: string;
+  content: string; // Markdown/texte libre pour les exercices
+  duration?: number; // en minutes
+  order: number;
+}
+
+// Extended TrainingSession with blocks
+export interface TrainingSessionWithBlocks extends TrainingSession {
+  blocks: SessionBlock[];
+}

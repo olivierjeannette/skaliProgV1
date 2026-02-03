@@ -7,11 +7,20 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getSupabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
-import { TrainingSession, SessionCategory } from '@/types';
+import {
+  TrainingSession,
+  SessionCategory,
+  WeekTemplate,
+  WeekTemplateDay,
+  SessionBlock,
+  BlockType,
+  BLOCK_TYPE_CONFIG,
+} from '@/types';
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -29,6 +38,13 @@ import {
   Heart,
   Leaf,
   Activity,
+  Copy,
+  FileText,
+  GripVertical,
+  ChevronUp,
+  ChevronDown,
+  Wand2,
+  CalendarDays,
 } from 'lucide-react';
 
 // Category configuration
@@ -42,13 +58,17 @@ const CATEGORY_CONFIG: Record<SessionCategory, { name: string; color: string; bg
 
 // Helpers
 const DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+const DAYS_FULL = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 const MONTHS = [
   'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
 ];
 
 function formatDateKey(date: Date): string {
-  return date.toISOString().split('T')[0];
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function getMonthDays(year: number, month: number): (Date | null)[] {
@@ -56,17 +76,13 @@ function getMonthDays(year: number, month: number): (Date | null)[] {
   const lastDay = new Date(year, month + 1, 0);
   const days: (Date | null)[] = [];
 
-  // Get the day of week (0 = Sunday, 1 = Monday, etc.)
-  // Convert to Monday-first (0 = Monday, 6 = Sunday)
   let startDay = firstDay.getDay() - 1;
   if (startDay < 0) startDay = 6;
 
-  // Add empty cells for days before the first
   for (let i = 0; i < startDay; i++) {
     days.push(null);
   }
 
-  // Add all days of the month
   for (let d = 1; d <= lastDay.getDate(); d++) {
     days.push(new Date(year, month, d));
   }
@@ -91,6 +107,17 @@ function isSameDay(date1: Date, date2: Date): boolean {
   );
 }
 
+function getWeekStart(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  return new Date(d.setDate(diff));
+}
+
+function generateBlockId(): string {
+  return `block-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
 export default function CalendarPage() {
   // Date states
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
@@ -99,6 +126,7 @@ export default function CalendarPage() {
 
   // Data states
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
+  const [templates, setTemplates] = useState<WeekTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Dialog states
@@ -107,15 +135,30 @@ export default function CalendarPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Template dialog states
+  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<WeekTemplate | null>(null);
+  const [isApplyingTemplate, setIsApplyingTemplate] = useState(false);
+
+  // Manage templates dialog
+  const [isManageTemplatesOpen, setIsManageTemplatesOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<WeekTemplate | null>(null);
+  const [templateFormData, setTemplateFormData] = useState({
+    name: '',
+    description: '',
+    days: [] as WeekTemplateDay[],
+  });
+
   // Form state
   const [formData, setFormData] = useState({
     title: '',
     category: '' as SessionCategory | '',
     description: '',
-    work_duration: '',
-    rest_duration: '',
-    rounds: '',
+    blocks: [] as SessionBlock[],
   });
+
+  // Active tab in session dialog
+  const [activeTab, setActiveTab] = useState<'info' | 'blocks'>('info');
 
   // Load sessions
   const loadSessions = useCallback(async () => {
@@ -129,7 +172,14 @@ export default function CalendarPage() {
         .order('date', { ascending: true });
 
       if (error) throw error;
-      setSessions(data || []);
+
+      // Parse blocks from JSONB
+      const parsedSessions = (data || []).map(s => ({
+        ...s,
+        blocks: Array.isArray(s.blocks) ? s.blocks : [],
+      }));
+
+      setSessions(parsedSessions);
     } catch (error) {
       console.error('Error loading sessions:', error);
       toast.error('Erreur lors du chargement des sessions');
@@ -138,9 +188,28 @@ export default function CalendarPage() {
     }
   }, []);
 
+  // Load templates
+  const loadTemplates = useCallback(async () => {
+    const supabase = getSupabase();
+
+    try {
+      const { data, error } = await supabase
+        .from('week_templates')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      setTemplates(data || []);
+    } catch (error) {
+      console.error('Error loading templates:', error);
+      // Don't show error toast, templates are optional
+    }
+  }, []);
+
   useEffect(() => {
     loadSessions();
-  }, [loadSessions]);
+    loadTemplates();
+  }, [loadSessions, loadTemplates]);
 
   // Get sessions for a specific date
   const getSessionsForDate = useCallback(
@@ -196,10 +265,9 @@ export default function CalendarPage() {
       title: '',
       category: '',
       description: '',
-      work_duration: '',
-      rest_duration: '',
-      rounds: '',
+      blocks: [],
     });
+    setActiveTab('info');
     setIsSessionDialogOpen(true);
   };
 
@@ -210,11 +278,36 @@ export default function CalendarPage() {
       title: session.title,
       category: session.category || '',
       description: session.description || '',
-      work_duration: session.work_duration?.toString() || '',
-      rest_duration: session.rest_duration?.toString() || '',
-      rounds: session.rounds?.toString() || '',
+      blocks: Array.isArray(session.blocks) ? session.blocks as SessionBlock[] : [],
     });
+    setActiveTab('info');
     setIsSessionDialogOpen(true);
+  };
+
+  // Duplicate session
+  const handleDuplicateSession = async (session: TrainingSession, targetDate: Date) => {
+    const supabase = getSupabase();
+
+    const sessionData = {
+      date: formatDateKey(targetDate),
+      title: session.title,
+      category: session.category || null,
+      description: session.description || null,
+      blocks: session.blocks || [],
+      work_duration: session.work_duration || null,
+      rest_duration: session.rest_duration || null,
+      rounds: session.rounds || null,
+    };
+
+    try {
+      const { error } = await supabase.from('sessions').insert(sessionData);
+      if (error) throw error;
+      toast.success('Session dupliquée');
+      loadSessions();
+    } catch (error) {
+      console.error('Error duplicating session:', error);
+      toast.error('Erreur lors de la duplication');
+    }
   };
 
   // Save session
@@ -228,18 +321,15 @@ export default function CalendarPage() {
     const supabase = getSupabase();
 
     const sessionData = {
-      date: formatDateKey(selectedDate),
+      date: editingSession ? editingSession.date : formatDateKey(selectedDate),
       title: formData.title.trim(),
       category: formData.category || null,
       description: formData.description.trim() || null,
-      work_duration: formData.work_duration ? parseInt(formData.work_duration) : null,
-      rest_duration: formData.rest_duration ? parseInt(formData.rest_duration) : null,
-      rounds: formData.rounds ? parseInt(formData.rounds) : null,
+      blocks: formData.blocks,
     };
 
     try {
       if (editingSession) {
-        // Update
         const { error } = await supabase
           .from('sessions')
           .update(sessionData)
@@ -248,7 +338,6 @@ export default function CalendarPage() {
         if (error) throw error;
         toast.success('Session mise à jour');
       } else {
-        // Create
         const { error } = await supabase.from('sessions').insert(sessionData);
 
         if (error) throw error;
@@ -291,6 +380,178 @@ export default function CalendarPage() {
     }
   };
 
+  // Block management
+  const addBlock = (type: BlockType) => {
+    const newBlock: SessionBlock = {
+      id: generateBlockId(),
+      type,
+      title: BLOCK_TYPE_CONFIG[type].name,
+      content: '',
+      order: formData.blocks.length,
+    };
+    setFormData({ ...formData, blocks: [...formData.blocks, newBlock] });
+  };
+
+  const updateBlock = (blockId: string, updates: Partial<SessionBlock>) => {
+    setFormData({
+      ...formData,
+      blocks: formData.blocks.map(b =>
+        b.id === blockId ? { ...b, ...updates } : b
+      ),
+    });
+  };
+
+  const deleteBlock = (blockId: string) => {
+    setFormData({
+      ...formData,
+      blocks: formData.blocks.filter(b => b.id !== blockId).map((b, i) => ({ ...b, order: i })),
+    });
+  };
+
+  const moveBlock = (blockId: string, direction: 'up' | 'down') => {
+    const index = formData.blocks.findIndex(b => b.id === blockId);
+    if (index === -1) return;
+
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= formData.blocks.length) return;
+
+    const newBlocks = [...formData.blocks];
+    [newBlocks[index], newBlocks[newIndex]] = [newBlocks[newIndex], newBlocks[index]];
+
+    setFormData({
+      ...formData,
+      blocks: newBlocks.map((b, i) => ({ ...b, order: i })),
+    });
+  };
+
+  const duplicateBlock = (blockId: string) => {
+    const block = formData.blocks.find(b => b.id === blockId);
+    if (!block) return;
+
+    const newBlock: SessionBlock = {
+      ...block,
+      id: generateBlockId(),
+      title: `${block.title} (copie)`,
+      order: formData.blocks.length,
+    };
+    setFormData({ ...formData, blocks: [...formData.blocks, newBlock] });
+  };
+
+  // Apply template to week
+  const handleApplyTemplate = async () => {
+    if (!selectedTemplate) return;
+
+    setIsApplyingTemplate(true);
+    const supabase = getSupabase();
+    const weekStart = getWeekStart(selectedDate);
+
+    try {
+      const sessionsToCreate = selectedTemplate.days.map((day: WeekTemplateDay) => {
+        const sessionDate = new Date(weekStart);
+        sessionDate.setDate(weekStart.getDate() + day.dayOfWeek);
+
+        return {
+          date: formatDateKey(sessionDate),
+          title: day.title,
+          category: day.category,
+          description: null,
+          blocks: [],
+        };
+      });
+
+      const { error } = await supabase.from('sessions').insert(sessionsToCreate);
+      if (error) throw error;
+
+      toast.success(`Template "${selectedTemplate.name}" appliqué`);
+      setIsTemplateDialogOpen(false);
+      loadSessions();
+    } catch (error) {
+      console.error('Error applying template:', error);
+      toast.error('Erreur lors de l\'application du template');
+    } finally {
+      setIsApplyingTemplate(false);
+    }
+  };
+
+  // Template management
+  const handleSaveTemplate = async () => {
+    if (!templateFormData.name.trim()) {
+      toast.error('Le nom du template est obligatoire');
+      return;
+    }
+
+    const supabase = getSupabase();
+
+    try {
+      if (editingTemplate) {
+        const { error } = await supabase
+          .from('week_templates')
+          .update({
+            name: templateFormData.name,
+            description: templateFormData.description || null,
+            days: templateFormData.days,
+          })
+          .eq('id', editingTemplate.id);
+
+        if (error) throw error;
+        toast.success('Template mis à jour');
+      } else {
+        const { error } = await supabase.from('week_templates').insert({
+          name: templateFormData.name,
+          description: templateFormData.description || null,
+          days: templateFormData.days,
+        });
+
+        if (error) throw error;
+        toast.success('Template créé');
+      }
+
+      setEditingTemplate(null);
+      setTemplateFormData({ name: '', description: '', days: [] });
+      loadTemplates();
+    } catch (error) {
+      console.error('Error saving template:', error);
+      toast.error('Erreur lors de la sauvegarde');
+    }
+  };
+
+  const handleDeleteTemplate = async (templateId: string) => {
+    const supabase = getSupabase();
+
+    try {
+      const { error } = await supabase
+        .from('week_templates')
+        .delete()
+        .eq('id', templateId);
+
+      if (error) throw error;
+      toast.success('Template supprimé');
+      loadTemplates();
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      toast.error('Erreur lors de la suppression');
+    }
+  };
+
+  const addTemplateDay = () => {
+    const usedDays = templateFormData.days.map(d => d.dayOfWeek);
+    const nextDay = [0, 1, 2, 3, 4, 5, 6].find(d => !usedDays.includes(d as 0|1|2|3|4|5|6));
+
+    if (nextDay === undefined) {
+      toast.error('Tous les jours sont déjà définis');
+      return;
+    }
+
+    setTemplateFormData({
+      ...templateFormData,
+      days: [...templateFormData.days, {
+        dayOfWeek: nextDay as 0|1|2|3|4|5|6,
+        title: '',
+        category: 'crosstraining' as SessionCategory,
+      }],
+    });
+  };
+
   // Stats
   const stats = useMemo(() => {
     const thisMonth = sessions.filter((s) => {
@@ -308,7 +569,7 @@ export default function CalendarPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
             <CalendarIcon className="h-8 w-8 text-purple-500" />
@@ -318,10 +579,20 @@ export default function CalendarPage() {
             Planification et gestion des sessions d&apos;entraînement
           </p>
         </div>
-        <Button onClick={loadSessions} variant="outline" disabled={isLoading}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-          Actualiser
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setIsManageTemplatesOpen(true)}>
+            <FileText className="h-4 w-4 mr-2" />
+            Gérer Templates
+          </Button>
+          <Button variant="outline" onClick={() => setIsTemplateDialogOpen(true)}>
+            <Wand2 className="h-4 w-4 mr-2" />
+            Appliquer Template
+          </Button>
+          <Button onClick={loadSessions} variant="outline" disabled={isLoading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Actualiser
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -469,6 +740,7 @@ export default function CalendarPage() {
                 {selectedDateSessions.map((session) => {
                   const cat = session.category && CATEGORY_CONFIG[session.category];
                   const Icon = cat?.icon || CalendarIcon;
+                  const blocks = Array.isArray(session.blocks) ? session.blocks as SessionBlock[] : [];
 
                   return (
                     <div
@@ -483,28 +755,42 @@ export default function CalendarPage() {
                           <Icon className={`h-4 w-4 ${cat?.color || ''}`} />
                           <span className="font-medium">{session.title}</span>
                         </div>
-                        <Pencil className="h-3 w-3 text-muted-foreground" />
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const tomorrow = new Date(selectedDate);
+                              tomorrow.setDate(tomorrow.getDate() + 1);
+                              handleDuplicateSession(session, tomorrow);
+                            }}
+                            title="Dupliquer demain"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                          <Pencil className="h-3 w-3 text-muted-foreground" />
+                        </div>
                       </div>
                       {cat && (
                         <Badge variant="secondary" className={`mt-2 text-xs ${cat.color}`}>
                           {cat.name}
                         </Badge>
                       )}
+                      {blocks.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {blocks.map((block) => (
+                            <Badge key={block.id} variant="outline" className="text-[10px]">
+                              {BLOCK_TYPE_CONFIG[block.type]?.icon} {block.title}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                       {session.description && (
                         <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
                           {session.description}
                         </p>
-                      )}
-                      {(session.work_duration || session.rounds) && (
-                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                          {session.work_duration && (
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {session.work_duration}s work
-                            </span>
-                          )}
-                          {session.rounds && <span>{session.rounds} rounds</span>}
-                        </div>
                       )}
                     </div>
                   );
@@ -517,99 +803,176 @@ export default function CalendarPage() {
 
       {/* Session Dialog */}
       <Dialog open={isSessionDialogOpen} onOpenChange={setIsSessionDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingSession ? 'Modifier la session' : 'Nouvelle session'}
             </DialogTitle>
+            <DialogDescription>
+              {editingSession
+                ? `Session du ${new Date(editingSession.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`
+                : `Session du ${selectedDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`
+              }
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Titre *</Label>
-              <Input
-                id="title"
-                placeholder="Ex: WOD du jour, Force, Cardio..."
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              />
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="category">Catégorie</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(v) => setFormData({ ...formData, category: v as SessionCategory })}
-              >
-                <SelectTrigger id="category">
-                  <SelectValue placeholder="Sélectionner une catégorie" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(CATEGORY_CONFIG).map(([key, config]) => (
-                    <SelectItem key={key} value={key}>
-                      <span className="flex items-center gap-2">
-                        <config.icon className={`h-4 w-4 ${config.color}`} />
-                        {config.name}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'info' | 'blocks')}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="info">Informations</TabsTrigger>
+              <TabsTrigger value="blocks">
+                Blocs ({formData.blocks.length})
+              </TabsTrigger>
+            </TabsList>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                placeholder="Détails de la session..."
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={3}
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
+            <TabsContent value="info" className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label htmlFor="work">Travail (s)</Label>
+                <Label htmlFor="title">Titre *</Label>
                 <Input
-                  id="work"
-                  type="number"
-                  placeholder="60"
-                  value={formData.work_duration}
-                  onChange={(e) => setFormData({ ...formData, work_duration: e.target.value })}
+                  id="title"
+                  placeholder="Ex: WOD du jour, Force, Cardio..."
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="rest">Repos (s)</Label>
-                <Input
-                  id="rest"
-                  type="number"
-                  placeholder="30"
-                  value={formData.rest_duration}
-                  onChange={(e) => setFormData({ ...formData, rest_duration: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="rounds">Rounds</Label>
-                <Input
-                  id="rounds"
-                  type="number"
-                  placeholder="5"
-                  value={formData.rounds}
-                  onChange={(e) => setFormData({ ...formData, rounds: e.target.value })}
-                />
-              </div>
-            </div>
 
-            <div className="text-sm text-muted-foreground">
-              Date: {selectedDate.toLocaleDateString('fr-FR', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })}
-            </div>
-          </div>
-          <DialogFooter className="flex justify-between">
+              <div className="space-y-2">
+                <Label htmlFor="category">Catégorie</Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(v) => setFormData({ ...formData, category: v as SessionCategory })}
+                >
+                  <SelectTrigger id="category">
+                    <SelectValue placeholder="Sélectionner une catégorie" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(CATEGORY_CONFIG).map(([key, config]) => (
+                      <SelectItem key={key} value={key}>
+                        <span className="flex items-center gap-2">
+                          <config.icon className={`h-4 w-4 ${config.color}`} />
+                          {config.name}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Description / Notes</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Notes générales sur la session..."
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="blocks" className="space-y-4 pt-4">
+              {/* Add block buttons */}
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(BLOCK_TYPE_CONFIG).map(([type, config]) => (
+                  <Button
+                    key={type}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addBlock(type as BlockType)}
+                    className={config.color}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    {config.icon} {config.name}
+                  </Button>
+                ))}
+              </div>
+
+              {/* Blocks list */}
+              {formData.blocks.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
+                  <p>Aucun bloc</p>
+                  <p className="text-sm">Ajoutez des blocs pour structurer votre séance</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {formData.blocks.sort((a, b) => a.order - b.order).map((block, index) => {
+                    const config = BLOCK_TYPE_CONFIG[block.type];
+                    return (
+                      <div
+                        key={block.id}
+                        className={`p-3 rounded-lg border ${config.color}`}
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
+                          <span className="text-lg">{config.icon}</span>
+                          <Input
+                            value={block.title}
+                            onChange={(e) => updateBlock(block.id, { title: e.target.value })}
+                            className="font-medium h-8"
+                            placeholder="Titre du bloc"
+                          />
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => moveBlock(block.id, 'up')}
+                              disabled={index === 0}
+                            >
+                              <ChevronUp className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => moveBlock(block.id, 'down')}
+                              disabled={index === formData.blocks.length - 1}
+                            >
+                              <ChevronDown className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => duplicateBlock(block.id)}
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive"
+                              onClick={() => deleteBlock(block.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Label className="text-xs">Durée (min)</Label>
+                          <Input
+                            type="number"
+                            value={block.duration || ''}
+                            onChange={(e) => updateBlock(block.id, { duration: e.target.value ? parseInt(e.target.value) : undefined })}
+                            className="w-20 h-7 text-sm"
+                            placeholder="15"
+                          />
+                        </div>
+                        <Textarea
+                          value={block.content}
+                          onChange={(e) => updateBlock(block.id, { content: e.target.value })}
+                          placeholder="Contenu du bloc (exercices, sets, reps...)"
+                          rows={3}
+                          className="text-sm"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+
+          <DialogFooter className="flex justify-between mt-4">
             <div>
               {editingSession && (
                 <Button
@@ -641,6 +1004,294 @@ export default function CalendarPage() {
               </Button>
             </div>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Apply Template Dialog */}
+      <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wand2 className="h-5 w-5" />
+              Appliquer un template
+            </DialogTitle>
+            <DialogDescription>
+              Génère les séances pour la semaine du {getWeekStart(selectedDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {templates.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <FileText className="h-12 w-12 mx-auto opacity-50 mb-3" />
+                <p>Aucun template disponible</p>
+                <Button
+                  variant="link"
+                  onClick={() => {
+                    setIsTemplateDialogOpen(false);
+                    setIsManageTemplatesOpen(true);
+                  }}
+                >
+                  Créer un template
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {templates.map((template) => (
+                  <div
+                    key={template.id}
+                    className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                      selectedTemplate?.id === template.id
+                        ? 'border-primary bg-primary/5'
+                        : 'hover:bg-muted'
+                    }`}
+                    onClick={() => setSelectedTemplate(template)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{template.name}</p>
+                        {template.description && (
+                          <p className="text-sm text-muted-foreground">{template.description}</p>
+                        )}
+                      </div>
+                      <Badge variant="secondary">
+                        {Array.isArray(template.days) ? template.days.length : 0} jours
+                      </Badge>
+                    </div>
+                    {Array.isArray(template.days) && template.days.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {(template.days as WeekTemplateDay[]).map((day, i) => {
+                          const cat = CATEGORY_CONFIG[day.category];
+                          return (
+                            <Badge key={i} variant="outline" className={`text-xs ${cat?.color || ''}`}>
+                              {DAYS[day.dayOfWeek]}: {day.title}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsTemplateDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button
+              onClick={handleApplyTemplate}
+              disabled={!selectedTemplate || isApplyingTemplate}
+            >
+              {isApplyingTemplate ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <CalendarDays className="h-4 w-4 mr-2" />
+              )}
+              Appliquer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Templates Dialog */}
+      <Dialog open={isManageTemplatesOpen} onOpenChange={setIsManageTemplatesOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Gérer les templates hebdomadaires
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {/* Create/Edit form */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">
+                  {editingTemplate ? 'Modifier le template' : 'Nouveau template'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Nom *</Label>
+                    <Input
+                      value={templateFormData.name}
+                      onChange={(e) => setTemplateFormData({ ...templateFormData, name: e.target.value })}
+                      placeholder="Ex: Semaine CrossFit"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Description</Label>
+                    <Input
+                      value={templateFormData.description}
+                      onChange={(e) => setTemplateFormData({ ...templateFormData, description: e.target.value })}
+                      placeholder="Description optionnelle"
+                    />
+                  </div>
+                </div>
+
+                {/* Days */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Jours de la semaine</Label>
+                    <Button variant="outline" size="sm" onClick={addTemplateDay}>
+                      <Plus className="h-3 w-3 mr-1" />
+                      Ajouter jour
+                    </Button>
+                  </div>
+
+                  {templateFormData.days.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Aucun jour défini
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {templateFormData.days.map((day, index) => (
+                        <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded">
+                          <Select
+                            value={day.dayOfWeek.toString()}
+                            onValueChange={(v) => {
+                              const newDays = [...templateFormData.days];
+                              newDays[index] = { ...day, dayOfWeek: parseInt(v) as 0|1|2|3|4|5|6 };
+                              setTemplateFormData({ ...templateFormData, days: newDays });
+                            }}
+                          >
+                            <SelectTrigger className="w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {DAYS_FULL.map((d, i) => (
+                                <SelectItem key={i} value={i.toString()}>{d}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            value={day.title}
+                            onChange={(e) => {
+                              const newDays = [...templateFormData.days];
+                              newDays[index] = { ...day, title: e.target.value };
+                              setTemplateFormData({ ...templateFormData, days: newDays });
+                            }}
+                            placeholder="Titre de la séance"
+                            className="flex-1"
+                          />
+                          <Select
+                            value={day.category}
+                            onValueChange={(v) => {
+                              const newDays = [...templateFormData.days];
+                              newDays[index] = { ...day, category: v as SessionCategory };
+                              setTemplateFormData({ ...templateFormData, days: newDays });
+                            }}
+                          >
+                            <SelectTrigger className="w-40">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.entries(CATEGORY_CONFIG).map(([key, config]) => (
+                                <SelectItem key={key} value={key}>
+                                  <span className={config.color}>{config.name}</span>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setTemplateFormData({
+                                ...templateFormData,
+                                days: templateFormData.days.filter((_, i) => i !== index),
+                              });
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  {editingTemplate && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setEditingTemplate(null);
+                        setTemplateFormData({ name: '', description: '', days: [] });
+                      }}
+                    >
+                      Annuler modification
+                    </Button>
+                  )}
+                  <Button onClick={handleSaveTemplate}>
+                    <Save className="h-4 w-4 mr-2" />
+                    {editingTemplate ? 'Mettre à jour' : 'Créer'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Existing templates */}
+            <div className="space-y-2">
+              <h3 className="font-medium">Templates existants</h3>
+              {templates.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Aucun template
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {templates.map((template) => (
+                    <div
+                      key={template.id}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
+                      <div>
+                        <p className="font-medium">{template.name}</p>
+                        {template.description && (
+                          <p className="text-sm text-muted-foreground">{template.description}</p>
+                        )}
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {Array.isArray(template.days) && (template.days as WeekTemplateDay[]).map((day, i) => (
+                            <Badge key={i} variant="outline" className="text-xs">
+                              {DAYS[day.dayOfWeek]}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setEditingTemplate(template);
+                            setTemplateFormData({
+                              name: template.name,
+                              description: template.description || '',
+                              days: Array.isArray(template.days) ? template.days as WeekTemplateDay[] : [],
+                            });
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive"
+                          onClick={() => handleDeleteTemplate(template.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

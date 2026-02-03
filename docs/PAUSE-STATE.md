@@ -175,6 +175,21 @@ npm run lint         # ESLint
   - Features (push, offline, biometric)
 - Build vérifié ✅
 
+### Session 12 - 2026-02-03
+
+- **Refonte complète du calendrier:**
+  - **Templates hebdomadaires:** Créer des semaines-type avec titre + catégorie par jour
+  - **Appliquer un template:** Génère les séances pour une semaine entière
+  - **Système de blocs:** Chaque séance peut avoir des blocs (Échauffement, Force, WOD, Skill, Accessoire, Cooldown, Custom)
+  - **Blocs modifiables:** Déplacer, dupliquer, supprimer les blocs
+  - **Duplication de séances:** Bouton copie pour dupliquer au jour suivant
+- **Migration SQL:** `008_week_templates.sql` pour table `week_templates`
+- **Types ajoutés:** `WeekTemplate`, `WeekTemplateDay`, `SessionBlock`, `BlockType`, `BLOCK_TYPE_CONFIG`
+- Build vérifié ✅
+- **À faire dans Supabase:**
+  - Exécuter `docs/sql/migrations/008_week_templates.sql`
+  - Décaler les séances: `UPDATE sessions SET date = date + INTERVAL '1 day';`
+
 ---
 
 *Skali Prog - Next.js 16 + Supabase*
