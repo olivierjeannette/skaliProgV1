@@ -275,7 +275,6 @@ export interface SessionBlock {
   type: BlockType;
   title: string;
   content: string; // Markdown/texte libre pour les exercices
-  duration?: number; // en minutes
   order: number;
 }
 
