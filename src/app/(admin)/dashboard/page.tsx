@@ -54,7 +54,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="grid gap-2">
             <a
-              href="/admin/discord"
+              href="/discord"
               className="flex items-center gap-3 rounded-lg border p-3 hover:bg-accent transition-colors"
             >
               <MessageSquare className="h-5 w-5 text-primary" />
@@ -64,7 +64,7 @@ export default function DashboardPage() {
               </div>
             </a>
             <a
-              href="/admin/inventory"
+              href="/inventory"
               className="flex items-center gap-3 rounded-lg border p-3 hover:bg-accent transition-colors"
             >
               <Package className="h-5 w-5 text-primary" />
@@ -74,7 +74,7 @@ export default function DashboardPage() {
               </div>
             </a>
             <a
-              href="/admin/members"
+              href="/members"
               className="flex items-center gap-3 rounded-lg border p-3 hover:bg-accent transition-colors"
             >
               <Users className="h-5 w-5 text-primary" />

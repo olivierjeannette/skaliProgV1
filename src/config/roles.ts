@@ -12,7 +12,7 @@ export const ROLES: Record<UserRole, {
     label: 'Administrateur',
     color: '#dc2626',
     permissions: ['all'],
-    canAccess: ['/admin/*'],
+    canAccess: ['/*'],
   },
   COACH: {
     label: 'Coach',
@@ -24,7 +24,7 @@ export const ROLES: Record<UserRole, {
       'edit_sessions',
       'view_calendar',
     ],
-    canAccess: ['/admin/members', '/admin/calendar', '/admin/dashboard'],
+    canAccess: ['/members', '/calendar', '/dashboard'],
   },
   ATHLETE: {
     label: 'Athlète',

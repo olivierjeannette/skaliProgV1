@@ -28,7 +28,7 @@ export default function LoginPage() {
     e.preventDefault();
     const success = await login(selectedRole, password);
     if (success) {
-      router.push('/admin/dashboard');
+      router.push('/dashboard');
     }
   };
 
