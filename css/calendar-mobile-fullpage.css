@@ -1,0 +1,876 @@
+/* ===================================================================
+   SKALIPROG - CALENDAR MOBILE FULLPAGE
+   Transforme les modaux du calendrier en pages pleine sur mobile
+   =================================================================== */
+
+/* ===================================
+   MODAL BACKDROP - FULL PAGE ON MOBILE
+   =================================== */
+
+/* Desktop: garder le comportement modal classique */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+/* ===================================
+   DAY MODAL - Vue jour avec liste de séances
+   =================================== */
+
+.day-modal {
+  background: var(--bg-primary, #0a0a0a);
+  border-radius: 1rem;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.day-modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.day-modal-title-section {
+  flex: 1;
+  min-width: 200px;
+}
+
+.day-modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary, #ffffff);
+  margin: 0 0 0.5rem 0;
+  text-transform: capitalize;
+}
+
+.day-modal-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-secondary, #a0a0a0);
+  margin: 0;
+}
+
+.day-modal-add-btn {
+  padding: 0.75rem 1.5rem;
+  background: var(--accent-primary, #00d4ff);
+  color: var(--bg-primary, #0a0a0a);
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.day-modal-add-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+}
+
+.day-modal-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.day-modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.day-modal-close-btn {
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary, #ffffff);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+
+.day-modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ===================================
+   DAY SESSIONS LIST
+   =================================== */
+
+.day-sessions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.day-no-sessions {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-secondary, #a0a0a0);
+}
+
+.day-no-sessions-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.day-no-sessions h4 {
+  font-size: 1.25rem;
+  margin: 0 0 0.5rem 0;
+  color: var(--text-primary, #ffffff);
+}
+
+.day-no-sessions p {
+  margin: 0;
+  color: var(--text-tertiary, #666);
+}
+
+/* ===================================
+   DAY SESSION CARD
+   =================================== */
+
+.day-session-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  transition: all 0.2s;
+}
+
+.day-session-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.day-session-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.day-session-info {
+  flex: 1;
+}
+
+.day-session-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary, #ffffff);
+  margin: 0 0 0.5rem 0;
+}
+
+.day-session-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.day-session-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.session-category-crosstraining {
+  background: rgba(255, 68, 68, 0.15);
+  color: #ff4444;
+  border: 1px solid rgba(255, 68, 68, 0.3);
+}
+
+.session-category-musculation {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.session-category-cardio {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.session-category-mobilite {
+  background: rgba(168, 85, 247, 0.15);
+  color: #a855f7;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.day-session-index {
+  font-size: 0.85rem;
+  color: var(--text-tertiary, #666);
+}
+
+.day-session-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.day-session-btn {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  color: var(--text-primary, #ffffff);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.day-session-btn:hover {
+  transform: scale(1.1);
+}
+
+.day-session-btn-tv {
+  background: rgba(147, 51, 234, 0.15);
+  border-color: rgba(147, 51, 234, 0.3);
+  color: #9333ea;
+}
+
+.day-session-btn-tv:hover {
+  background: rgba(147, 51, 234, 0.25);
+}
+
+.day-session-btn-timer {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #22c55e;
+}
+
+.day-session-btn-timer:hover {
+  background: rgba(34, 197, 94, 0.25);
+}
+
+.day-session-btn-duplicate {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #3b82f6;
+}
+
+.day-session-btn-duplicate:hover {
+  background: rgba(59, 130, 246, 0.25);
+}
+
+.day-session-btn-edit {
+  background: rgba(251, 191, 36, 0.15);
+  border-color: rgba(251, 191, 36, 0.3);
+  color: #fbbf24;
+}
+
+.day-session-btn-edit:hover {
+  background: rgba(251, 191, 36, 0.25);
+}
+
+.day-session-btn-delete {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+.day-session-btn-delete:hover {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+/* ===================================
+   DAY SESSION BLOCKS
+   =================================== */
+
+.day-session-blocks {
+  margin-top: 1rem;
+}
+
+.day-session-blocks-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.day-session-blocks-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary, #ffffff);
+  margin: 0;
+}
+
+.day-session-blocks-count {
+  font-size: 0.85rem;
+  color: var(--text-tertiary, #666);
+}
+
+.day-session-blocks-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+.day-session-block {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.day-session-block-header {
+  margin-bottom: 0.5rem;
+}
+
+.day-session-block-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent-primary, #00d4ff);
+  margin: 0;
+}
+
+.day-session-block-content {
+  font-size: 0.9rem;
+  color: var(--text-secondary, #a0a0a0);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.day-session-empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-tertiary, #666);
+}
+
+.day-session-empty i {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.5;
+}
+
+/* ===================================
+   SESSION MODAL - Édition de séance
+   =================================== */
+
+.session-modal {
+  background: var(--bg-primary, #0a0a0a);
+  border-radius: 1rem;
+  max-width: 1000px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.session-modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.session-modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary, #ffffff);
+  margin: 0;
+}
+
+.session-modal-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+/* ===================================
+   SESSION FORM
+   =================================== */
+
+.session-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.session-form-header {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+}
+
+.session-form-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.session-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.session-form-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary, #ffffff);
+  display: flex;
+  align-items: center;
+}
+
+.session-form-input,
+.session-form-select {
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  color: var(--text-primary, #ffffff);
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.session-form-input:focus,
+.session-form-select:focus {
+  outline: none;
+  border-color: var(--accent-primary, #00d4ff);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.session-blocks-section {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+}
+
+.session-blocks-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.session-blocks-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary, #ffffff);
+  margin: 0;
+}
+
+.session-add-block-btn {
+  padding: 0.625rem 1.25rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  color: var(--text-primary, #ffffff);
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.session-add-block-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.session-add-block-btn.ai-generate {
+  background: var(--accent-primary, #00d4ff);
+  color: var(--bg-primary, #0a0a0a);
+  border-color: var(--accent-primary, #00d4ff);
+}
+
+.session-add-block-btn.ai-generate:hover {
+  box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+}
+
+.session-blocks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.session-block-item {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  transition: all 0.2s;
+}
+
+.session-block-item:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.session-block-item.dragging {
+  opacity: 0.5;
+}
+
+.session-block-item.drag-over {
+  border-color: var(--accent-primary, #00d4ff);
+  box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2);
+}
+
+.session-block-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.session-block-drag-handle {
+  cursor: grab;
+  color: var(--text-tertiary, #666);
+  padding: 0.25rem;
+}
+
+.session-block-drag-handle:active {
+  cursor: grabbing;
+}
+
+.session-block-name {
+  flex: 1;
+  padding: 0.625rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  color: var(--text-primary, #ffffff);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.session-block-name:focus {
+  outline: none;
+  border-color: var(--accent-primary, #00d4ff);
+}
+
+.session-block-regenerate-btn {
+  background: var(--accent-primary, #00d4ff);
+  color: var(--bg-primary, #0a0a0a);
+  border: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.session-block-regenerate-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+}
+
+.session-block-delete-btn {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 0.5rem;
+  color: #ef4444;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.session-block-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+  transform: scale(1.1);
+}
+
+.session-block-content {
+  width: 100%;
+  min-height: 120px;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  color: var(--text-primary, #ffffff);
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.session-block-content:focus {
+  outline: none;
+  border-color: var(--accent-primary, #00d4ff);
+}
+
+.session-actions {
+  display: flex;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.session-btn {
+  flex: 1;
+  padding: 0.875rem 1.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+  font-size: 0.95rem;
+}
+
+.session-btn-primary {
+  background: var(--accent-primary, #00d4ff);
+  color: var(--bg-primary, #0a0a0a);
+}
+
+.session-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+}
+
+.session-btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary, #ffffff);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.session-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ===================================
+   RESPONSIVE - MOBILE FULLPAGE
+   =================================== */
+
+@media (max-width: 768px) {
+  /* Transformer le backdrop en page pleine */
+  /* IMPORTANT: Ne pas appliquer en mode TV */
+  body:not(.tv-mode-active) .modal-backdrop {
+    padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+
+  /* Day Modal - Plein écran (sauf en mode TV) */
+  body:not(.tv-mode-active) .day-modal {
+    max-width: 100%;
+    max-height: 100%;
+    height: 100%;
+    border-radius: 0;
+    border: none;
+  }
+
+  body:not(.tv-mode-active) .day-modal-header {
+    padding: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg-primary, #0a0a0a);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  }
+
+  body:not(.tv-mode-active) .day-modal-title {
+    font-size: 1.25rem;
+  }
+
+  body:not(.tv-mode-active) .day-modal-add-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  body:not(.tv-mode-active) .day-modal-content {
+    padding: 1rem;
+  }
+
+  body:not(.tv-mode-active) .day-modal-footer {
+    position: sticky;
+    bottom: 0;
+    background: var(--bg-primary, #0a0a0a);
+    border-top: 2px solid rgba(255, 255, 255, 0.1);
+  }
+
+  body:not(.tv-mode-active) .day-modal-close-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Session Card - Optimisé mobile (sauf mode TV) */
+  body:not(.tv-mode-active) .day-session-card {
+    padding: 1rem;
+  }
+
+  body:not(.tv-mode-active) .day-session-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  body:not(.tv-mode-active) .day-session-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  /* Garder les blocs en colonnes sur mobile */
+  body:not(.tv-mode-active) .day-session-blocks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 0.75rem;
+  }
+
+  /* Session Modal - Plein écran (sauf mode TV) */
+  body:not(.tv-mode-active) .session-modal {
+    max-width: 100%;
+    max-height: 100%;
+    height: 100%;
+    border-radius: 0;
+    border: none;
+  }
+
+  body:not(.tv-mode-active) .session-modal-header {
+    padding: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg-primary, #0a0a0a);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  }
+
+  body:not(.tv-mode-active) .session-modal-title {
+    font-size: 1.25rem;
+  }
+
+  body:not(.tv-mode-active) .session-modal-content {
+    padding: 1rem;
+  }
+
+  /* Form - Optimisé mobile (sauf mode TV) */
+  body:not(.tv-mode-active) .session-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  body:not(.tv-mode-active) .session-blocks-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  body:not(.tv-mode-active) .session-add-block-btn {
+    flex: 1 1 auto;
+    min-width: 140px;
+  }
+
+  body:not(.tv-mode-active) .session-block-header {
+    flex-wrap: wrap;
+  }
+
+  body:not(.tv-mode-active) .session-block-name {
+    width: 100%;
+  }
+
+  body:not(.tv-mode-active) .session-actions {
+    flex-direction: column;
+  }
+
+  body:not(.tv-mode-active) .session-btn {
+    width: 100%;
+  }
+
+  /* Ajuster les espacements (sauf mode TV) */
+  body:not(.tv-mode-active) .day-sessions-list {
+    gap: 1rem;
+  }
+
+  body:not(.tv-mode-active) .session-blocks-list {
+    gap: 0.875rem;
+  }
+}
+
+/* ===================================
+   ANIMATIONS
+   =================================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* ===================================
+   SCROLLBAR CUSTOM
+   =================================== */
+
+.day-modal-content::-webkit-scrollbar,
+.session-modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.day-modal-content::-webkit-scrollbar-track,
+.session-modal-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.day-modal-content::-webkit-scrollbar-thumb,
+.session-modal-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.day-modal-content::-webkit-scrollbar-thumb:hover,
+.session-modal-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}

@@ -1,0 +1,218 @@
+/**
+ * ═══════════════════════════════════════════════════════════════════════
+ * MODE PERFORMANCE ULTRA
+ * Désactive tous les effets coûteux pour améliorer l'INP
+ * ═══════════════════════════════════════════════════════════════════════
+ */
+
+/* Désactiver TOUS les backdrop-filters (très coûteux pour GPU) */
+* {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Remplacer backdrop-filter par background solide */
+.auth-card,
+.glass-card,
+.modal,
+.sidebar,
+.auth-input,
+.glass-btn,
+.calendar-cell,
+.member-card,
+.session-card,
+.nav-item {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Désactiver les transitions pendant les interactions */
+.disable-animations *,
+.disable-animations *::before,
+.disable-animations *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Réduire drastiquement les transitions pour améliorer l'INP */
+* {
+  transition-duration: 50ms !important; /* Au lieu de 250ms+ */
+}
+
+/* Supprimer will-change (peut ralentir sur mobile) */
+* {
+  will-change: auto !important;
+}
+
+/* Optimiser les transformations (utiliser translate au lieu de transform complet) */
+button:active,
+.nav-item:active,
+.btn:active {
+  transform: none !important; /* Pas d'animation au clic */
+}
+
+/* Désactiver les box-shadows multiples (coûteux) */
+* {
+  box-shadow: none !important;
+}
+
+/* Réactiver uniquement les ombres critiques pour la lisibilité */
+.modal,
+.auth-card,
+.sidebar {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Désactiver les gradients (remplacer par couleurs solides) */
+.auth-button,
+.btn-primary,
+.accent-btn {
+  background: #007aff !important; /* Couleur solide au lieu de gradient */
+}
+
+/* Simplifier les bordures */
+* {
+  border-image: none !important;
+}
+
+/* Optimiser les hover states - pas de transition */
+button:hover,
+.nav-item:hover,
+.btn:hover {
+  transition: none !important;
+}
+
+/* Désactiver les animations de chargement coûteuses */
+@keyframes spin,
+@keyframes pulse,
+@keyframes bounce,
+@keyframes fade {
+  from,
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+/* Forcer le repaint GPU uniquement pour le scroll */
+.main-content {
+  transform: translateZ(0);
+  will-change: scroll-position;
+}
+
+/* Désactiver les pseudo-éléments animés */
+*::before,
+*::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Optimiser les filtres CSS */
+* {
+  filter: none !important;
+}
+
+/* Exception : garder les filtres d'images */
+img {
+  filter: initial !important;
+}
+
+/* Optimiser le text-shadow */
+* {
+  text-shadow: none !important;
+}
+
+/* Garder uniquement les text-shadow critiques pour la lisibilité */
+.auth-title,
+h1,
+h2 {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* ===================================
+   OPTIMISATIONS SPÉCIFIQUES PAR MODULE
+   =================================== */
+
+/* Calendar - Supprimer les effets glassmorphism */
+.calendar-cell,
+.day-cell {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Navigation - Simplifier les états */
+.nav-item {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+.nav-item.active {
+  background: rgba(0, 122, 255, 0.2) !important;
+  border-left: 3px solid #007aff !important;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Modal - Simplifier le backdrop */
+.modal-backdrop {
+  background: rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Cards - Supprimer les effets 3D */
+.member-card,
+.session-card,
+.nutrition-card {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Inputs - Simplifier */
+input,
+textarea,
+select {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: #007aff !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* ===================================
+   OPTIMISATIONS MOBILE
+   =================================== */
+
+@media (max-width: 768px) {
+  /* Désactiver TOUTES les animations sur mobile */
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Simplifier encore plus les effets */
+  .sidebar {
+    background: #0a0a12 !important;
+  }
+
+  .mobile-overlay {
+    background: rgba(0, 0, 0, 0.8) !important;
+  }
+}
+
+/* ===================================
+   PRINT MODE - Supprimer tous les effets
+   =================================== */
+
+@media print {
+  * {
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+}

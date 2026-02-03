@@ -1,0 +1,391 @@
+/**
+ * ═══════════════════════════════════════════════════════════════
+ * MOBILE FIXES - Corrections et surcharges spécifiques
+ * Ce fichier doit être chargé en dernier pour garantir la priorité
+ * ═══════════════════════════════════════════════════════════════
+ */
+
+/* ========================================
+   FIXES CRITIQUES MOBILE
+   ======================================== */
+
+/* Fix: Éviter le zoom sur les inputs iOS */
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='number'],
+input[type='tel'],
+input[type='url'],
+select,
+textarea {
+  font-size: 16px !important;
+}
+
+/* Fix: Empêcher la sélection de texte sur les éléments interactifs */
+button,
+.menu-item,
+.nav-btn,
+.pokemon-card {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Fix: Assurer que les boutons ne deviennent pas des links iOS */
+button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* ========================================
+   HAMBURGER BUTTON IMPROVEMENTS
+   ======================================== */
+#hamburgerBtn {
+  /* Assurer la transition fluide */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#hamburgerBtn:active {
+  transform: scale(0.92);
+}
+
+/* ========================================
+   MOBILE MENU IMPROVEMENTS
+   ======================================== */
+
+/* Améliorer la lisibilité du menu */
+#menuSidebar {
+  /* Assurer qu'on ne peut pas scroller au-delà du contenu */
+  overscroll-behavior: contain;
+}
+
+/* Améliorer le contraste des items inactifs */
+.menu-item:not(.bg-gradient-to-br) {
+  background: rgba(31, 41, 55, 0.9) !important;
+}
+
+.menu-item:not(.bg-gradient-to-br):active {
+  background: rgba(55, 65, 81, 0.9) !important;
+}
+
+/* ========================================
+   POKEMON CARDS MOBILE FIXES
+   ======================================== */
+
+/* Fix: Éviter les cartes trop hautes sur petits écrans */
+@media (max-width: 375px) {
+  .pokemon-card {
+    min-height: 380px !important;
+  }
+
+  .card-image-container {
+    min-height: 180px !important;
+    padding: 1rem !important;
+  }
+
+  .card-pokemon-image {
+    max-width: 140px !important;
+  }
+}
+
+/* Fix: Ajuster les stats sur mobile */
+.card-stats-mini > div {
+  font-size: 0.8rem;
+  padding: 0.5rem;
+}
+
+/* ========================================
+   GLASS CARD IMPROVEMENTS
+   ======================================== */
+
+/* Améliorer le backdrop sur iOS (parfois glitchy) */
+.glass-card {
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  /* Fallback pour les browsers qui ne supportent pas backdrop-filter */
+  background: rgba(15, 23, 42, 0.95);
+}
+
+@supports (backdrop-filter: blur(16px)) or (-webkit-backdrop-filter: blur(16px)) {
+  .glass-card {
+    background: rgba(15, 23, 42, 0.8);
+  }
+}
+
+/* ========================================
+   NAVIGATION FIXES
+   ======================================== */
+
+/* Fix: Navbar qui peut être cachée par le clavier iOS */
+nav.sticky {
+  position: -webkit-sticky;
+  position: sticky;
+}
+
+/* Fix: Améliorer la lisibilité du logo sur mobile */
+nav h1,
+nav p {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* ========================================
+   CONTENT AREA FIXES
+   ======================================== */
+
+/* Fix: Padding bottom pour éviter que le contenu soit caché */
+#contentArea {
+  margin-bottom: 2rem;
+  padding-bottom: env(safe-area-inset-bottom, 2rem);
+}
+
+/* ========================================
+   DISCORD LOGIN SCREEN FIXES
+   ======================================== */
+
+/* Fix: Centrer correctement sur tous les écrans */
+#discordLoginScreen {
+  min-height: calc(100vh - 80px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+#discordLoginScreen .glass-card {
+  width: 100%;
+}
+
+/* ========================================
+   SCROLLBAR WEBKIT FIX
+   ======================================== */
+
+/* Masquer la scrollbar sur mobile mais garder le scroll */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 0px;
+    display: none;
+  }
+
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+}
+
+/* ========================================
+   LANDSCAPE MODE OPTIMIZATIONS
+   ======================================== */
+
+@media (orientation: landscape) and (max-height: 600px) {
+  /* Réduire les hauteurs en mode paysage */
+  nav {
+    height: 48px !important;
+  }
+
+  .glass-card {
+    padding: 1rem !important;
+  }
+
+  #discordLoginScreen .w-24 {
+    width: 4rem !important;
+    height: 4rem !important;
+  }
+
+  .pokemon-card {
+    min-height: 340px !important;
+  }
+}
+
+/* ========================================
+   PERFORMANCE IMPROVEMENTS
+   ======================================== */
+
+/* Forcer l'accélération GPU sur les éléments animés */
+.pokemon-card,
+#menuSidebar,
+#menuBackdrop,
+.menu-item {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Retirer will-change après l'animation pour économiser la mémoire */
+.pokemon-card:not(:hover):not(:active),
+.menu-item:not(:hover):not(:active) {
+  will-change: auto;
+}
+
+/* ========================================
+   TOUCH RIPPLE EFFECT (Material Design)
+   ======================================== */
+
+/* Ajouter un effet ripple subtil sur les boutons */
+button,
+.menu-item,
+.pokemon-card {
+  position: relative;
+  overflow: hidden;
+}
+
+button::after,
+.menu-item::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.6s,
+    height 0.6s;
+}
+
+button:active::after,
+.menu-item:active::after {
+  width: 300px;
+  height: 300px;
+}
+
+/* ========================================
+   DARK MODE ENHANCEMENTS
+   ======================================== */
+
+/* Améliorer le contraste en mode sombre */
+@media (prefers-color-scheme: dark) {
+  body {
+    background: linear-gradient(135deg, #0a0f1e 0%, #1a1f2e 100%);
+  }
+
+  .glass-card {
+    border-color: rgba(82, 199, 89, 0.3);
+  }
+}
+
+/* ========================================
+   LOADING STATES
+   ======================================== */
+
+/* Skeleton loader pour les cartes */
+.pokemon-card.loading {
+  background: linear-gradient(
+    90deg,
+    rgba(26, 26, 46, 0.5) 0%,
+    rgba(45, 27, 78, 0.5) 50%,
+    rgba(26, 26, 46, 0.5) 100%
+  );
+  background-size: 200% 100%;
+  animation: loading 1.5s ease-in-out infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ========================================
+   FOCUS VISIBLE (Accessibilité)
+   ======================================== */
+
+/* Améliorer le focus pour la navigation clavier */
+*:focus-visible {
+  outline: 3px solid rgba(82, 199, 89, 0.5);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+.menu-item:focus-visible {
+  outline: 3px solid rgba(82, 199, 89, 0.7);
+}
+
+/* ========================================
+   IOS SPECIFIC FIXES
+   ======================================== */
+
+/* Fix: Supprimer les coins arrondis par défaut iOS */
+input,
+textarea,
+select,
+button {
+  -webkit-border-radius: 0;
+  border-radius: var(--radius-md, 0.75rem);
+}
+
+/* Fix: Empêcher l'auto-zoom sur les inputs */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  select,
+  textarea,
+  input {
+    font-size: 16px;
+  }
+}
+
+/* Fix: Problème de position fixed sur iOS */
+@supports (-webkit-touch-callout: none) {
+  nav.sticky {
+    position: -webkit-sticky;
+    top: 0;
+  }
+}
+
+/* ========================================
+   ANDROID SPECIFIC FIXES
+   ======================================== */
+
+/* Fix: Material design ripple qui peut persister */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Fix: Assurer que les transitions sont fluides */
+@media (prefers-reduced-motion: no-preference) {
+  * {
+    -webkit-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* ========================================
+   PRINT MODE
+   ======================================== */
+
+@media print {
+  /* Masquer les éléments non essentiels */
+  nav,
+  #mobileMenu,
+  #hamburgerBtn,
+  button:not(.pokemon-card button),
+  .menu-item {
+    display: none !important;
+  }
+
+  /* Optimiser l'affichage des cartes */
+  .pokemon-card {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}
+
+/* ========================================
+   HIGH CONTRAST MODE
+   ======================================== */
+
+@media (prefers-contrast: high) {
+  .glass-card {
+    border-width: 2px;
+    border-color: rgba(82, 199, 89, 0.8);
+  }
+
+  button,
+  .menu-item {
+    border: 2px solid currentColor;
+  }
+}

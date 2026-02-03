@@ -1,0 +1,44 @@
+# Environnement
+.env
+.env.local
+.env.*.local
+
+# Node modules
+node_modules/
+
+# Temporaires
+temp/
+*.tmp
+*.temp
+
+# Backups
+*.bak
+*-backup.*
+*-old.*
+*-copy.*
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Cache
+.cache/
+*.cache
+
+# Build
+dist/
+build/
+
+# Claude config (local)
+.claude/

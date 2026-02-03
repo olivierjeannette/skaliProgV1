@@ -1,0 +1,351 @@
+/**
+ * ═══════════════════════════════════════════════════════════════
+ * PORTAIL ADHÉRENT - CARTES POKÉMON
+ * Cartes compactes et optimisées pour mobile
+ * ═══════════════════════════════════════════════════════════════
+ */
+
+/* ========================================
+   GRID RESPONSIVE
+   ======================================== */
+.pokemon-gallery {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-md);
+  width: 100%;
+}
+
+/* ========================================
+   CARTE POKÉMON - COMPACTE
+   ======================================== */
+.pokemon-card {
+  position: relative;
+  background: linear-gradient(135deg, #1a1a2e 0%, #2d1b4e 50%, #1a1a2e 100%);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  min-height: 240px; /* Réduit encore plus pour mobile */
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-lg);
+}
+
+.pokemon-card:active {
+  transform: scale(0.98);
+}
+
+/* ========================================
+   HEADER - COMPACT
+   ======================================== */
+.card-header {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(138, 43, 226, 0.3), rgba(75, 0, 130, 0.3));
+  border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+  min-height: 40px; /* Plus compact */
+}
+
+.card-name {
+  font-size: var(--font-lg);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  margin: 0;
+}
+
+.card-level {
+  font-size: var(--font-base);
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--color-gold), #ffed4e);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 4px rgba(255, 215, 0, 0.6));
+}
+
+/* ========================================
+   IMAGE CONTAINER - COMPACT
+   ======================================== */
+.card-image-container {
+  padding: var(--spacing-sm);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 90px; /* Réduit encore plus */
+  background: radial-gradient(ellipse at center, rgba(138, 43, 226, 0.1) 0%, transparent 70%);
+  position: relative;
+}
+
+.card-pokemon-image {
+  width: 100%;
+  max-width: 80px; /* Réduit encore plus */
+  height: auto;
+  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.5));
+  transition: all var(--transition-base);
+  position: relative;
+  z-index: 2;
+}
+
+/* ========================================
+   BODY - COMPACT
+   ======================================== */
+.card-body {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7));
+  color: white;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.card-trainer {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--color-gold);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  margin: 0;
+}
+
+.card-type {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.card-type span {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.card-rarity {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  color: var(--color-gold);
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+  margin: 0;
+}
+
+/* ========================================
+   STATS MINI - COMPACT
+   ======================================== */
+.card-stats-mini {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.375rem;
+  margin-top: var(--spacing-xs);
+}
+
+.card-stats-mini > div {
+  background: linear-gradient(135deg, rgba(138, 43, 226, 0.3), rgba(75, 0, 130, 0.3));
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: var(--shadow-sm);
+  min-height: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: transform var(--transition-fast);
+}
+
+.card-stats-mini > div:active {
+  transform: scale(0.95);
+}
+
+/* ========================================
+   RARITY VARIANTS
+   ======================================== */
+
+/* Common */
+.pokemon-card.rarity-common {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Uncommon */
+.pokemon-card.rarity-uncommon {
+  box-shadow: 0 6px 20px rgba(100, 100, 200, 0.2);
+  border: 1px solid rgba(150, 150, 255, 0.2);
+}
+
+.pokemon-card.rarity-uncommon .card-name {
+  color: #a5b4fc;
+}
+
+/* Rare */
+.pokemon-card.rarity-rare {
+  box-shadow: 0 8px 28px rgba(138, 43, 226, 0.3);
+  border: 1px solid rgba(200, 100, 255, 0.3);
+}
+
+.pokemon-card.rarity-rare .card-name {
+  color: #c084fc;
+}
+
+/* Legendary */
+.pokemon-card.rarity-legendary {
+  box-shadow:
+    0 10px 40px rgba(255, 215, 0, 0.4),
+    0 0 60px rgba(255, 100, 0, 0.2);
+  border: 2px solid rgba(255, 215, 0, 0.4);
+}
+
+.pokemon-card.rarity-legendary .card-name {
+  color: var(--color-gold);
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+/* Petits smartphones */
+@media (max-width: 375px) {
+  .pokemon-card {
+    min-height: 260px;
+  }
+
+  .card-image-container {
+    min-height: 100px;
+    padding: var(--spacing-sm);
+  }
+
+  .card-pokemon-image {
+    max-width: 80px;
+  }
+}
+
+/* Tablettes */
+@media (min-width: 640px) {
+  .pokemon-gallery {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-xl);
+  }
+
+  .pokemon-card {
+    min-height: 320px;
+  }
+
+  .card-image-container {
+    min-height: 140px;
+  }
+
+  .card-pokemon-image {
+    max-width: 120px;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .pokemon-gallery {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .pokemon-card:hover {
+    transform: translateY(-8px) scale(1.02);
+  }
+}
+
+/* Landscape sur mobile */
+@media (orientation: landscape) and (max-height: 600px) {
+  .pokemon-card {
+    min-height: 240px;
+  }
+
+  .card-image-container {
+    min-height: 90px;
+    padding: var(--spacing-sm);
+  }
+
+  .card-pokemon-image {
+    max-width: 70px;
+  }
+}
+
+/* ========================================
+   CARTE D'ACCUEIL - RÉDUCTION MAXIMALE
+   ======================================== */
+
+/* Cibler spécifiquement la carte d'accueil (fullscreen) */
+.pokemon-card[style*='min-height: auto'] {
+  max-width: 100% !important;
+}
+
+/* Réduire tous les espacements de la carte d'accueil */
+.pokemon-card[style*='min-height: auto'] .card-header {
+  padding: 0.5rem 0.75rem !important;
+  min-height: 36px !important;
+}
+
+.pokemon-card[style*='min-height: auto'] .card-name {
+  font-size: 1rem !important;
+}
+
+.pokemon-card[style*='min-height: auto'] .card-level {
+  font-size: 0.9rem !important;
+}
+
+.pokemon-card[style*='min-height: auto'] .card-image-container {
+  min-height: 100px !important;
+  padding: 0.75rem !important;
+}
+
+.pokemon-card[style*='min-height: auto'] .card-pokemon-image {
+  max-width: 90px !important;
+}
+
+.pokemon-card[style*='min-height: auto'] .card-body {
+  padding: 0.5rem 0.75rem 0.75rem !important;
+}
+
+.pokemon-card[style*='min-height: auto'] .card-trainer {
+  font-size: 0.75rem !important;
+  margin-bottom: 0.375rem !important;
+}
+
+.pokemon-card[style*='min-height: auto'] .card-type span {
+  font-size: 0.7rem !important;
+  padding: 0.25rem 0.625rem !important;
+}
+
+.pokemon-card[style*='min-height: auto'] .card-rarity {
+  font-size: 0.7rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.pokemon-card[style*='min-height: auto'] .card-stats-mini {
+  gap: 0.375rem !important;
+}
+
+.pokemon-card[style*='min-height: auto'] .card-stats-mini > div {
+  padding: 0.375rem !important;
+}
+
+/* Sur très petits écrans, réduire encore plus */
+@media (max-width: 375px) {
+  .pokemon-card[style*='min-height: auto'] .card-image-container {
+    min-height: 80px !important;
+    padding: 0.5rem !important;
+  }
+
+  .pokemon-card[style*='min-height: auto'] .card-pokemon-image {
+    max-width: 70px !important;
+  }
+}

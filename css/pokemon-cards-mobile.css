@@ -1,0 +1,676 @@
+/**
+ * ═══════════════════════════════════════════════════════════════
+ * POKEMON CARDS - MOBILE OPTIMIZED DESIGN SYSTEM
+ * Rarity-based design with mobile-first approach
+ * ═══════════════════════════════════════════════════════════════
+ */
+
+/* ==========================================
+   CARD ENTRANCE ANIMATIONS - PROGRESSIVE BY RARITY
+   ========================================== */
+@keyframes cardAppearSimple {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cardAppearUncommon {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes cardAppearRare {
+  from {
+    opacity: 0;
+    transform: scale(0.9) rotateY(-10deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotateY(0deg);
+  }
+}
+
+@keyframes cardAppearLegendary {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) rotateY(-20deg) rotateX(10deg);
+    filter: brightness(0.5);
+  }
+  60% {
+    transform: scale(1.03) rotateY(5deg) rotateX(-5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotateY(0deg) rotateX(0deg);
+    filter: brightness(1);
+  }
+}
+
+/* ==========================================
+   HOLOGRAPHIC & SHINE ANIMATIONS
+   ========================================== */
+@keyframes holoShine {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes sparkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1) rotate(180deg);
+  }
+}
+
+/* ==========================================
+   POKEMON FLOAT ANIMATIONS - PROGRESSIVE
+   ========================================== */
+@keyframes pokemonFloatSubtle {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes pokemonFloatMedium {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(2deg);
+  }
+}
+
+@keyframes pokemonFloatActive {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg) scale(1);
+  }
+  33% {
+    transform: translateY(-10px) rotate(3deg) scale(1.02);
+  }
+  66% {
+    transform: translateY(-5px) rotate(-3deg) scale(0.98);
+  }
+}
+
+@keyframes pokemonFloatLegendary {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg) scale(1);
+  }
+  25% {
+    transform: translateY(-12px) rotate(5deg) scale(1.03);
+  }
+  50% {
+    transform: translateY(-8px) rotate(0deg) scale(1.01);
+  }
+  75% {
+    transform: translateY(-12px) rotate(-5deg) scale(1.03);
+  }
+}
+
+/* ==========================================
+   GRADIENT & GLOW ANIMATIONS
+   ========================================== */
+@keyframes rotatingGradient {
+  0% {
+    filter: hue-rotate(0deg);
+  }
+  100% {
+    filter: hue-rotate(360deg);
+  }
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6));
+  }
+  50% {
+    filter: drop-shadow(0 0 40px rgba(255, 215, 0, 1));
+  }
+}
+
+@keyframes rainbowBorder {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+/* ==========================================
+   BASE CARD STYLES - MOBILE OPTIMIZED
+   ========================================== */
+.pokemon-card {
+  position: relative;
+  background: linear-gradient(135deg, #1a1a2e 0%, #2d1b4e 50%, #1a1a2e 100%);
+  border-radius: 1rem;
+  overflow: visible;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: pointer;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+  height: 100%;
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  /* Mobile optimization */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ==========================================
+   RARITY: COMMON (Rookie/Beginner)
+   Clean, simple, professional
+   ========================================== */
+.pokemon-card.rarity-common {
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  animation: cardAppearSimple 0.4s ease-out;
+}
+
+.pokemon-card.rarity-common:active {
+  transform: scale(0.98);
+}
+
+.pokemon-card.rarity-common .card-pokemon-image {
+  animation: pokemonFloatSubtle 4s ease-in-out infinite;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+}
+
+/* ==========================================
+   RARITY: UNCOMMON (Intermediate)
+   Added shimmer and subtle effects
+   ========================================== */
+.pokemon-card.rarity-uncommon {
+  box-shadow:
+    0 6px 20px rgba(100, 100, 200, 0.2),
+    0 0 0 1px rgba(150, 150, 255, 0.2),
+    inset 0 0 40px rgba(255, 255, 255, 0.03);
+  animation: cardAppearUncommon 0.5s ease-out;
+}
+
+.pokemon-card.rarity-uncommon::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  right: -1px;
+  bottom: -1px;
+  background: linear-gradient(45deg, transparent, rgba(150, 150, 255, 0.2), transparent);
+  background-size: 200% 200%;
+  border-radius: 1rem;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.pokemon-card.rarity-uncommon:active {
+  transform: scale(0.98);
+}
+
+.pokemon-card.rarity-uncommon .card-pokemon-image {
+  animation: pokemonFloatMedium 3.5s ease-in-out infinite;
+  filter: drop-shadow(0 3px 12px rgba(100, 100, 200, 0.4));
+}
+
+/* ==========================================
+   RARITY: RARE (Advanced)
+   Holographic effects and strong animations
+   ========================================== */
+.pokemon-card.rarity-rare {
+  box-shadow:
+    0 8px 28px rgba(138, 43, 226, 0.3),
+    0 0 0 1px rgba(200, 100, 255, 0.3),
+    inset 0 0 60px rgba(255, 255, 255, 0.05);
+  animation: cardAppearRare 0.6s ease-out;
+}
+
+.pokemon-card.rarity-rare::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #8b00ff, #00d4ff, #ff00ff, #8b00ff, #00d4ff);
+  background-size: 300% 300%;
+  border-radius: 1rem;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.pokemon-card.rarity-rare:active {
+  transform: scale(0.98);
+}
+
+.pokemon-card.rarity-rare .card-pokemon-image {
+  animation: pokemonFloatActive 3s ease-in-out infinite;
+  filter: drop-shadow(0 5px 20px rgba(138, 43, 226, 0.5));
+}
+
+/* Foil overlay for rare cards */
+.pokemon-card.rarity-rare .card-foil-overlay {
+  opacity: 0.3;
+}
+
+/* ==========================================
+   RARITY: LEGENDARY (Elite/Master)
+   Maximum effects - social media ready
+   ========================================== */
+.pokemon-card.rarity-legendary {
+  box-shadow:
+    0 10px 40px rgba(255, 215, 0, 0.4),
+    0 0 0 2px rgba(255, 215, 0, 0.4),
+    0 0 60px rgba(255, 100, 0, 0.2),
+    inset 0 0 80px rgba(255, 215, 0, 0.08);
+  animation: cardAppearLegendary 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.pokemon-card.rarity-legendary::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  background: linear-gradient(
+    45deg,
+    #ff0080,
+    #ff8c00,
+    #ffd700,
+    #00ff00,
+    #00d4ff,
+    #8b00ff,
+    #ff0080,
+    #ff8c00,
+    #ffd700
+  );
+  background-size: 400% 400%;
+  border-radius: calc(1rem + 2px);
+  z-index: -1;
+  opacity: 0.7;
+  animation: rainbowBorder 4s linear infinite;
+}
+
+.pokemon-card.rarity-legendary:active {
+  transform: scale(0.98);
+}
+
+.pokemon-card.rarity-legendary .card-pokemon-image {
+  animation: pokemonFloatLegendary 2.5s ease-in-out infinite;
+  filter: drop-shadow(0 8px 30px rgba(255, 215, 0, 0.7))
+    drop-shadow(0 0 20px rgba(255, 100, 0, 0.5));
+}
+
+/* Enhanced foil for legendary */
+.pokemon-card.rarity-legendary .card-foil-overlay {
+  opacity: 0.6;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.05) 0px,
+      transparent 1px,
+      transparent 2px,
+      rgba(255, 255, 255, 0.05) 3px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.05) 0px,
+      transparent 1px,
+      transparent 2px,
+      rgba(255, 255, 255, 0.05) 3px
+    ),
+    radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.1), transparent);
+}
+
+/* Legendary sparkles */
+.pokemon-card.rarity-legendary .card-image-container::before {
+  animation: sparkle 3s ease-in-out infinite;
+  opacity: 0.4;
+}
+
+/* ==========================================
+   CARD STRUCTURE
+   ========================================== */
+
+/* Holographic foil overlay */
+.card-foil-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.03) 0px,
+      transparent 1px,
+      transparent 2px,
+      rgba(255, 255, 255, 0.03) 3px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.03) 0px,
+      transparent 1px,
+      transparent 2px,
+      rgba(255, 255, 255, 0.03) 3px
+    );
+  pointer-events: none;
+  opacity: 0.5;
+  z-index: 10;
+  border-radius: 1rem;
+}
+
+/* Card header */
+.card-header {
+  padding: 1rem;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(138, 43, 226, 0.3), rgba(75, 0, 130, 0.3));
+  border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.card-name {
+  font-size: 1.25rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* Rarity-specific name styles */
+.pokemon-card.rarity-common .card-name {
+  color: #e5e7eb;
+}
+
+.pokemon-card.rarity-uncommon .card-name {
+  color: #a5b4fc;
+  text-shadow:
+    0 0 8px rgba(165, 180, 252, 0.5),
+    2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.pokemon-card.rarity-rare .card-name {
+  color: #c084fc;
+  text-shadow:
+    0 0 10px rgba(192, 132, 252, 0.6),
+    2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.pokemon-card.rarity-legendary .card-name {
+  color: #ffd700;
+  text-shadow:
+    0 0 12px rgba(255, 215, 0, 0.8),
+    2px 2px 6px rgba(0, 0, 0, 0.9);
+}
+
+/* Card level */
+.card-level {
+  font-size: 1rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #ffd700, #ffed4e, #ffd700);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 2px 8px rgba(255, 215, 0, 0.6);
+  filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.8));
+}
+
+/* Card image container */
+.card-image-container {
+  padding: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  background: radial-gradient(ellipse at center, rgba(138, 43, 226, 0.1) 0%, transparent 70%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Animated background particles */
+.card-image-container::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.8) 1px, transparent 1px),
+    radial-gradient(circle, rgba(138, 43, 226, 0.8) 1px, transparent 1px);
+  background-size:
+    50px 50px,
+    80px 80px;
+  background-position:
+    0 0,
+    40px 40px;
+  animation: sparkle 4s ease-in-out infinite;
+  opacity: 0;
+}
+
+/* Pokemon glow effect */
+.card-image-container::after {
+  content: '';
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, rgba(138, 43, 226, 0.4), transparent 70%);
+  border-radius: 50%;
+  filter: blur(30px);
+  animation: rotatingGradient 8s linear infinite;
+}
+
+/* Pokemon image */
+.card-pokemon-image {
+  width: 100%;
+  height: auto;
+  max-width: 160px;
+  filter: drop-shadow(0 0 20px rgba(138, 43, 226, 0.6)) drop-shadow(0 5px 15px rgba(0, 0, 0, 0.5));
+  transition: all 0.4s ease;
+  position: relative;
+  z-index: 2;
+}
+
+/* Card body */
+.card-body {
+  padding: 1rem;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7));
+  color: white;
+  position: relative;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Card trainer */
+.card-trainer {
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ffd700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.5px;
+}
+
+/* Card type */
+.card-type {
+  margin-bottom: 0.75rem;
+}
+
+.card-type span {
+  display: inline-block;
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.4),
+    inset 0 1px 2px rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+/* Card rarity */
+.card-rarity {
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+  color: #ffd700;
+  font-weight: 700;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+  letter-spacing: 0.5px;
+}
+
+/* Rarity-specific text styles */
+.pokemon-card.rarity-common .card-rarity {
+  color: #d1d5db;
+  text-shadow: none;
+}
+
+.pokemon-card.rarity-uncommon .card-rarity {
+  color: #a5b4fc;
+  text-shadow: 0 0 8px rgba(165, 180, 252, 0.6);
+}
+
+.pokemon-card.rarity-rare .card-rarity {
+  color: #c084fc;
+  text-shadow: 0 0 10px rgba(192, 132, 252, 0.8);
+}
+
+.pokemon-card.rarity-legendary .card-rarity {
+  color: #ffd700;
+  text-shadow:
+    0 0 10px rgba(255, 215, 0, 0.8),
+    0 0 20px rgba(255, 165, 0, 0.6);
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* Card stats mini */
+.card-stats-mini {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.card-stats-mini > div {
+  background: linear-gradient(135deg, rgba(138, 43, 226, 0.3), rgba(75, 0, 130, 0.3));
+  padding: 0.6rem;
+  border-radius: 0.75rem;
+  text-align: center;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 2px rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.card-stats-mini > div:active {
+  transform: scale(0.95);
+}
+
+/* Card inner structure */
+.card-inner {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==========================================
+   RESPONSIVE - TABLET & UP
+   ========================================== */
+@media (min-width: 768px) {
+  .pokemon-card {
+    min-height: 450px;
+  }
+
+  .pokemon-card:hover {
+    transform: translateY(-12px) scale(1.02);
+  }
+
+  .pokemon-card.rarity-uncommon:hover::before {
+    opacity: 1;
+    animation: holoShine 2s ease infinite;
+  }
+
+  .pokemon-card.rarity-rare:hover::before {
+    opacity: 0.5;
+    animation: holoShine 2.5s ease infinite;
+  }
+
+  .pokemon-card.rarity-legendary:hover::before {
+    opacity: 1;
+  }
+
+  .card-name {
+    font-size: 1.35rem;
+  }
+
+  .card-image-container {
+    padding: 2rem;
+    min-height: 220px;
+  }
+
+  .card-pokemon-image {
+    max-width: 180px;
+  }
+
+  .card-body {
+    padding: 1.25rem;
+  }
+}
+
+/* ==========================================
+   REDUCED MOTION
+   ========================================== */
+@media (prefers-reduced-motion: reduce) {
+  .pokemon-card,
+  .pokemon-card *,
+  .pokemon-card::before,
+  .pokemon-card::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

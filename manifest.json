@@ -1,0 +1,85 @@
+{
+  "name": "Skali Prog - Performance Training System",
+  "short_name": "Skali Prog",
+  "description": "Système complet de gestion d'entraînement, nutrition et performance pour salles de sport",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#3e8e41",
+  "orientation": "any",
+  "scope": "/",
+  "lang": "fr",
+  "dir": "ltr",
+  "categories": ["fitness", "sports", "productivity", "health"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "js/img/logo.webp",
+      "sizes": "192x192",
+      "type": "image/webp",
+      "purpose": "any"
+    },
+    {
+      "src": "js/img/logo.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "any"
+    },
+    {
+      "src": "js/img/logo.webp",
+      "sizes": "192x192",
+      "type": "image/webp",
+      "purpose": "maskable"
+    },
+    {
+      "src": "js/img/logo.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "js/img/logo.webp",
+      "sizes": "1280x720",
+      "type": "image/webp",
+      "form_factor": "wide",
+      "label": "Mode TV en paysage"
+    }
+  ],
+  "features": [
+    "Gestion des séances d'entraînement",
+    "Mode TV pour affichage sur grand écran",
+    "Synchronisation cloud",
+    "Export PDF",
+    "Notifications Discord"
+  ],
+  "shortcuts": [
+    {
+      "name": "Mode TV",
+      "short_name": "TV",
+      "description": "Ouvrir le mode TV",
+      "url": "/?tv=true",
+      "icons": [
+        {
+          "src": "js/img/logo.webp",
+          "sizes": "96x96",
+          "type": "image/webp"
+        }
+      ]
+    },
+    {
+      "name": "Connecter ma montre",
+      "short_name": "Montre",
+      "description": "Connecter Apple Watch ou montre connectée",
+      "url": "/connect-watch.html",
+      "icons": [
+        {
+          "src": "js/img/logo.webp",
+          "sizes": "96x96",
+          "type": "image/webp"
+        }
+      ]
+    }
+  ]
+}

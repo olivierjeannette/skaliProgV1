@@ -1,0 +1,703 @@
+/**
+ * ═══════════════════════════════════════════════════════════════════════
+ * MEMBER PORTAL - UNIFIED DESIGN
+ * Design harmonisé avec master-theme.css et modules-config.css
+ * Version: 2.0 - Redesign complet avec variables unifiées
+ * ═══════════════════════════════════════════════════════════════════════
+ */
+
+/* Ce fichier utilise les variables CSS de master-theme.css */
+/* Pas besoin de redéfinir les variables, elles sont héritées */
+
+/* ===================================
+   NAVIGATION - Sticky Top Bar
+   =================================== */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur-xl);
+  -webkit-backdrop-filter: var(--blur-xl);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-2xl), var(--glow-lg);
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+nav .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  gap: var(--spacing-md);
+  padding: 0 var(--spacing-lg);
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* Logo & Brand */
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.nav-logo-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-lg);
+  background: var(--accent-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(0, 122, 255, 0.4);
+  flex-shrink: 0;
+}
+
+.nav-logo-icon i {
+  font-size: var(--font-size-xl);
+  color: white;
+}
+
+.nav-brand h1 {
+  font-size: var(--font-size-xl);
+  line-height: 1.2;
+  margin: 0;
+  color: var(--text-primary);
+  font-weight: var(--font-bold);
+  background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.7) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.nav-brand p {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  margin: 0;
+  line-height: 1;
+}
+
+/* Nav Actions */
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.nav-actions button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 var(--spacing-md);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  white-space: nowrap;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  border: 1px solid var(--glass-border);
+}
+
+/* Logout Button */
+.nav-logout {
+  background: linear-gradient(135deg, var(--color-error) 0%, #dc2626 100%);
+  border-color: rgba(255, 59, 48, 0.3);
+  color: white;
+  box-shadow: 0 0 20px rgba(255, 59, 48, 0.3);
+}
+
+.nav-logout:hover {
+  box-shadow:
+    0 0 30px rgba(255, 59, 48, 0.4),
+    var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.nav-logout i {
+  font-size: var(--font-size-lg);
+}
+
+/* Hamburger Button */
+#hamburgerBtn {
+  background: var(--accent-gradient);
+  border-color: rgba(0, 122, 255, 0.3);
+  color: white;
+  box-shadow: 0 0 20px rgba(0, 122, 255, 0.3);
+}
+
+#hamburgerBtn:hover {
+  box-shadow:
+    0 0 30px rgba(0, 122, 255, 0.4),
+    var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+#hamburgerBtn i {
+  font-size: var(--font-size-xl);
+}
+
+/* ===================================
+   MOBILE MENU - Sidebar
+   =================================== */
+#mobileMenu {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  pointer-events: none;
+  transition: all var(--transition-base);
+}
+
+#mobileMenu.active {
+  pointer-events: auto;
+}
+
+/* Menu Backdrop */
+#menuBackdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+  pointer-events: none;
+}
+
+#menuBackdrop.opacity-100 {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Menu Sidebar */
+#menuSidebar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 85vw;
+  max-width: 380px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur-2xl);
+  -webkit-backdrop-filter: var(--blur-2xl);
+  border-left: 1px solid var(--glass-border);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.6);
+  transform: translateX(100%);
+  transition: transform var(--transition-base);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  pointer-events: auto;
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  padding-bottom: calc(var(--spacing-3xl) + env(safe-area-inset-bottom));
+}
+
+#menuSidebar.translate-x-0 {
+  transform: translateX(0);
+}
+
+/* Menu Container */
+.menu-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* Menu Items */
+.menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  min-height: 60px;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-semibold);
+  color: var(--text-secondary);
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur-md);
+  -webkit-backdrop-filter: var(--blur-md);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+  touch-action: manipulation;
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.menu-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 100%
+  );
+}
+
+.menu-item i {
+  font-size: 1.75rem;
+  width: 2rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.menu-item span {
+  font-size: var(--font-size-xl);
+  flex: 1;
+}
+
+.menu-item:active {
+  transform: scale(0.97);
+}
+
+.menu-item:not(.active):hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-hover);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-md);
+}
+
+/* Menu Item Active */
+.menu-item.active {
+  background: var(--accent-gradient);
+  border-color: rgba(0, 122, 255, 0.3);
+  color: white;
+  font-weight: var(--font-bold);
+  box-shadow: 0 6px 20px rgba(0, 122, 255, 0.4);
+}
+
+/* Menu Divider */
+.menu-divider {
+  height: 1px;
+  background: var(--glass-border);
+  margin: var(--spacing-md) 0;
+}
+
+/* ===================================
+   CONTAINER & LAYOUT
+   =================================== */
+.container {
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+}
+
+/* Main Content */
+#mainContent {
+  min-height: calc(100vh - 64px);
+  padding: var(--spacing-2xl) 0;
+  padding-bottom: calc(var(--spacing-3xl) + env(safe-area-inset-bottom));
+}
+
+/* ===================================
+   LOGIN SCREEN - Discord Auth
+   =================================== */
+#discordLoginScreen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+  padding: var(--spacing-2xl);
+}
+
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur-xl);
+  -webkit-backdrop-filter: var(--blur-xl);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-3xl);
+  padding: var(--spacing-3xl) var(--spacing-2xl);
+  box-shadow: var(--shadow-2xl), var(--glow-lg);
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  animation: fadeIn 0.6s ease-out;
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+}
+
+/* Login Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Discord Icon Animation */
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 20px rgba(88, 101, 242, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 40px rgba(88, 101, 242, 0.6);
+  }
+}
+
+/* ===================================
+   CONTENT AREA - Dynamic Content
+   =================================== */
+#contentArea {
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur-xl);
+  -webkit-backdrop-filter: var(--blur-xl);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-2xl);
+  padding: var(--spacing-2xl);
+  box-shadow: var(--shadow-xl);
+  position: relative;
+  overflow: hidden;
+  animation: slideUp 0.5s ease-out;
+}
+
+#contentArea::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===================================
+   BUTTONS & INTERACTIONS
+   =================================== */
+
+/* Tailwind utility overrides pour cohérence */
+.bg-gradient-to-r {
+  background-image: var(--accent-gradient);
+}
+
+.bg-gradient-to-br {
+  background-image: var(--accent-gradient);
+}
+
+.hover\:from-indigo-700:hover {
+  box-shadow: 0 0 30px rgba(0, 122, 255, 0.5);
+}
+
+.hover\:scale-105:hover {
+  transform: scale(1.05);
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Alert Boxes */
+.bg-green-900\/30 {
+  background: rgba(52, 199, 89, 0.15);
+  border-color: var(--color-success);
+}
+
+.bg-blue-900\/30 {
+  background: rgba(0, 122, 255, 0.15);
+  border-color: var(--accent-primary);
+}
+
+.border-green-500\/50 {
+  border-color: rgba(52, 199, 89, 0.5);
+}
+
+.border-blue-500\/50 {
+  border-color: rgba(0, 122, 255, 0.5);
+}
+
+.text-green-400 {
+  color: var(--color-success);
+}
+
+.text-blue-400 {
+  color: var(--accent-primary);
+}
+
+/* Touch Active Effect */
+.touch-active:active {
+  transform: scale(0.96);
+}
+
+/* ===================================
+   RESPONSIVE - Mobile & Tablet
+   =================================== */
+
+@media (max-width: 1024px) {
+  nav .container {
+    padding: 0 var(--spacing-md);
+  }
+
+  .container {
+    padding: 0 var(--spacing-md);
+  }
+
+  #mainContent {
+    padding: var(--spacing-xl) 0;
+  }
+}
+
+@media (max-width: 768px) {
+  nav .container {
+    height: 56px;
+  }
+
+  .nav-logo-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .nav-logo-icon i {
+    font-size: var(--font-size-lg);
+  }
+
+  .nav-brand h1 {
+    font-size: var(--font-size-lg);
+  }
+
+  .nav-brand p {
+    display: none;
+  }
+
+  .nav-logout span {
+    display: none;
+  }
+
+  #hamburgerBtn {
+    min-width: 44px;
+    padding: 0;
+  }
+
+  .glass-card {
+    padding: var(--spacing-2xl) var(--spacing-lg);
+  }
+
+  #contentArea {
+    padding: var(--spacing-lg);
+  }
+
+  .menu-item {
+    font-size: var(--font-size-lg);
+    padding: var(--spacing-md) var(--spacing-lg);
+    min-height: 56px;
+  }
+
+  .menu-item i {
+    font-size: 1.5rem;
+  }
+
+  .menu-item span {
+    font-size: var(--font-size-lg);
+  }
+}
+
+@media (max-width: 480px) {
+  nav .container {
+    height: 52px;
+    padding: 0 var(--spacing-sm);
+  }
+
+  .nav-logo {
+    gap: var(--spacing-xs);
+  }
+
+  .nav-logo-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .nav-brand h1 {
+    font-size: var(--font-size-base);
+  }
+
+  .nav-actions {
+    gap: var(--spacing-sm);
+  }
+
+  .nav-actions button {
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0 var(--spacing-sm);
+  }
+
+  .container {
+    padding: 0 var(--spacing-sm);
+  }
+
+  #mainContent {
+    padding: var(--spacing-md) 0;
+  }
+
+  #discordLoginScreen {
+    padding: var(--spacing-lg);
+  }
+
+  .glass-card {
+    padding: var(--spacing-xl) var(--spacing-md);
+  }
+
+  #menuSidebar {
+    width: 90vw;
+    max-width: 100%;
+    padding: var(--spacing-xl) var(--spacing-md);
+  }
+
+  .menu-item {
+    font-size: var(--font-size-base);
+    padding: var(--spacing-sm) var(--spacing-md);
+    min-height: 52px;
+    gap: var(--spacing-md);
+  }
+
+  .menu-item i {
+    font-size: 1.25rem;
+  }
+
+  .menu-item span {
+    font-size: var(--font-size-base);
+  }
+}
+
+/* ===================================
+   LANDSCAPE ORIENTATION
+   =================================== */
+@media (orientation: landscape) and (max-height: 600px) {
+  nav .container {
+    height: 48px;
+  }
+
+  .menu-item {
+    min-height: 48px;
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  #menuSidebar {
+    padding: var(--spacing-lg) var(--spacing-md);
+  }
+}
+
+/* ===================================
+   DARK MODE ADJUSTMENTS
+   =================================== */
+@media (prefers-color-scheme: dark) {
+  /* Déjà en dark mode par défaut */
+}
+
+/* ===================================
+   PRINT STYLES
+   =================================== */
+@media print {
+  nav,
+  #hamburgerBtn,
+  .nav-logout,
+  #mobileMenu {
+    display: none !important;
+  }
+
+  #contentArea {
+    box-shadow: none;
+    border: none;
+  }
+}
+
+/* ===================================
+   ACCESSIBILITY
+   =================================== */
+*:focus-visible {
+  outline: 3px solid rgba(0, 122, 255, 0.5);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (prefers-contrast: high) {
+  .glass-card,
+  #contentArea,
+  .menu-item {
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+}
+
+/* ===================================
+   UTILITIES
+   =================================== */
+.hidden {
+  display: none !important;
+}
+
+.fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.slide-up {
+  animation: slideUp 0.5s ease-out;
+}
+
+/* Safe Area Padding */
+.pb-safe {
+  padding-bottom: calc(var(--spacing-2xl) + env(safe-area-inset-bottom));
+}
+
+.mb-safe {
+  margin-bottom: calc(var(--spacing-2xl) + env(safe-area-inset-bottom));
+}
