@@ -3,7 +3,7 @@
 > Dernier update: 2026-02-03
 > Phase actuelle: **4 - IMPLEMENTATION** (Dev en cours)
 > Agent actif: **@DEV**
-> Prochain: Modules P2 (Performance, Teams, CRM)
+> Prochain: Modules P2 (Teams, CRM)
 
 ---
 
@@ -35,6 +35,7 @@
 | Inventory (4 tabs, CRUD) | ✅ | `skali-admin/src/app/(admin)/inventory/page.tsx` | 2026-02-03 |
 | Members (liste, fiche, édition) | ✅ | `skali-admin/src/app/(admin)/members/page.tsx` | 2026-02-03 |
 | Calendar (vue mois, CRUD sessions) | ✅ | `skali-admin/src/app/(admin)/calendar/page.tsx` | 2026-02-03 |
+| Performance (dashboard, Pokemon cards) | ✅ | `skali-admin/src/app/(admin)/performance/page.tsx` | 2026-02-03 |
 | SSH + GitHub CLI | ✅ | `~/.ssh/id_ed25519` configuré | 2026-02-03 |
 
 ## ❌ MODULES EXCLUS (Supprimés du scope)
@@ -53,7 +54,7 @@
 | Admin (Inventory) | P0 - MVP | ✅ Complet (4 tabs, CRUD équipements) |
 | Members | P1 | ✅ Complet (liste, fiche détaillée, édition) |
 | Calendar | P1 | ✅ Complet (vue mois, CRUD sessions) |
-| Performance | P2 | ⏳ Pending |
+| Performance | P2 | ✅ Complet (dashboard, Pokemon cards, classement) |
 | Teams | P2 | ⏳ Pending |
 | CRM | P2 | ⏳ Pending |
 | TV Mode | P3 | ⏳ Pending |
@@ -84,7 +85,8 @@
 - [x] SSH + GitHub configuré ✅
 - [x] Module Members (liste, fiche, édition) ✅
 - [x] Module Calendar (vue mois, CRUD sessions) ✅
-- [ ] **🚧 NEXT: Modules P2 (Performance, Teams, CRM)**
+- [x] Module Performance (dashboard, Pokemon cards, classement) ✅
+- [ ] **🚧 NEXT: Modules P2 (Teams, CRM)**
 
 ---
 
@@ -128,6 +130,7 @@ skali-admin/
 │   │   │   ├── inventory/page.tsx    ← Module Inventory (4 tabs)
 │   │   │   ├── members/page.tsx      ← Module Members (liste, fiche, édition)
 │   │   │   ├── calendar/page.tsx     ← Module Calendar (vue mois, CRUD)
+│   │   │   ├── performance/page.tsx  ← Module Performance (dashboard, Pokemon cards)
 │   │   │   ├── settings/
 │   │   │   │   └── api-keys/page.tsx ← Module API Keys
 │   │   │   └── layout.tsx
@@ -202,6 +205,17 @@ skali-admin/
   - Composant Textarea ajouté
 - **P1 COMPLET (Members + Calendar)** 🎉
 - **NEXT:** Modules P2 (Performance, Teams, CRM)
+
+### Session 6 - 2026-02-03 (Suite)
+- Module Performance complet:
+  - Dashboard avec stats globales (total perfs, PRs, niveau moyen)
+  - Cartes Pokémon avec 4 stats (Cardio, Force, Gym, Puissance)
+  - Classement Top 10 par niveau
+  - Ajout de performances avec calcul 1RM automatique
+  - Détection automatique des nouveaux PRs
+  - Types Performance et PokemonStats ajoutés
+- Navigation mise à jour avec Performance
+- **Performance P2 COMPLET** 🎉
 
 ---
 

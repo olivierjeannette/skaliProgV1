@@ -8,6 +8,7 @@ import {
   Package,
   Users,
   Calendar,
+  TrendingUp,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -44,6 +45,11 @@ export const ADMIN_NAV: NavItem[] = [
     title: 'Calendar',
     href: '/calendar',
     icon: Calendar,
+  },
+  {
+    title: 'Performance',
+    href: '/performance',
+    icon: TrendingUp,
   },
   {
     title: 'Settings',

@@ -82,3 +82,54 @@ export interface APIKeyConfig {
   testable: boolean;
   required: boolean;
 }
+
+// Performance tracking
+export type PerformanceCategory = 'Musculation' | 'Crosstraining' | 'Endurance' | 'Gymnastique';
+export type PerformanceUnit = 'kg' | 'seconds' | 'meters' | 'reps';
+
+export interface Performance {
+  id: string;
+  member_id: string;
+  exercise_type: string;
+  category: PerformanceCategory;
+  value: number;
+  unit: PerformanceUnit;
+  reps?: number;
+  date: string;
+  is_pr: boolean;
+  notes?: string;
+  created_at: string;
+}
+
+// Pokemon card stats (4 categories)
+export type PokemonStatCategory = 'cardio' | 'force' | 'gym' | 'puissance';
+
+export interface PokemonStats {
+  cardio: number;    // 0-100: Endurance (courses, rameur, skierg)
+  force: number;     // 0-100: Force pure (squats, deadlifts, bench)
+  gym: number;       // 0-100: Poids du corps (pullups, dips, pushups)
+  puissance: number; // 0-100: Explosivité (watts, jumps)
+  niveau: number;    // 1-100: Overall level (moyenne des 4)
+}
+
+// Exercise mapping for stats calculation
+export const EXERCISE_MAPPING: Record<PokemonStatCategory, string[]> = {
+  cardio: ['run', '600m', '800m', '1200m', '2000m', 'skierg', 'rameur', 'row', 'bikerg', 'burpees'],
+  force: ['bench press', 'deadlift', 'squat', 'front squat', 'back squat', 'strict press', 'snatch', 'clean & jerk', 'clean and jerk'],
+  gym: ['pullups', 'pull ups', 'toes to bar', 'dips', 'pushups', 'push ups', 'handstand'],
+  puissance: ['pic watts', 'watts', 'assault bike', 'jump', 'broad jump', 'box jump']
+};
+
+// 1RM calculation formulas
+export const OneRMFormulas = {
+  epley: (weight: number, reps: number): number => {
+    if (reps === 1) return weight;
+    if (reps === 0) return 0;
+    return weight * (1 + reps / 30);
+  },
+  brzycki: (weight: number, reps: number): number => {
+    if (reps === 1) return weight;
+    if (reps === 0) return 0;
+    return weight / (1.0278 - 0.0278 * reps);
+  }
+};
