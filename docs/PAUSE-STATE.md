@@ -1,92 +1,180 @@
-# PAUSE-STATE - [Date] Session 1
+# PAUSE-STATE - Skali Prog Migration Next.js
+
+> Dernier update: 2026-02-03
+> Phase actuelle: **4 - IMPLEMENTATION** (Dev en cours)
+> Agent actif: **@DEV**
+> Prochain: Continuer modules MVP
+
+---
+
+## 🔄 POUR REPRENDRE LE CONTEXTE
+
+**Dis simplement:** `*status` ou "$continue"
+
+**Documents à lire (dans l'ordre):**
+1. `docs/PAUSE-STATE.md` ← CE FICHIER (résumé état)
+2. `docs/DECISIONS-LOG.md` ← Décisions techniques
+3. `docs/prd.md` ← Requirements si besoin de contexte
+
+---
 
 ## ⚠️ MODULES COMPLETS - NE PAS REFAIRE
 
-Avant de commencer une feature, vérifier cette liste:
+| Module | Status | Fichiers Clés | Date |
+|--------|--------|---------------|------|
+| Nettoyage projet | ✅ | `archive/` supprimé, SQL renommées | 2026-02-03 |
+| Phase 1: Brainstorming | ✅ | `docs/brainstorm.md` | 2026-02-03 |
+| Phase 1: Project Brief | ✅ | `docs/project-brief.md` | 2026-02-03 |
+| Phase 2: PRD | ✅ | `docs/prd.md` (38 stories, 9 epics) | 2026-02-03 |
+| Phase 3: Architecture | ✅ | `docs/architecture.md` | 2026-02-03 |
+| Setup Next.js | ✅ | `skali-admin/` créé, dépendances installées | 2026-02-03 |
+| Auth Store | ✅ | `skali-admin/src/stores/auth-store.ts` | 2026-02-03 |
+| Admin Layout + Sidebar | ✅ | `skali-admin/src/components/layout/AdminSidebar.tsx` | 2026-02-03 |
+| Settings > API Keys | ✅ | `skali-admin/src/app/(admin)/settings/api-keys/page.tsx` | 2026-02-03 |
+| Discord Unified (4 tabs) | ✅ | `skali-admin/src/app/(admin)/discord/page.tsx` | 2026-02-03 |
+| Placeholder: Inventory | ✅ | `skali-admin/src/app/(admin)/inventory/page.tsx` | 2026-02-03 |
+| Placeholder: Members | ✅ | `skali-admin/src/app/(admin)/members/page.tsx` | 2026-02-03 |
+| Placeholder: Calendar | ✅ | `skali-admin/src/app/(admin)/calendar/page.tsx` | 2026-02-03 |
 
-| Module | Status | Fichiers Clés |
-|--------|--------|---------------|
-| [Module 1] | ⏳ En cours | `chemin/vers/fichiers` |
+## ❌ MODULES EXCLUS (Supprimés du scope)
 
-### À FAIRE (vraiment)
-- [ ] Feature 1
-- [ ] Feature 2
-- [ ] Feature 3
+- Programming Pro (génération programmes IA)
+- Nutrition (plans nutritionnels)
+- Cardio (cardiomon, cardiotv)
+- Reports (rapports, allures)
+
+## ✅ MODULES À MIGRER
+
+| Module | Priorité | Status |
+|--------|----------|--------|
+| Admin (Settings, API Keys) | P0 - MVP | ✅ Complet |
+| Admin (Discord Unified) | P0 - MVP | ✅ Complet (UI + liaison membres) |
+| Admin (Inventory) | P0 - MVP | ⏳ Placeholder créé |
+| Members | P1 | ⏳ Placeholder créé |
+| Calendar | P1 | ⏳ Placeholder créé |
+| Performance | P2 | ⏳ Pending |
+| Teams | P2 | ⏳ Pending |
+| CRM | P2 | ⏳ Pending |
+| TV Mode | P3 | ⏳ Pending |
 
 ---
 
-## Contexte Actuel
+## CONTEXTE PROJET
 
-[Description de l'état actuel du projet]
+**Nom:** Skali Admin - Migration Next.js
+**Objectif:** Migrer Skali Prog (Vanilla JS, 121 fichiers, 98K lignes) vers Next.js
+**Approche:** Migration progressive module par module
+**Priorité MVP:** Admin complet (Discord, Inventory, Settings, API Keys)
+**Design:** shadcn/ui + Tailwind CSS
 
-## Tâches Complétées (Session 1)
+---
 
-- [ ] Initialisation du projet
-- [ ] Configuration de base
+## EN COURS
 
-## Sessions Précédentes
+- [x] Phase 1: Brainstorming → `docs/brainstorm.md` ✅
+- [x] Phase 1: Project Brief → `docs/project-brief.md` ✅
+- [x] Phase 2: PRD → `docs/prd.md` ✅
+- [x] Phase 3: Architecture → `docs/architecture.md` ✅
+- [x] Node.js installé (/opt/homebrew/bin/node v25.5.0) ✅
+- [x] Setup Next.js (`skali-admin/`) ✅
+- [x] Module Discord Unified (4 onglets) ✅
+- [x] Module API Keys ✅
+- [ ] **🚧 EN COURS: Module Inventory (fonctionnel)**
+- [ ] Module Members (fonctionnel)
+- [ ] Module Calendar (fonctionnel)
 
-*Aucune session précédente*
+---
 
-## Tâches Restantes (par ordre de priorité)
+## STACK TECHNIQUE
 
-### Priorité Haute (P0)
-- [ ] Task A
-- [ ] Task B
+| Layer | Technologie | Status |
+|-------|-------------|--------|
+| Framework | Next.js 16.1.6 (App Router) | ✅ Installé |
+| Language | TypeScript | ✅ Configuré |
+| UI Components | shadcn/ui | ✅ Installé |
+| Styling | Tailwind CSS v4 | ✅ Configuré |
+| State | Zustand | ✅ Installé |
+| Data Fetching | TanStack Query | ✅ Installé |
+| Backend | Supabase | ✅ Configuré |
+| Auth | Custom 3 rôles (ADMIN/COACH/ATHLETE) | ✅ Implémenté |
 
-### Priorité Moyenne (P1)
-- [ ] Task C
-- [ ] Task D
+---
 
-### Priorité Basse (P2)
-- [ ] Task E
-
-## Fichiers Créés/Modifiés Session 1
-
-```
-projet/
-├── CLAUDE.md                  # NEW - Process dev
-├── .claude/                   # NEW - Configuration Claude
-│   ├── settings.json
-│   ├── instructions.md
-│   └── commands/
-└── docs/
-    ├── PAUSE-STATE.md         # NEW - Ce fichier
-    └── DECISIONS-LOG.md       # NEW - Log décisions
-```
-
-## Point de Reprise
-
-Pour reprendre le développement:
-
-1. Lire `CLAUDE.md` dans le dossier racine
-2. Lire ce fichier `PAUSE-STATE.md`
-3. Lire `docs/PRD.md` pour le scope complet (si existe)
-4. Continuer avec les tâches restantes
-5. Utiliser `/continue-dev` pour reprendre
-
-## Notes Importantes
-
-- [Notes spécifiques au projet]
-
-## Commandes Utiles
+## COMMANDES PROJET
 
 ```bash
-cd "/chemin/vers/projet"
-npm run dev          # Serveur dev
+# Nouveau code (Next.js)
+cd /Users/jackson/Documents/skaliProgV1/skali-admin
+export PATH="/opt/homebrew/bin:$PATH"  # Si node pas dans PATH
+npm run dev          # Port 3000
 npm run build        # Build production
-npm run lint         # ESLint
-npm run typecheck    # TypeScript
+npm run lint         # Vérifier erreurs
 ```
-
-## Stats Session 1
-
-- Fichiers créés: X
-- Fichiers modifiés: X
-- Nouveaux composants: X
-- Build: ⏳ Non testé
 
 ---
 
-*Session 1 - [Date]*
-*Initialisation du projet*
+## STRUCTURE SKALI-ADMIN
+
+```
+skali-admin/
+├── src/
+│   ├── app/
+│   │   ├── (admin)/
+│   │   │   ├── dashboard/page.tsx
+│   │   │   ├── discord/page.tsx      ← Module Discord (4 tabs)
+│   │   │   ├── inventory/page.tsx    ← Placeholder
+│   │   │   ├── members/page.tsx      ← Placeholder
+│   │   │   ├── calendar/page.tsx     ← Placeholder
+│   │   │   ├── settings/
+│   │   │   │   └── api-keys/page.tsx ← Module API Keys
+│   │   │   └── layout.tsx
+│   │   ├── (auth)/
+│   │   │   └── login/page.tsx
+│   │   └── api/
+│   │       ├── auth/login/route.ts
+│   │       └── api-keys/route.ts
+│   ├── components/
+│   │   ├── layout/AdminSidebar.tsx
+│   │   └── ui/                       ← shadcn/ui components
+│   ├── config/
+│   │   ├── navigation.ts
+│   │   ├── api-keys.ts
+│   │   └── roles.ts
+│   ├── lib/supabase/client.ts
+│   ├── stores/auth-store.ts
+│   └── types/index.ts
+└── package.json
+```
+
+---
+
+## SESSIONS
+
+### Session 1 - 2026-02-03
+- Audit codebase complet (121 JS, 26 CSS, 11 modules)
+- Nettoyage: supprimé archive/, corrigé SQL migrations
+- Process BMAD: Brief ✅ → PRD ✅ → Architecture ✅
+- Modules exclus: Prog Pro, Nutrition, Cardio, Reports
+
+### Session 2 - 2026-02-03 (Suite)
+- Node.js fonctionnel (/opt/homebrew/bin/node v25.5.0)
+- Ajout référence PAUSE-STATE.md dans CLAUDE.md
+- Module Discord Unified migré (4 onglets: Notifications, Morning, Liaison, Bot)
+- Placeholders créés pour Inventory, Members, Calendar
+- Navigation corrigée (routes sans /admin prefix)
+- **NEXT:** Implémenter module Inventory fonctionnel
+
+---
+
+## 📝 COMMANDES BMAD RAPIDES
+
+| Commande | Action |
+|----------|--------|
+| `*status` | Voir état du projet |
+| `$continue` | Reprendre le travail |
+| `*implement [module]` | Implémenter un module |
+| `*review` | Review code |
+
+---
+
+*BMAD Process v2.0 - Skali Prog Migration*
