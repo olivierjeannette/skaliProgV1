@@ -11,6 +11,7 @@ import {
   TrendingUp,
   UsersRound,
   Target,
+  Tv,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -62,6 +63,11 @@ export const ADMIN_NAV: NavItem[] = [
     title: 'CRM',
     href: '/crm',
     icon: Target,
+  },
+  {
+    title: 'TV Mode',
+    href: '/tv',
+    icon: Tv,
   },
   {
     title: 'Settings',

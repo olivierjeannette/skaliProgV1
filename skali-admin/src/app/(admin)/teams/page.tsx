@@ -512,7 +512,15 @@ Pierre Durand"
               <Shuffle className="h-5 w-5 mr-2" />
               Générer les Équipes
             </Button>
-            <Button variant="outline" size="lg" disabled={teams.length === 0}>
+            <Button
+              variant="outline"
+              size="lg"
+              disabled={teams.length === 0}
+              onClick={() => {
+                localStorage.setItem('tv_teams', JSON.stringify(teams));
+                window.open('/tv?teams=true', '_blank');
+              }}
+            >
               <Tv className="h-5 w-5 mr-2" />
               Mode TV
             </Button>
