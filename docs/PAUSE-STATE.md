@@ -88,7 +88,35 @@ AUTH_SECRET=<générer avec: openssl rand -base64 32>
 | TV Mode | `/tv` | Affichage 1080p/4K |
 | Member Portal | `/portal` | Auth Discord, carte Pokemon |
 | Settings | `/settings/api-keys` | Gestion clés API |
+| PWA Config | `/pwa-config` | Config app mobile adhérents |
 | Login | `/login` | Authentification |
+
+---
+
+## NAVIGATION MENU
+
+Structure du menu sidebar (réorganisée):
+
+```
+📊 Dashboard
+
+📌 Navigation
+   ├── Planning (calendar)
+   ├── Adhérents (members)
+   ├── TeamBuilder (teams)
+   ├── TV Mode
+   └── Performance
+
+🎯 CRM
+
+🛠️ Outils
+   ├── PWA Config
+   ├── Settings
+   ├── Inventory
+   └── Discord
+```
+
+**Responsive:** Menu mobile avec hamburger + Sheet (< 1024px)
 
 ---
 
@@ -131,6 +159,21 @@ npm run lint         # ESLint
 - Déplacement skali-admin/ vers racine
 - Build vérifié: `npm run build` ✅
 - Prêt pour Vercel
+
+### Session 11 - 2026-02-03
+
+- **Réorganisation menu sidebar:**
+  - Dashboard (seul)
+  - Navigation: Planning, Adhérents, TeamBuilder, TV Mode, Performance
+  - CRM (seul)
+  - Outils: PWA Config, Settings, Inventory, Discord
+- **Responsive mobile:** MobileNav avec Sheet, header mobile fixe
+- **Page PWA Config:** Configuration complète de l'app adhérents
+  - Modules à activer/désactiver
+  - Branding (couleurs, nom)
+  - Navigation bottom bar
+  - Features (push, offline, biometric)
+- Build vérifié ✅
 
 ---
 

@@ -12,6 +12,9 @@ import {
   UsersRound,
   Target,
   Tv,
+  Compass,
+  Wrench,
+  Smartphone,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -21,63 +24,85 @@ export interface NavItem {
   icon: LucideIcon;
   badge?: string;
   children?: NavItem[];
+  isSection?: boolean; // Pour les titres de section
 }
 
 export const ADMIN_NAV: NavItem[] = [
+  // Dashboard seul
   {
     title: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
   },
+
+  // Section Navigation
   {
-    title: 'Discord',
-    href: '/discord',
-    icon: MessageSquare,
+    title: 'Navigation',
+    href: '#navigation',
+    icon: Compass,
+    isSection: true,
+    children: [
+      {
+        title: 'Planning',
+        href: '/calendar',
+        icon: Calendar,
+      },
+      {
+        title: 'Adhérents',
+        href: '/members',
+        icon: Users,
+      },
+      {
+        title: 'TeamBuilder',
+        href: '/teams',
+        icon: UsersRound,
+      },
+      {
+        title: 'TV Mode',
+        href: '/tv',
+        icon: Tv,
+      },
+      {
+        title: 'Performance',
+        href: '/performance',
+        icon: TrendingUp,
+      },
+    ],
   },
-  {
-    title: 'Inventory',
-    href: '/inventory',
-    icon: Package,
-  },
-  {
-    title: 'Members',
-    href: '/members',
-    icon: Users,
-  },
-  {
-    title: 'Calendar',
-    href: '/calendar',
-    icon: Calendar,
-  },
-  {
-    title: 'Performance',
-    href: '/performance',
-    icon: TrendingUp,
-  },
-  {
-    title: 'Teams',
-    href: '/teams',
-    icon: UsersRound,
-  },
+
+  // CRM seul
   {
     title: 'CRM',
     href: '/crm',
     icon: Target,
   },
+
+  // Section Outils
   {
-    title: 'TV Mode',
-    href: '/tv',
-    icon: Tv,
-  },
-  {
-    title: 'Settings',
-    href: '/settings',
-    icon: Settings,
+    title: 'Outils',
+    href: '#outils',
+    icon: Wrench,
+    isSection: true,
     children: [
       {
-        title: 'API Keys',
+        title: 'PWA Config',
+        href: '/pwa-config',
+        icon: Smartphone,
+      },
+      {
+        title: 'Settings',
         href: '/settings/api-keys',
-        icon: Key,
+        icon: Settings,
+      },
+      {
+        title: 'Inventory',
+        href: '/inventory',
+        icon: Package,
+      },
+      {
+        title: 'Discord',
+        href: '/discord',
+        icon: MessageSquare,
       },
     ],
   },

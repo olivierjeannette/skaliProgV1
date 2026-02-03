@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth-store';
 import { AdminSidebar } from '@/components/layout/AdminSidebar';
+import { MobileNav } from '@/components/layout/MobileNav';
 import { Toaster } from '@/components/ui/sonner';
 
 export default function AdminLayout({
@@ -31,9 +32,18 @@ export default function AdminLayout({
 
   return (
     <div className="min-h-screen bg-background">
-      <AdminSidebar />
-      <main className="pl-64">
-        <div className="container py-6">
+      {/* Desktop Sidebar - hidden on mobile */}
+      <div className="hidden lg:block">
+        <AdminSidebar />
+      </div>
+
+      {/* Mobile Navigation */}
+      <MobileNav />
+
+      {/* Main Content */}
+      <main className="lg:pl-64">
+        {/* Mobile: padding-top for fixed header */}
+        <div className="container py-6 pt-20 lg:pt-6">
           {children}
         </div>
       </main>

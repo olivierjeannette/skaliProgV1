@@ -14,14 +14,29 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export function AdminSidebar() {
   const pathname = usePathname();
   const { session, logout } = useAuthStore();
-  const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  // Par défaut, les sections sont ouvertes
+  const [expandedItems, setExpandedItems] = useState<string[]>(['#navigation', '#outils']);
 
   const roleConfig = session?.role ? ROLES[session.role] : null;
+
+  // Auto-expand section contenant la page active
+  useEffect(() => {
+    ADMIN_NAV.forEach((item) => {
+      if (item.isSection && item.children) {
+        const hasActiveChild = item.children.some(
+          (child) => pathname === child.href || pathname.startsWith(child.href + '/')
+        );
+        if (hasActiveChild && !expandedItems.includes(item.href)) {
+          setExpandedItems((prev) => [...prev, item.href]);
+        }
+      }
+    });
+  }, [pathname]);
 
   const toggleExpanded = (href: string) => {
     setExpandedItems((prev) =>
@@ -46,57 +61,15 @@ export function AdminSidebar() {
         <nav className="flex-1 overflow-y-auto p-4">
           <ul className="space-y-1">
             {ADMIN_NAV.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
               const hasChildren = item.children && item.children.length > 0;
               const isExpanded = expandedItems.includes(item.href);
+              const isSection = item.isSection;
 
-              return (
-                <li key={item.href}>
-                  {hasChildren ? (
-                    <>
-                      <button
-                        onClick={() => toggleExpanded(item.href)}
-                        className={cn(
-                          'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                          isActive
-                            ? 'bg-primary text-primary-foreground'
-                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                        )}
-                      >
-                        <item.icon className="h-4 w-4" />
-                        {item.title}
-                        <ChevronDown
-                          className={cn(
-                            'ml-auto h-4 w-4 transition-transform',
-                            isExpanded && 'rotate-180'
-                          )}
-                        />
-                      </button>
-                      {isExpanded && item.children && (
-                        <ul className="ml-4 mt-1 space-y-1">
-                          {item.children.map((child) => {
-                            const isChildActive = pathname === child.href;
-                            return (
-                              <li key={child.href}>
-                                <Link
-                                  href={child.href}
-                                  className={cn(
-                                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
-                                    isChildActive
-                                      ? 'bg-primary text-primary-foreground'
-                                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                                  )}
-                                >
-                                  <child.icon className="h-4 w-4" />
-                                  {child.title}
-                                </Link>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      )}
-                    </>
-                  ) : (
+              // Pour les items sans enfants (Dashboard, CRM)
+              if (!hasChildren) {
+                const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                return (
+                  <li key={item.href}>
                     <Link
                       href={item.href}
                       className={cn(
@@ -114,7 +87,62 @@ export function AdminSidebar() {
                         </span>
                       )}
                     </Link>
-                  )}
+                  </li>
+                );
+              }
+
+              // Pour les sections avec enfants
+              return (
+                <li key={item.href} className={cn(isSection && 'mt-4')}>
+                  <button
+                    onClick={() => toggleExpanded(item.href)}
+                    className={cn(
+                      'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+                      isSection
+                        ? 'font-semibold text-foreground/80 hover:text-foreground'
+                        : 'font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {item.title}
+                    <ChevronDown
+                      className={cn(
+                        'ml-auto h-4 w-4 transition-transform duration-200',
+                        isExpanded && 'rotate-180'
+                      )}
+                    />
+                  </button>
+                  <div
+                    className={cn(
+                      'overflow-hidden transition-all duration-200',
+                      isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                    )}
+                  >
+                    {item.children && (
+                      <ul className="ml-4 mt-1 space-y-1 border-l border-border/50 pl-2">
+                        {item.children.map((child) => {
+                          const isChildActive =
+                            pathname === child.href || pathname.startsWith(child.href + '/');
+                          return (
+                            <li key={child.href}>
+                              <Link
+                                href={child.href}
+                                className={cn(
+                                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+                                  isChildActive
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                                )}
+                              >
+                                <child.icon className="h-4 w-4" />
+                                {child.title}
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
                 </li>
               );
             })}
