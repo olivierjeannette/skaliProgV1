@@ -93,7 +93,7 @@ export const ADMIN_NAV: NavItem[] = [
       },
       {
         title: 'Settings',
-        href: '/settings/api-keys',
+        href: '/settings',
         icon: Settings,
       },
       {

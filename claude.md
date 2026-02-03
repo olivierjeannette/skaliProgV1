@@ -1,4 +1,4 @@
-# CLAUDE.md - Ultimate Multi-Agent Dev Process
+la co# CLAUDE.md - Ultimate Multi-Agent Dev Process
 
 > Inspiré de BMAD v6 (Breakthrough Method for Agile AI-Driven Development)
 > Adapté pour Claude AI - Process professionnel de dev

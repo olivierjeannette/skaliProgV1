@@ -819,7 +819,7 @@ export default function CalendarPage() {
 
       {/* Session Dialog */}
       <Dialog open={isSessionDialogOpen} onOpenChange={setIsSessionDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl w-[95vw] h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>
               {editingSession ? 'Modifier la session' : 'Nouvelle session'}
@@ -832,15 +832,15 @@ export default function CalendarPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'info' | 'blocks')}>
-            <TabsList className="grid w-full grid-cols-2">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'info' | 'blocks')} className="flex-1 flex flex-col min-h-0">
+            <TabsList className="grid w-full grid-cols-2 shrink-0">
               <TabsTrigger value="info">Informations</TabsTrigger>
               <TabsTrigger value="blocks">
                 Blocs ({formData.blocks.length})
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="info" className="space-y-4 pt-4">
+            <TabsContent value="info" className="space-y-4 pt-4 flex-1 overflow-y-auto">
               <div className="space-y-2">
                 <Label htmlFor="title">Titre *</Label>
                 <Input
@@ -885,7 +885,7 @@ export default function CalendarPage() {
               </div>
             </TabsContent>
 
-            <TabsContent value="blocks" className="space-y-4 pt-4">
+            <TabsContent value="blocks" className="space-y-4 pt-4 flex-1 overflow-y-auto">
               {/* Add block buttons */}
               <div className="flex flex-wrap gap-2">
                 {Object.entries(BLOCK_TYPE_CONFIG).map(([type, config]) => (
@@ -978,7 +978,7 @@ export default function CalendarPage() {
             </TabsContent>
           </Tabs>
 
-          <DialogFooter className="flex justify-between mt-4">
+          <DialogFooter className="flex justify-between mt-4 shrink-0 border-t pt-4">
             <div className="flex gap-2">
               {editingSession && (
                 <>
