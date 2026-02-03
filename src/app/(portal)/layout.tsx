@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { usePortalStore } from '@/stores/portal-store'
 import { PortalLogin } from '@/components/portal/PortalLogin'
+import { InstallPrompt } from '@/components/pwa/install-prompt'
 
 export default function PortalLayout({
   children,
@@ -34,6 +35,7 @@ export default function PortalLayout({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <InstallPrompt />
       {children}
     </div>
   )
