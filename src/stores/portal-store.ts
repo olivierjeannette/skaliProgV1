@@ -3,6 +3,7 @@ import { create } from 'zustand'
 interface PortalUser {
   discordId: string
   username: string
+  avatar?: string | null
 }
 
 interface LinkedMember {
@@ -34,6 +35,21 @@ interface PokemonStats {
   rarity: string
 }
 
+interface SessionMember {
+  id: string
+  first_name: string
+  last_name: string
+  email: string | null
+}
+
+interface PortalSession {
+  discord_id: string
+  discord_username: string
+  discord_avatar: string | null
+  member: SessionMember | null
+  is_linked: boolean
+}
+
 interface PortalStore {
   currentUser: PortalUser | null
   linkedMember: LinkedMember | null
@@ -43,14 +59,14 @@ interface PortalStore {
 
   // Actions
   login: (discordId: string) => Promise<boolean>
-  logout: () => void
-  checkSession: () => void
+  logout: () => Promise<void>
+  checkSession: () => Promise<void>
   setLinkedMember: (member: LinkedMember | null) => void
   setPokemonStats: (stats: PokemonStats | null) => void
   linkMemberToDiscord: (memberId: string, discordId: string, username: string) => Promise<boolean>
 }
 
-// Mock données pour la démo
+// Mock données pour la démo (fallback si pas connecté à Supabase)
 const mockMembers: LinkedMember[] = [
   {
     id: '1',
@@ -120,21 +136,19 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
   isLoading: true,
   error: null,
 
+  // Legacy login (kept for backward compatibility, but OAuth is preferred)
   login: async (discordId: string) => {
     set({ isLoading: true, error: null })
 
     try {
-      // Simuler vérification Discord (dans la vraie app: vérifier via API Discord)
       if (!/^[0-9]{17,19}$/.test(discordId)) {
         set({ error: 'Discord ID invalide (17-19 chiffres)', isLoading: false })
         return false
       }
 
-      // Chercher si ce Discord ID est déjà lié
       const linkedMember = mockMembers.find(m => m.discord_id === discordId)
 
       if (linkedMember) {
-        // Discord déjà lié -> connexion directe
         const user: PortalUser = {
           discordId,
           username: linkedMember.discord_username || `User${discordId.slice(-4)}`
@@ -149,13 +163,9 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
           isLoading: false
         })
 
-        // Sauvegarder session (sessionStorage pour éviter multi-users)
-        sessionStorage.setItem('portal_session', JSON.stringify({ discordId, username: user.username }))
-
         return true
       }
 
-      // Discord non lié -> demander liaison
       const user: PortalUser = {
         discordId,
         username: `User${discordId.slice(-4)}`
@@ -168,8 +178,6 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
         isLoading: false
       })
 
-      sessionStorage.setItem('portal_session', JSON.stringify({ discordId, username: user.username }))
-
       return true
     } catch (error) {
       set({ error: 'Erreur de connexion', isLoading: false })
@@ -177,8 +185,12 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
     }
   },
 
-  logout: () => {
-    sessionStorage.removeItem('portal_session')
+  logout: async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+    } catch {
+      // Ignore errors
+    }
     set({
       currentUser: null,
       linkedMember: null,
@@ -187,23 +199,54 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
     })
   },
 
-  checkSession: () => {
-    const saved = sessionStorage.getItem('portal_session')
-    if (saved) {
-      try {
-        const { discordId, username } = JSON.parse(saved)
-        const linkedMember = mockMembers.find(m => m.discord_id === discordId)
+  checkSession: async () => {
+    set({ isLoading: true })
+
+    try {
+      // Check OAuth session from API
+      const response = await fetch('/api/auth/session')
+      const data = await response.json()
+
+      if (data.session) {
+        const session: PortalSession = data.session
+
+        const user: PortalUser = {
+          discordId: session.discord_id,
+          username: session.discord_username,
+          avatar: session.discord_avatar
+        }
+
+        // Convert member format if exists
+        let linkedMember: LinkedMember | null = null
+        if (session.member) {
+          linkedMember = {
+            id: session.member.id,
+            name: `${session.member.first_name} ${session.member.last_name}`,
+            firstName: session.member.first_name,
+            lastName: session.member.last_name,
+            email: session.member.email || undefined,
+            discord_id: session.discord_id,
+            discord_username: session.discord_username,
+          }
+        }
 
         set({
-          currentUser: { discordId, username },
-          linkedMember: linkedMember || null,
+          currentUser: user,
+          linkedMember,
           pokemonStats: linkedMember ? generatePokemonStats(linkedMember) : null,
           isLoading: false
         })
-      } catch {
-        set({ isLoading: false })
+        return
       }
-    } else {
+
+      // No OAuth session, user not logged in
+      set({
+        currentUser: null,
+        linkedMember: null,
+        pokemonStats: null,
+        isLoading: false
+      })
+    } catch {
       set({ isLoading: false })
     }
   },
@@ -220,24 +263,53 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
   setPokemonStats: (stats) => set({ pokemonStats: stats }),
 
   linkMemberToDiscord: async (memberId, discordId, username) => {
-    // Simuler la liaison (dans la vraie app: update Supabase)
-    const member = mockMembers.find(m => m.id === memberId)
-
-    if (member) {
-      member.discord_id = discordId
-      member.discord_username = username
-
-      const stats = generatePokemonStats(member)
-
-      set({
-        linkedMember: member,
-        pokemonStats: stats
+    try {
+      // Try to link via Supabase RPC
+      const response = await fetch('/api/members/link-discord', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberId, discordId, username })
       })
 
-      return true
-    }
+      if (response.ok) {
+        const data = await response.json()
+        if (data.member) {
+          const stats = generatePokemonStats(data.member)
+          set({
+            linkedMember: data.member,
+            pokemonStats: stats
+          })
+          return true
+        }
+      }
 
-    return false
+      // Fallback to mock data for demo
+      const member = mockMembers.find(m => m.id === memberId)
+      if (member) {
+        member.discord_id = discordId
+        member.discord_username = username
+
+        const stats = generatePokemonStats(member)
+        set({
+          linkedMember: member,
+          pokemonStats: stats
+        })
+        return true
+      }
+
+      return false
+    } catch {
+      // Fallback to mock
+      const member = mockMembers.find(m => m.id === memberId)
+      if (member) {
+        member.discord_id = discordId
+        member.discord_username = username
+        const stats = generatePokemonStats(member)
+        set({ linkedMember: member, pokemonStats: stats })
+        return true
+      }
+      return false
+    }
   }
 }))
 

@@ -1,11 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { usePortalStore, searchMembers } from '@/stores/portal-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Card, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   User,
@@ -14,10 +13,10 @@ import {
   Lock,
   CheckCircle,
   AlertCircle,
-  Info,
   ArrowLeft,
   Loader2,
-  Dumbbell
+  Dumbbell,
+  LogIn,
 } from 'lucide-react'
 
 // Discord icon SVG
@@ -30,30 +29,46 @@ const DiscordIcon = ({ className }: { className?: string }) => (
 export function PortalLogin() {
   const { login, linkMemberToDiscord, currentUser, error } = usePortalStore()
   const [step, setStep] = useState<'login' | 'link'>('login')
-  const [discordId, setDiscordId] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<ReturnType<typeof searchMembers>>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [loginError, setLoginError] = useState<string | null>(null)
+  const [authError, setAuthError] = useState<string | null>(null)
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoginError(null)
-    setIsLoading(true)
-
-    const success = await login(discordId)
-
-    setIsLoading(false)
-
-    if (success) {
-      // Si pas de membre lié, passer à l'étape de liaison
-      const store = usePortalStore.getState()
-      if (!store.linkedMember) {
-        setStep('link')
+  // Check for OAuth errors in URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const errorParam = params.get('error')
+    if (errorParam) {
+      switch (errorParam) {
+        case 'access_denied':
+          setAuthError('Vous avez refusé l\'autorisation Discord')
+          break
+        case 'invalid_state':
+          setAuthError('Erreur de sécurité. Veuillez réessayer.')
+          break
+        case 'auth_failed':
+          setAuthError('Échec de l\'authentification Discord')
+          break
+        default:
+          setAuthError('Erreur de connexion')
       }
-    } else {
-      setLoginError(error || 'Erreur de connexion')
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname)
     }
+  }, [])
+
+  // Check if user came back from OAuth but needs linking
+  useEffect(() => {
+    if (currentUser && !usePortalStore.getState().linkedMember) {
+      setStep('link')
+    }
+  }, [currentUser])
+
+  const handleDiscordLogin = () => {
+    setIsLoading(true)
+    setAuthError(null)
+    // Redirect to Discord OAuth
+    window.location.href = '/api/auth/discord'
   }
 
   const handleSearch = (query: string) => {
@@ -75,89 +90,83 @@ export function PortalLogin() {
     )
 
     if (success) {
-      // La page se rechargera automatiquement avec le nouveau state
+      // Reload to show the portal
       window.location.reload()
     }
   }
 
-  // Écran de connexion Discord
+  // Login screen with Discord OAuth
   if (step === 'login') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-slate-800/80 border-slate-700 backdrop-blur-xl">
+        <Card className="w-full max-w-md bg-slate-800/80 border-slate-700 backdrop-blur-xl overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6 rounded-t-lg">
-            <div className="flex items-center gap-3">
-              <Dumbbell className="h-10 w-10 text-white" />
-              <div>
-                <h1 className="text-2xl font-bold text-white">Skàli Portal</h1>
-                <p className="text-emerald-100 text-sm">Espace Membre</p>
+          <div className="bg-gradient-to-r from-[#228B22] to-emerald-600 p-8 text-center">
+            <div className="flex justify-center mb-4">
+              <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
+                <Dumbbell className="h-12 w-12 text-white" />
               </div>
             </div>
+            <h1 className="text-3xl font-bold text-white">Skali Prog</h1>
+            <p className="text-emerald-100 mt-2">Espace Membre</p>
           </div>
 
           <CardContent className="p-6 space-y-6">
-            {/* Info box */}
-            <Alert className="bg-indigo-500/10 border-indigo-500/30">
-              <Info className="h-4 w-4 text-indigo-400" />
-              <AlertDescription className="text-slate-300 text-sm">
-                <p className="font-semibold mb-2">Comment trouver mon Discord ID ?</p>
-                <ol className="list-decimal list-inside text-xs space-y-1 text-slate-400">
-                  <li>Ouvrir Discord</li>
-                  <li>Paramètres → Avancés</li>
-                  <li>Activer &quot;Mode développeur&quot;</li>
-                  <li>Clic droit sur votre nom → &quot;Copier l&apos;ID&quot;</li>
-                </ol>
-              </AlertDescription>
-            </Alert>
+            {/* Error display */}
+            {authError && (
+              <Alert className="bg-red-500/10 border-red-500/30">
+                <AlertCircle className="h-4 w-4 text-red-400" />
+                <AlertDescription className="text-red-300">{authError}</AlertDescription>
+              </Alert>
+            )}
 
-            {/* Login form */}
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-2">
-                  <DiscordIcon className="h-4 w-4 text-indigo-400" />
-                  Votre Discord ID
-                </label>
-                <Input
-                  type="text"
-                  placeholder="123456789012345678"
-                  value={discordId}
-                  onChange={(e) => setDiscordId(e.target.value)}
-                  pattern="[0-9]{17,19}"
-                  required
-                  className="bg-slate-900/50 border-slate-600 text-white font-mono text-lg"
-                />
-                <p className="text-xs text-slate-500 mt-1">17-19 chiffres uniquement</p>
-              </div>
-
-              {loginError && (
-                <Alert className="bg-red-500/10 border-red-500/30">
-                  <AlertCircle className="h-4 w-4 text-red-400" />
-                  <AlertDescription className="text-red-300">{loginError}</AlertDescription>
-                </Alert>
+            {/* Discord OAuth Button */}
+            <Button
+              onClick={handleDiscordLogin}
+              disabled={isLoading}
+              size="lg"
+              className="w-full h-14 bg-[#5865F2] hover:bg-[#4752C4] text-white text-lg font-semibold"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-5 w-5 mr-3 animate-spin" />
+                  Connexion en cours...
+                </>
+              ) : (
+                <>
+                  <DiscordIcon className="h-6 w-6 mr-3" />
+                  Se connecter avec Discord
+                </>
               )}
+            </Button>
 
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Vérification...
-                  </>
-                ) : (
-                  <>
-                    <DiscordIcon className="h-4 w-4 mr-2" />
-                    Se connecter
-                  </>
-                )}
-              </Button>
-            </form>
+            {/* Info */}
+            <div className="space-y-3 pt-4 border-t border-slate-700">
+              <p className="text-center text-sm text-slate-400">
+                Connectez-vous avec votre compte Discord pour accéder à :
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-xs text-slate-500">
+                <div className="flex items-center gap-2 bg-slate-900/50 p-2 rounded-lg">
+                  <CheckCircle className="h-4 w-4 text-emerald-500" />
+                  <span>Planning des séances</span>
+                </div>
+                <div className="flex items-center gap-2 bg-slate-900/50 p-2 rounded-lg">
+                  <CheckCircle className="h-4 w-4 text-emerald-500" />
+                  <span>Vos performances</span>
+                </div>
+                <div className="flex items-center gap-2 bg-slate-900/50 p-2 rounded-lg">
+                  <CheckCircle className="h-4 w-4 text-emerald-500" />
+                  <span>Carte Pokemon</span>
+                </div>
+                <div className="flex items-center gap-2 bg-slate-900/50 p-2 rounded-lg">
+                  <CheckCircle className="h-4 w-4 text-emerald-500" />
+                  <span>Notifications</span>
+                </div>
+              </div>
+            </div>
 
-            <p className="text-center text-xs text-slate-500">
-              Vous devez être membre du serveur Discord Skàli
+            <p className="text-center text-xs text-slate-600">
+              Vous devez être membre du serveur Discord La Skali
             </p>
           </CardContent>
         </Card>
@@ -165,17 +174,27 @@ export function PortalLogin() {
     )
   }
 
-  // Écran de liaison profil
+  // Link profile screen
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
       <Card className="w-full max-w-md bg-slate-800/80 border-slate-700 backdrop-blur-xl">
         {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6 rounded-t-lg">
+        <div className="bg-gradient-to-r from-[#228B22] to-emerald-600 p-6 rounded-t-lg">
           <div className="flex items-center gap-3">
-            <User className="h-10 w-10 text-white" />
+            {currentUser?.avatar ? (
+              <img
+                src={currentUser.avatar}
+                alt={currentUser.username}
+                className="h-12 w-12 rounded-full border-2 border-white/30"
+              />
+            ) : (
+              <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
+                <User className="h-6 w-6 text-white" />
+              </div>
+            )}
             <div>
-              <h1 className="text-xl font-bold text-white">Lier votre profil</h1>
-              <p className="text-emerald-100 text-sm">Discord: {currentUser?.username}</p>
+              <h1 className="text-xl font-bold text-white">Bienvenue !</h1>
+              <p className="text-emerald-100 text-sm">{currentUser?.username}</p>
             </div>
           </div>
         </div>
@@ -272,14 +291,14 @@ export function PortalLogin() {
           <Button
             variant="outline"
             onClick={() => {
-              setStep('login')
-              setSearchQuery('')
-              setSearchResults([])
+              // Logout and go back
+              fetch('/api/auth/logout', { method: 'POST' })
+              window.location.href = '/portal'
             }}
             className="w-full border-slate-600 text-slate-300 hover:bg-slate-700"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Retour
+            Se déconnecter
           </Button>
         </CardContent>
       </Card>
