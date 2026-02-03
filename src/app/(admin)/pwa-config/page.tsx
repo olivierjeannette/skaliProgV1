@@ -137,8 +137,8 @@ const defaultConfig: PWAConfig = {
   general: {
     appName: 'Skali Prog',
     shortName: 'Skali',
-    description: 'Application membre La Skàli CrossFit',
-    themeColor: '#6366f1',
+    description: 'Application membre La Skali CrossFit',
+    themeColor: '#228B22',
     backgroundColor: '#0a0a0a',
   },
   modules: defaultModules,
@@ -150,8 +150,8 @@ const defaultConfig: PWAConfig = {
     autoSync: true,
   },
   branding: {
-    primaryColor: '#6366f1',
-    accentColor: '#f59e0b',
+    primaryColor: '#228B22',
+    accentColor: '#32CD32',
     logoUrl: '',
     splashScreen: true,
   },
