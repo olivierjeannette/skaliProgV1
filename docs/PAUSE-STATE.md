@@ -3,7 +3,7 @@
 > Dernier update: 2026-02-03
 > Phase actuelle: **4 - IMPLEMENTATION** (Dev en cours)
 > Agent actif: **@DEV**
-> Prochain: Continuer modules MVP
+> Prochain: Module Calendar (fonctionnel)
 
 ---
 
@@ -33,7 +33,7 @@
 | Settings > API Keys | ✅ | `skali-admin/src/app/(admin)/settings/api-keys/page.tsx` | 2026-02-03 |
 | Discord Unified (4 tabs) | ✅ | `skali-admin/src/app/(admin)/discord/page.tsx` | 2026-02-03 |
 | Inventory (4 tabs, CRUD) | ✅ | `skali-admin/src/app/(admin)/inventory/page.tsx` | 2026-02-03 |
-| Placeholder: Members | ✅ | `skali-admin/src/app/(admin)/members/page.tsx` | 2026-02-03 |
+| Members (liste, fiche, édition) | ✅ | `skali-admin/src/app/(admin)/members/page.tsx` | 2026-02-03 |
 | Placeholder: Calendar | ✅ | `skali-admin/src/app/(admin)/calendar/page.tsx` | 2026-02-03 |
 | SSH + GitHub CLI | ✅ | `~/.ssh/id_ed25519` configuré | 2026-02-03 |
 
@@ -51,7 +51,7 @@
 | Admin (Settings, API Keys) | P0 - MVP | ✅ Complet |
 | Admin (Discord Unified) | P0 - MVP | ✅ Complet (UI + liaison membres) |
 | Admin (Inventory) | P0 - MVP | ✅ Complet (4 tabs, CRUD équipements) |
-| Members | P1 | ⏳ Placeholder créé |
+| Members | P1 | ✅ Complet (liste, fiche détaillée, édition) |
 | Calendar | P1 | ⏳ Placeholder créé |
 | Performance | P2 | ⏳ Pending |
 | Teams | P2 | ⏳ Pending |
@@ -82,8 +82,8 @@
 - [x] Module API Keys ✅
 - [x] Module Inventory (4 onglets, CRUD équipements) ✅
 - [x] SSH + GitHub configuré ✅
-- [ ] **🚧 NEXT: Module Members (fonctionnel)**
-- [ ] Module Calendar (fonctionnel)
+- [x] Module Members (liste, fiche, édition) ✅
+- [ ] **🚧 NEXT: Module Calendar (fonctionnel)**
 
 ---
 
@@ -124,8 +124,8 @@ skali-admin/
 │   │   ├── (admin)/
 │   │   │   ├── dashboard/page.tsx
 │   │   │   ├── discord/page.tsx      ← Module Discord (4 tabs)
-│   │   │   ├── inventory/page.tsx    ← Placeholder
-│   │   │   ├── members/page.tsx      ← Placeholder
+│   │   │   ├── inventory/page.tsx    ← Module Inventory (4 tabs)
+│   │   │   ├── members/page.tsx      ← Module Members (liste, fiche, édition)
 │   │   │   ├── calendar/page.tsx     ← Placeholder
 │   │   │   ├── settings/
 │   │   │   │   └── api-keys/page.tsx ← Module API Keys
@@ -175,7 +175,19 @@ skali-admin/
   - Filtrage par catégorie + recherche
   - Stats cards (total, quantité, alertes)
 - **MVP Admin P0 COMPLET** 🎉
-- **NEXT:** Module Members ou Calendar
+
+### Session 4 - 2026-02-03 (Suite)
+- Module Members complet:
+  - Liste paginée (12/page)
+  - Stats cards (total, actifs, inactifs, ce mois)
+  - Recherche par nom/email/téléphone
+  - Filtres actifs/inactifs
+  - Tri par colonnes (nom, âge, genre, poids, taille)
+  - Dialog fiche membre détaillée
+  - Dialog édition membre (CRUD)
+  - Composant Select shadcn/ui ajouté
+- Type Member étendu avec tous les champs
+- **NEXT:** Module Calendar
 
 ---
 

@@ -13,12 +13,21 @@ export interface Member {
   id: string;
   name: string;
   email?: string;
-  weight?: number;
-  body_fat_percentage?: number;
   phone?: string;
+  birthdate?: string;
+  gender?: 'male' | 'female' | null;
+  weight?: number;
+  height?: number;
+  body_fat_percentage?: number;
+  lean_mass?: number;
+  photo?: string;
   is_active: boolean;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
+  // Computed fields (not in DB)
+  firstName?: string;
+  lastName?: string;
+  age?: number;
 }
 
 export interface DiscordMember {
