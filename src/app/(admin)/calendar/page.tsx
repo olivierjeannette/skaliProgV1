@@ -57,6 +57,63 @@ const CATEGORY_CONFIG: Record<SessionCategory, { name: string; color: string; bg
   recovery: { name: 'Récupération', color: 'text-purple-500', bgColor: 'bg-purple-500/20', icon: Leaf },
 };
 
+// Suggested titles by category
+const SUGGESTED_TITLES: Record<SessionCategory, string[]> = {
+  crosstraining: [
+    'WOD du jour',
+    'Force + WOD',
+    'Skill + Metcon',
+    'Team WOD',
+    'Hero WOD',
+    'Benchmark',
+    'Open Gym',
+    'Technique',
+  ],
+  musculation: [
+    'Upper Body Push',
+    'Upper Body Pull',
+    'Lower Body',
+    'Full Body',
+    'Back & Biceps',
+    'Chest & Triceps',
+    'Legs & Glutes',
+    'Shoulders & Arms',
+    'Force Max',
+    'Hypertrophie',
+  ],
+  cardio: [
+    'Running',
+    'Rowing',
+    'Bike',
+    'Swimming',
+    'LISS Cardio',
+    'HIIT',
+    'Interval Training',
+    'Zone 2',
+    'Endurance',
+  ],
+  hyrox: [
+    'Running + Sled',
+    'SkiErg + Burpees',
+    'Rowing + Farmers',
+    'Wall Balls + Lunges',
+    'Simulation Race',
+    'Station Work',
+    'Running Intervals',
+    'Roxzone',
+  ],
+  recovery: [
+    'Mobilité',
+    'Stretching',
+    'Yoga',
+    'Foam Rolling',
+    'Active Recovery',
+    'Récupération Active',
+    'Massage',
+    'Rest Day',
+  ],
+};
+
 // Helpers
 const DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 const DAYS_FULL = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
@@ -841,16 +898,7 @@ export default function CalendarPage() {
             </TabsList>
 
             <TabsContent value="info" className="space-y-4 pt-4 flex-1 overflow-y-auto">
-              <div className="space-y-2">
-                <Label htmlFor="title">Titre *</Label>
-                <Input
-                  id="title"
-                  placeholder="Ex: WOD du jour, Force, Cardio..."
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                />
-              </div>
-
+              {/* Category Selection */}
               <div className="space-y-2">
                 <Label htmlFor="category">Catégorie</Label>
                 <Select
@@ -871,6 +919,33 @@ export default function CalendarPage() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Title with suggestions */}
+              <div className="space-y-2">
+                <Label htmlFor="title">Titre *</Label>
+                <Input
+                  id="title"
+                  placeholder="Ex: WOD du jour, Force, Cardio..."
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                />
+                {formData.category && SUGGESTED_TITLES[formData.category] && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {SUGGESTED_TITLES[formData.category].map((title) => (
+                      <Button
+                        key={title}
+                        type="button"
+                        variant={formData.title === title ? 'default' : 'outline'}
+                        size="sm"
+                        className="text-xs h-7"
+                        onClick={() => setFormData({ ...formData, title })}
+                      >
+                        {title}
+                      </Button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
