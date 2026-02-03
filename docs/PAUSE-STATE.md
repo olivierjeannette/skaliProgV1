@@ -40,6 +40,7 @@
 | CRM (gestion leads) | ✅ | `skali-admin/src/app/(admin)/crm/page.tsx` | 2026-02-03 |
 | TV Mode (affichage 1080p) | ✅ | `skali-admin/src/app/(admin)/tv/page.tsx` | 2026-02-03 |
 | SSH + GitHub CLI | ✅ | `~/.ssh/id_ed25519` configuré | 2026-02-03 |
+| Member Portal | ✅ | `skali-admin/src/app/(portal)/portal/page.tsx` | 2026-02-03 |
 
 ## ❌ MODULES EXCLUS (Supprimés du scope)
 
@@ -61,6 +62,7 @@
 | Teams | P2 | ✅ Complet (TeamBuilder Pro, import, génération équipes) |
 | CRM | P2 | ✅ Complet (dashboard leads, 8 onglets, gestion statuts) |
 | TV Mode | P3 | ✅ Complet (affichage sessions/équipes, plein écran, zoom) |
+| Member Portal | P2 | ✅ Complet (auth Discord, carte Pokémon, infos/perfs/historique) |
 
 ---
 
@@ -140,6 +142,9 @@ skali-admin/
 │   │   │   ├── settings/
 │   │   │   │   └── api-keys/page.tsx ← Module API Keys
 │   │   │   └── layout.tsx
+│   │   ├── (portal)/
+│   │   │   ├── portal/page.tsx       ← Member Portal (auth, carte Pokemon, données)
+│   │   │   └── layout.tsx
 │   │   ├── (auth)/
 │   │   │   └── login/page.tsx
 │   │   └── api/
@@ -153,7 +158,9 @@ skali-admin/
 │   │   ├── api-keys.ts
 │   │   └── roles.ts
 │   ├── lib/supabase/client.ts
-│   ├── stores/auth-store.ts
+│   ├── stores/
+│   │   ├── auth-store.ts
+│   │   └── portal-store.ts           ← Store portail membre
 │   └── types/index.ts
 └── package.json
 ```
@@ -257,6 +264,21 @@ skali-admin/
 - Navigation mise à jour avec TV Mode
 - **P3 COMPLET (TV Mode)** 🎉
 - **🎉 MIGRATION COMPLÈTE - TOUS LES MODULES TERMINÉS**
+
+### Session 9 - 2026-02-03 (Suite)
+- Module Member Portal complet:
+  - Authentification via Discord ID (17-19 chiffres)
+  - Liaison profil membre à Discord
+  - Carte Pokémon avec stats (ATK/DEF/SPD/END/TEC)
+  - Niveau, XP, type et rareté
+  - Onglet Infos personnelles (édition poids, taille, contact)
+  - Onglet Performances (PRs, stats)
+  - Onglet Historique (sessions passées)
+  - Navigation mobile (bottom nav)
+  - Store Zustand dédié (portal-store.ts)
+  - Composants UI ajoutés: Alert, Progress
+- Route: /portal
+- **Member Portal COMPLET** 🎉
 
 ---
 
