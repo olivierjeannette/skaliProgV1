@@ -45,6 +45,7 @@ import {
   ChevronDown,
   Wand2,
   CalendarDays,
+  Tv,
 } from 'lucide-react';
 
 // Category configuration
@@ -762,6 +763,18 @@ export default function CalendarPage() {
                             className="h-6 w-6"
                             onClick={(e) => {
                               e.stopPropagation();
+                              window.open(`/tv?session=${session.id}`, '_blank');
+                            }}
+                            title="Afficher en mode TV"
+                          >
+                            <Tv className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={(e) => {
+                              e.stopPropagation();
                               const tomorrow = new Date(selectedDate);
                               tomorrow.setDate(tomorrow.getDate() + 1);
                               handleDuplicateSession(session, tomorrow);
@@ -947,16 +960,6 @@ export default function CalendarPage() {
                             </Button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Label className="text-xs">Durée (min)</Label>
-                          <Input
-                            type="number"
-                            value={block.duration || ''}
-                            onChange={(e) => updateBlock(block.id, { duration: e.target.value ? parseInt(e.target.value) : undefined })}
-                            className="w-20 h-7 text-sm"
-                            placeholder="15"
-                          />
-                        </div>
                         <Textarea
                           value={block.content}
                           onChange={(e) => updateBlock(block.id, { content: e.target.value })}
@@ -973,20 +976,29 @@ export default function CalendarPage() {
           </Tabs>
 
           <DialogFooter className="flex justify-between mt-4">
-            <div>
+            <div className="flex gap-2">
               {editingSession && (
-                <Button
-                  variant="destructive"
-                  onClick={handleDeleteSession}
-                  disabled={isDeleting || isSaving}
-                >
-                  {isDeleting ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4 mr-2" />
-                  )}
-                  Supprimer
-                </Button>
+                <>
+                  <Button
+                    variant="destructive"
+                    onClick={handleDeleteSession}
+                    disabled={isDeleting || isSaving}
+                  >
+                    {isDeleting ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4 mr-2" />
+                    )}
+                    Supprimer
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => window.open(`/tv?session=${editingSession.id}`, '_blank')}
+                  >
+                    <Tv className="h-4 w-4 mr-2" />
+                    Mode TV
+                  </Button>
+                </>
               )}
             </div>
             <div className="flex gap-2">
@@ -1061,10 +1073,10 @@ export default function CalendarPage() {
                     {Array.isArray(template.days) && template.days.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
                         {(template.days as WeekTemplateDay[]).map((day, i) => {
-                          const cat = CATEGORY_CONFIG[day.category];
+                          const cat = day.category ? CATEGORY_CONFIG[day.category] : null;
                           return (
                             <Badge key={i} variant="outline" className={`text-xs ${cat?.color || ''}`}>
-                              {DAYS[day.dayOfWeek]}: {day.title}
+                              {DAYS[day.dayOfWeek]}: {day.title || 'Sans titre'}
                             </Badge>
                           );
                         })}
