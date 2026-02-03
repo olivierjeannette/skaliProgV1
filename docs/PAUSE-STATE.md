@@ -3,7 +3,7 @@
 > Dernier update: 2026-02-03
 > Phase actuelle: **4 - IMPLEMENTATION** (Dev en cours)
 > Agent actif: **@DEV**
-> Prochain: Modules P2 (Teams, CRM)
+> Prochain: Module TV Mode (P3)
 
 ---
 
@@ -36,6 +36,8 @@
 | Members (liste, fiche, édition) | ✅ | `skali-admin/src/app/(admin)/members/page.tsx` | 2026-02-03 |
 | Calendar (vue mois, CRUD sessions) | ✅ | `skali-admin/src/app/(admin)/calendar/page.tsx` | 2026-02-03 |
 | Performance (dashboard, Pokemon cards) | ✅ | `skali-admin/src/app/(admin)/performance/page.tsx` | 2026-02-03 |
+| Teams (TeamBuilder Pro) | ✅ | `skali-admin/src/app/(admin)/teams/page.tsx` | 2026-02-03 |
+| CRM (gestion leads) | ✅ | `skali-admin/src/app/(admin)/crm/page.tsx` | 2026-02-03 |
 | SSH + GitHub CLI | ✅ | `~/.ssh/id_ed25519` configuré | 2026-02-03 |
 
 ## ❌ MODULES EXCLUS (Supprimés du scope)
@@ -55,8 +57,8 @@
 | Members | P1 | ✅ Complet (liste, fiche détaillée, édition) |
 | Calendar | P1 | ✅ Complet (vue mois, CRUD sessions) |
 | Performance | P2 | ✅ Complet (dashboard, Pokemon cards, classement) |
-| Teams | P2 | ⏳ Pending |
-| CRM | P2 | ⏳ Pending |
+| Teams | P2 | ✅ Complet (TeamBuilder Pro, import, génération équipes) |
+| CRM | P2 | ✅ Complet (dashboard leads, 8 onglets, gestion statuts) |
 | TV Mode | P3 | ⏳ Pending |
 
 ---
@@ -86,7 +88,9 @@
 - [x] Module Members (liste, fiche, édition) ✅
 - [x] Module Calendar (vue mois, CRUD sessions) ✅
 - [x] Module Performance (dashboard, Pokemon cards, classement) ✅
-- [ ] **🚧 NEXT: Modules P2 (Teams, CRM)**
+- [x] Module Teams (TeamBuilder Pro) ✅
+- [x] Module CRM (gestion leads) ✅
+- [ ] **🚧 NEXT: TV Mode (P3)**
 
 ---
 
@@ -216,6 +220,27 @@ skali-admin/
   - Types Performance et PokemonStats ajoutés
 - Navigation mise à jour avec Performance
 - **Performance P2 COMPLET** 🎉
+
+### Session 7 - 2026-02-03 (Suite)
+- Module Teams (TeamBuilder Pro) complet:
+  - Configuration: mode (nombre équipes/taille), équilibrage (par niveau/homogène)
+  - Import participants via copier-coller
+  - Reconnaissance auto depuis base membres
+  - Sélection genre (♂/♀) et niveau (débutant → très en forme)
+  - Génération équipes équilibrées (snake draft)
+  - Affichage résultats avec points et stats
+  - Copier dans presse-papier
+  - Types TeamParticipant, Team, TeamSettings ajoutés
+- Module CRM complet:
+  - Dashboard stats par statut (prospects, contactés, RDV, convertis, etc.)
+  - 8 onglets de filtrage
+  - Table leads avec service, contact, statut, date
+  - Dialog détail lead
+  - Dialog édition (statut + notes)
+  - Types Lead, LeadStatus, LeadService ajoutés
+- Navigation mise à jour avec Teams et CRM
+- **P2 COMPLET (Teams + CRM)** 🎉
+- **NEXT:** TV Mode (P3)
 
 ---
 

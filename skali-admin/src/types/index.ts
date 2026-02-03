@@ -133,3 +133,102 @@ export const OneRMFormulas = {
     return weight / (1.0278 - 0.0278 * reps);
   }
 };
+
+// ================================
+// TEAM BUILDER
+// ================================
+
+export type TeamMode = 'teams' | 'size';
+export type BalanceMode = 'level' | 'homogeneous';
+export type ParticipantLevel = 'debutant' | 'intermediaire' | 'enforme' | 'tresenforme';
+
+export const LEVEL_POINTS: Record<ParticipantLevel, number> = {
+  debutant: 1,
+  intermediaire: 2,
+  enforme: 3,
+  tresenforme: 4
+};
+
+export const LEVEL_LABELS: Record<ParticipantLevel, string> = {
+  debutant: '🟢 Débutant (1pt)',
+  intermediaire: '🟡 Intermédiaire (2pt)',
+  enforme: '🟠 En forme (3pt)',
+  tresenforme: '🔴 Très en forme (4pt)'
+};
+
+export interface TeamParticipant {
+  id: string;
+  name: string;
+  cleanName: string;
+  gender: 'homme' | 'femme' | null;
+  level: ParticipantLevel;
+  points: number;
+  isInDatabase: boolean;
+  memberId?: string;
+}
+
+export interface Team {
+  id: number;
+  name: string;
+  participants: TeamParticipant[];
+  totalPoints: number;
+  maleCount: number;
+  femaleCount: number;
+}
+
+export interface TeamSettings {
+  mode: TeamMode;
+  numberOfTeams: number;
+  teamSize: number;
+  balanceMode: BalanceMode;
+}
+
+// ================================
+// CRM
+// ================================
+
+export type LeadStatus =
+  | 'prospect'
+  | 'contacte_attente'
+  | 'rdv_essai'
+  | 'converti_abonnement'
+  | 'converti_carnets'
+  | 'non_converti_prix'
+  | 'liste_rouge';
+
+export type LeadService = 'fitness' | 'pilates' | 'coaching' | 'teambuilding';
+
+export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
+  prospect: '🆕 Prospect',
+  contacte_attente: '📞 Contacté (Attente)',
+  rdv_essai: '📅 RDV pris (Essai)',
+  converti_abonnement: '✅ Converti (Abo)',
+  converti_carnets: '🎫 Converti (Carnets)',
+  non_converti_prix: '💰 Non converti',
+  liste_rouge: '🗑️ Liste rouge'
+};
+
+export const LEAD_STATUS_COLORS: Record<LeadStatus, string> = {
+  prospect: '#60a5fa',
+  contacte_attente: '#fbbf24',
+  rdv_essai: '#c084fc',
+  converti_abonnement: '#4ade80',
+  converti_carnets: '#34d399',
+  non_converti_prix: '#f87171',
+  liste_rouge: '#94a3b8'
+};
+
+export interface Lead {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  service: LeadService;
+  status: LeadStatus;
+  message?: string;
+  notes?: string;
+  created_at: string;
+  updated_at?: string;
+  contacted_at?: string;
+  converted_at?: string;
+}

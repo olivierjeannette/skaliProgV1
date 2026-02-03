@@ -9,6 +9,8 @@ import {
   Users,
   Calendar,
   TrendingUp,
+  UsersRound,
+  Target,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -50,6 +52,16 @@ export const ADMIN_NAV: NavItem[] = [
     title: 'Performance',
     href: '/performance',
     icon: TrendingUp,
+  },
+  {
+    title: 'Teams',
+    href: '/teams',
+    icon: UsersRound,
+  },
+  {
+    title: 'CRM',
+    href: '/crm',
+    icon: Target,
   },
   {
     title: 'Settings',
