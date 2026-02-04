@@ -1,15 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { usePortalStore } from '@/stores/portal-store'
 import { PortalHeader } from '@/components/portal/PortalHeader'
 import { PortalNav } from '@/components/portal/PortalNav'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
-  Calendar,
   Clock,
   Flame,
   Dumbbell,
@@ -20,23 +19,11 @@ import {
   ChevronRight,
   CheckCircle2,
   Target,
-  Activity
+  Activity,
+  Loader2
 } from 'lucide-react'
 
 // Types
-interface Workout {
-  id: string
-  date: string
-  title: string
-  type: 'CrossTraining' | 'Musculation' | 'Cardio' | 'Hyrox' | 'Recuperation'
-  duration: number
-  coach: string
-  completed: boolean
-  score?: string
-  notes?: string
-  blocks?: WorkoutBlock[]
-}
-
 interface WorkoutBlock {
   id: string
   type: 'warmup' | 'strength' | 'wod' | 'skill' | 'accessory' | 'cooldown'
@@ -45,87 +32,46 @@ interface WorkoutBlock {
   result?: string
 }
 
-// Mock data
-const mockWorkouts: Workout[] = [
-  {
-    id: '1',
-    date: '2026-02-04',
-    title: 'WOD - Murph Prep',
-    type: 'CrossTraining',
-    duration: 60,
-    coach: 'Alex',
-    completed: true,
-    score: '32:45 Rx',
-    blocks: [
-      { id: 'b1', type: 'warmup', title: 'Echauffement', content: '800m Run + Mobility', result: 'OK' },
-      { id: 'b2', type: 'wod', title: 'WOD', content: 'Half Murph: 800m Run, 50 Pull-ups, 100 Push-ups, 150 Squats, 800m Run', result: '32:45' },
-      { id: 'b3', type: 'cooldown', title: 'Cooldown', content: 'Stretching 10min', result: 'OK' }
-    ]
-  },
-  {
-    id: '2',
-    date: '2026-02-03',
-    title: 'Force - Back Squat',
-    type: 'Musculation',
-    duration: 75,
-    coach: 'Julie',
-    completed: true,
-    score: 'PR 125kg',
-    blocks: [
-      { id: 'b1', type: 'warmup', title: 'Echauffement', content: 'Rameur 1000m + Mobilite hanche', result: 'OK' },
-      { id: 'b2', type: 'strength', title: 'Force', content: 'Back Squat 5x3 @85%', result: '3x120kg, 2x125kg (PR!)' },
-      { id: 'b3', type: 'accessory', title: 'Accessoire', content: 'Romanian DL 3x10 + Leg Curl 3x12', result: '70kg / 40kg' }
-    ]
-  },
-  {
-    id: '3',
-    date: '2026-02-02',
-    title: 'AMRAP 20',
-    type: 'CrossTraining',
-    duration: 60,
-    coach: 'Alex',
-    completed: true,
-    score: '8 rounds + 12 reps',
-    blocks: [
-      { id: 'b1', type: 'wod', title: 'AMRAP 20min', content: '5 Pull-ups, 10 Push-ups, 15 Air Squats', result: '8+12' }
-    ]
-  },
-  {
-    id: '4',
-    date: '2026-01-31',
-    title: 'Hyrox Simulation',
-    type: 'Hyrox',
-    duration: 90,
-    coach: 'Marc',
-    completed: true,
-    score: '1:12:30'
-  },
-  {
-    id: '5',
-    date: '2026-01-29',
-    title: 'Cardio - Intervals',
-    type: 'Cardio',
-    duration: 45,
-    coach: 'Julie',
-    completed: true,
-    score: '8.2km'
-  }
-]
-
-// Helpers
-const getTypeConfig = (type: Workout['type']) => {
-  const configs = {
-    CrossTraining: { color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', icon: Flame, label: 'CrossTraining' },
-    Musculation: { color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: Dumbbell, label: 'Musculation' },
-    Cardio: { color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: Heart, label: 'Cardio' },
-    Hyrox: { color: 'bg-purple-500/20 text-purple-400 border-purple-500/30', icon: Zap, label: 'Hyrox' },
-    Recuperation: { color: 'bg-green-500/20 text-green-400 border-green-500/30', icon: Heart, label: 'Recuperation' }
-  }
-  return configs[type] || configs.CrossTraining
+interface Workout {
+  id: string
+  date: string
+  title: string
+  type: string
+  duration: number
+  coach: string
+  completed: boolean
+  score?: string
+  notes?: string
+  blocks?: WorkoutBlock[]
 }
 
-const getBlockTypeConfig = (type: WorkoutBlock['type']) => {
-  const configs = {
+interface WorkoutStats {
+  thisMonth: number
+  totalTime: number
+  totalSessions: number
+}
+
+// Helpers
+const getTypeConfig = (type: string) => {
+  const configs: Record<string, { color: string; icon: React.ComponentType<{ className?: string }>; label: string }> = {
+    crossnfit: { color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', icon: Flame, label: 'CrossTraining' },
+    crosstraining: { color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', icon: Flame, label: 'CrossTraining' },
+    power: { color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: Dumbbell, label: 'Power' },
+    build: { color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: Dumbbell, label: 'Build' },
+    musculation: { color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: Dumbbell, label: 'Musculation' },
+    cardio: { color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: Heart, label: 'Cardio' },
+    hyrox: { color: 'bg-purple-500/20 text-purple-400 border-purple-500/30', icon: Zap, label: 'Hyrox' },
+    hyrox_long: { color: 'bg-purple-500/20 text-purple-400 border-purple-500/30', icon: Zap, label: 'Hyrox Long' },
+    hyrox_team: { color: 'bg-purple-500/20 text-purple-400 border-purple-500/30', icon: Zap, label: 'Hyrox Team' },
+    tactical: { color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', icon: Zap, label: 'Tactical' },
+    recuperation: { color: 'bg-green-500/20 text-green-400 border-green-500/30', icon: Heart, label: 'Recuperation' },
+    open: { color: 'bg-slate-500/20 text-slate-400 border-slate-500/30', icon: Timer, label: 'Open' }
+  }
+  return configs[type?.toLowerCase()] || { color: 'bg-slate-500/20 text-slate-400 border-slate-500/30', icon: Timer, label: type || 'WOD' }
+}
+
+const getBlockTypeConfig = (type: string) => {
+  const configs: Record<string, { color: string; icon: React.ComponentType<{ className?: string }>; label: string }> = {
     warmup: { color: 'text-yellow-400', icon: Activity, label: 'Echauffement' },
     strength: { color: 'text-blue-400', icon: Dumbbell, label: 'Force' },
     wod: { color: 'text-orange-400', icon: Flame, label: 'WOD' },
@@ -178,7 +124,7 @@ function WorkoutCard({ workout, onSelect }: { workout: Workout; onSelect: (w: Wo
                 <Clock className="h-3 w-3" />
                 {workout.duration} min
               </span>
-              <span>Coach {workout.coach}</span>
+              {workout.coach && <span>Coach {workout.coach}</span>}
             </div>
           </div>
 
@@ -220,7 +166,7 @@ function WorkoutDetail({ workout, onClose }: { workout: Workout; onClose: () => 
               </Badge>
               <CardTitle className="text-lg text-white">{workout.title}</CardTitle>
               <p className="text-sm text-slate-400 mt-1">
-                {formatDate(workout.date)} - Coach {workout.coach}
+                {formatDate(workout.date)} {workout.coach && `- Coach ${workout.coach}`}
               </p>
             </div>
             {workout.score && (
@@ -250,18 +196,18 @@ function WorkoutDetail({ workout, onClose }: { workout: Workout; onClose: () => 
           {workout.blocks && workout.blocks.length > 0 && (
             <div className="space-y-3 pt-2">
               <h4 className="text-sm font-medium text-slate-300">Detail de la seance</h4>
-              {workout.blocks.map((block) => {
+              {workout.blocks.map((block, index) => {
                 const blockConfig = getBlockTypeConfig(block.type)
                 const BlockIcon = blockConfig.icon
                 return (
                   <div
-                    key={block.id}
+                    key={block.id || index}
                     className="bg-slate-900/50 rounded-lg p-3 border border-slate-700/50"
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <BlockIcon className={`h-4 w-4 ${blockConfig.color}`} />
                       <span className={`text-sm font-medium ${blockConfig.color}`}>
-                        {block.title}
+                        {block.title || blockConfig.label}
                       </span>
                     </div>
                     <p className="text-sm text-slate-300 whitespace-pre-line">
@@ -285,38 +231,27 @@ function WorkoutDetail({ workout, onClose }: { workout: Workout; onClose: () => 
 }
 
 // Stats rapides
-function QuickStats({ workouts }: { workouts: Workout[] }) {
-  const thisMonth = new Date().getMonth()
-  const thisMonthWorkouts = workouts.filter(w => new Date(w.date).getMonth() === thisMonth)
-  const totalDuration = thisMonthWorkouts.reduce((acc, w) => acc + w.duration, 0)
-
-  const typeCount = workouts.reduce((acc, w) => {
-    acc[w.type] = (acc[w.type] || 0) + 1
-    return acc
-  }, {} as Record<string, number>)
-
-  const mostCommonType = Object.entries(typeCount).sort((a, b) => b[1] - a[1])[0]
-
+function QuickStats({ stats }: { stats: WorkoutStats }) {
   return (
     <div className="grid grid-cols-3 gap-2">
       <Card className="bg-slate-800/50 border-slate-700">
         <CardContent className="p-3 text-center">
           <TrendingUp className="h-5 w-5 mx-auto mb-1 text-emerald-400" />
-          <div className="text-xl font-bold text-white">{thisMonthWorkouts.length}</div>
+          <div className="text-xl font-bold text-white">{stats.thisMonth}</div>
           <div className="text-[10px] text-slate-400">Ce mois</div>
         </CardContent>
       </Card>
       <Card className="bg-slate-800/50 border-slate-700">
         <CardContent className="p-3 text-center">
           <Clock className="h-5 w-5 mx-auto mb-1 text-blue-400" />
-          <div className="text-xl font-bold text-white">{Math.round(totalDuration / 60)}h</div>
+          <div className="text-xl font-bold text-white">{stats.totalTime}h</div>
           <div className="text-[10px] text-slate-400">Entrainement</div>
         </CardContent>
       </Card>
       <Card className="bg-slate-800/50 border-slate-700">
         <CardContent className="p-3 text-center">
           <Flame className="h-5 w-5 mx-auto mb-1 text-orange-400" />
-          <div className="text-xl font-bold text-white">{workouts.length}</div>
+          <div className="text-xl font-bold text-white">{stats.totalSessions}</div>
           <div className="text-[10px] text-slate-400">Total</div>
         </CardContent>
       </Card>
@@ -326,14 +261,44 @@ function QuickStats({ workouts }: { workouts: Workout[] }) {
 
 export default function WorkoutsPage() {
   const { linkedMember } = usePortalStore()
-  const [workouts] = useState<Workout[]>(mockWorkouts)
+  const [workouts, setWorkouts] = useState<Workout[]>([])
+  const [stats, setStats] = useState<WorkoutStats>({ thisMonth: 0, totalTime: 0, totalSessions: 0 })
   const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null)
   const [activeTab, setActiveTab] = useState('all')
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Filter workouts
+  // Fetch workouts
+  const fetchWorkouts = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const typeFilter = activeTab === 'all' ? '' : `&type=${activeTab}`
+      const response = await fetch(`/api/portal/workouts?limit=50${typeFilter}`)
+      if (response.ok) {
+        const data = await response.json()
+        setWorkouts(data.workouts || [])
+        setStats(data.stats || { thisMonth: 0, totalTime: 0, totalSessions: 0 })
+      }
+    } catch (error) {
+      console.error('Failed to fetch workouts:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [activeTab])
+
+  useEffect(() => {
+    if (linkedMember) {
+      fetchWorkouts()
+    }
+  }, [linkedMember, fetchWorkouts])
+
+  // Filter workouts locally based on tab
   const filteredWorkouts = workouts.filter(w => {
     if (activeTab === 'all') return true
-    return w.type.toLowerCase().includes(activeTab.toLowerCase())
+    const typeLower = (w.type || '').toLowerCase()
+    if (activeTab === 'cross') return typeLower.includes('cross') || typeLower.includes('nfit')
+    if (activeTab === 'muscu') return typeLower.includes('power') || typeLower.includes('build') || typeLower.includes('muscu')
+    if (activeTab === 'hyrox') return typeLower.includes('hyrox')
+    return true
   })
 
   if (!linkedMember) {
@@ -353,7 +318,7 @@ export default function WorkoutsPage() {
         ) : (
           <>
             {/* Quick stats */}
-            <QuickStats workouts={workouts} />
+            <QuickStats stats={stats} />
 
             {/* Filter tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -365,25 +330,35 @@ export default function WorkoutsPage() {
               </TabsList>
             </Tabs>
 
-            {/* Workout list */}
-            <div className="space-y-3">
-              {filteredWorkouts.length === 0 ? (
-                <Card className="bg-slate-800/30 border-slate-700/50">
-                  <CardContent className="py-8 text-center">
-                    <Dumbbell className="h-12 w-12 mx-auto mb-3 text-slate-600" />
-                    <p className="text-slate-500">Aucun entrainement trouve</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                filteredWorkouts.map((workout) => (
-                  <WorkoutCard
-                    key={workout.id}
-                    workout={workout}
-                    onSelect={setSelectedWorkout}
-                  />
-                ))
-              )}
-            </div>
+            {/* Loading state */}
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+              </div>
+            ) : (
+              /* Workout list */
+              <div className="space-y-3">
+                {filteredWorkouts.length === 0 ? (
+                  <Card className="bg-slate-800/30 border-slate-700/50">
+                    <CardContent className="py-8 text-center">
+                      <Dumbbell className="h-12 w-12 mx-auto mb-3 text-slate-600" />
+                      <p className="text-slate-500">Aucun entrainement trouve</p>
+                      <p className="text-xs text-slate-600 mt-1">
+                        Inscrivez-vous a une seance pour commencer!
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  filteredWorkouts.map((workout) => (
+                    <WorkoutCard
+                      key={workout.id}
+                      workout={workout}
+                      onSelect={setSelectedWorkout}
+                    />
+                  ))
+                )}
+              </div>
+            )}
           </>
         )}
       </main>

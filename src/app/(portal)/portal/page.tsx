@@ -1,7 +1,8 @@
 'use client'
 
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { usePortalStore, THEME_OPTIONS } from '@/stores/portal-store'
+import { usePortalStore } from '@/stores/portal-store'
 import { EpicCard } from '@/components/portal/EpicCard'
 import { PortalHeader } from '@/components/portal/PortalHeader'
 import { PortalNav } from '@/components/portal/PortalNav'
@@ -62,18 +63,34 @@ function QuickAction({
   )
 }
 
+// Today's session type
+interface TodaySessionData {
+  id: string
+  time: string
+  title: string
+  type: string
+  coach?: string
+  duration: number
+  is_booked: boolean
+}
+
 // Today's session preview
-function TodaySession() {
+function TodaySession({ session }: { session: TodaySessionData | null }) {
   const router = useRouter()
 
-  // Mock - sera remplace par API
-  const todaySession = {
-    time: '18:30',
-    title: 'WOD - Murph Prep',
-    type: 'CrossTraining',
-    coach: 'Alex',
-    duration: 60,
-    isBooked: true
+  if (!session) {
+    return (
+      <Card
+        className="bg-slate-800/30 border-slate-700/50 cursor-pointer hover:bg-slate-800/50 transition-colors active:scale-[0.98]"
+        onClick={() => router.push('/portal/planning')}
+      >
+        <CardContent className="p-4 text-center">
+          <Calendar className="h-8 w-8 mx-auto mb-2 text-slate-500" />
+          <p className="text-slate-500 text-sm">Pas de seance prevue aujourd&apos;hui</p>
+          <p className="text-xs text-slate-600 mt-1">Voir le planning complet</p>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
@@ -91,17 +108,21 @@ function TodaySession() {
         <div className="flex items-center gap-4">
           <div className="text-center min-w-[50px]">
             <Clock className="h-5 w-5 mx-auto mb-1 text-emerald-400" />
-            <span className="text-lg font-bold text-white">{todaySession.time}</span>
+            <span className="text-lg font-bold text-white">{session.time}</span>
           </div>
           <div className="flex-1">
-            <h3 className="font-medium text-white">{todaySession.title}</h3>
+            <h3 className="font-medium text-white">{session.title}</h3>
             <div className="flex items-center gap-2 text-xs text-slate-400">
-              <span>{todaySession.duration} min</span>
-              <span>•</span>
-              <span>Coach {todaySession.coach}</span>
+              <span>{session.duration} min</span>
+              {session.coach && (
+                <>
+                  <span>•</span>
+                  <span>Coach {session.coach}</span>
+                </>
+              )}
             </div>
           </div>
-          {todaySession.isBooked && (
+          {session.is_booked && (
             <Badge className="bg-white/10 text-white border-white/20">
               Inscrit
             </Badge>
@@ -114,6 +135,40 @@ function TodaySession() {
 
 export default function PortalPage() {
   const { linkedMember, epicCharacter, memberStats, refreshStats } = usePortalStore()
+  const [todaySession, setTodaySession] = useState<TodaySessionData | null>(null)
+
+  // Fetch today's session
+  const fetchTodaySession = useCallback(async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      const response = await fetch(`/api/portal/sessions?from=${today}&to=${today}`)
+      if (response.ok) {
+        const data = await response.json()
+        const sessions = data.sessions || []
+        // Get the next upcoming session (by time)
+        const now = new Date()
+        const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
+        const upcoming = sessions
+          .filter((s: TodaySessionData) => s.time >= currentTime)
+          .sort((a: TodaySessionData, b: TodaySessionData) => a.time.localeCompare(b.time))
+
+        if (upcoming.length > 0) {
+          setTodaySession(upcoming[0])
+        } else if (sessions.length > 0) {
+          // If no upcoming, show the last session of today
+          setTodaySession(sessions[sessions.length - 1])
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch today session:', error)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (linkedMember) {
+      fetchTodaySession()
+    }
+  }, [linkedMember, fetchTodaySession])
 
   if (!linkedMember) {
     return (
@@ -164,12 +219,12 @@ export default function PortalPage() {
             onClick={refreshStats}
           >
             <Shuffle className="h-4 w-4" />
-            Nouvelle carte
+            Rafraichir stats
           </Button>
         </div>
 
         {/* Today's session */}
-        <TodaySession />
+        <TodaySession session={todaySession} />
 
         {/* Quick actions */}
         <div className="space-y-3">

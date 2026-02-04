@@ -77,38 +77,40 @@ interface PortalStore {
   // Actions
   logout: () => Promise<void>
   checkSession: () => Promise<void>
-  setLinkedMember: (member: LinkedMember | null) => void
+  setLinkedMember: (member: LinkedMember | null) => Promise<void>
   linkMemberToDiscord: (memberId: string) => Promise<boolean>
   setPreferredTheme: (theme: CardTheme) => void
   refreshStats: () => Promise<void>
 }
 
-// Genere les stats du membre (sera remplace par API)
-const generateMemberStats = (member: LinkedMember): MemberStats => {
-  // TODO: Recuperer depuis /api/portal/stats
-  // Pour demo, valeurs basees sur l'anciennete du membre
-  const daysSinceJoin = member.created_at
-    ? Math.floor((Date.now() - new Date(member.created_at).getTime()) / (1000 * 60 * 60 * 24))
-    : 30
-
-  // Simuler une progression basee sur l'anciennete
-  const baseLevel = Math.min(Math.floor(daysSinceJoin / 7) + 1, 50)
-  const baseXp = (daysSinceJoin * 15) % 1000
-
-  return {
-    strength: 40 + Math.floor(Math.random() * 30),
-    endurance: 40 + Math.floor(Math.random() * 30),
-    speed: 40 + Math.floor(Math.random() * 30),
-    technique: 40 + Math.floor(Math.random() * 30),
-    power: 40 + Math.floor(Math.random() * 30),
-    level: baseLevel,
-    xp: baseXp,
-    xpToNextLevel: 1000,
-    percentile: Math.min(40 + Math.floor(daysSinceJoin / 3), 99), // Plus ancien = meilleur percentile
-    sessionCount: Math.floor(daysSinceJoin * 0.4),
-    prCount: Math.floor(daysSinceJoin * 0.1)
+// Recupere les stats du membre depuis l'API
+const fetchMemberStats = async (): Promise<MemberStats | null> => {
+  try {
+    const response = await fetch('/api/portal/stats')
+    if (response.ok) {
+      const data = await response.json()
+      return data.stats || null
+    }
+  } catch (error) {
+    console.error('Failed to fetch member stats:', error)
   }
+  return null
 }
+
+// Stats par defaut si API non disponible
+const getDefaultStats = (): MemberStats => ({
+  strength: 30,
+  endurance: 30,
+  speed: 30,
+  technique: 30,
+  power: 30,
+  level: 1,
+  xp: 0,
+  xpToNextLevel: 600,
+  percentile: 50,
+  sessionCount: 0,
+  prCount: 0
+})
 
 // Trouve la stat principale du membre
 type StatKey = 'strength' | 'endurance' | 'speed' | 'technique' | 'power'
@@ -179,8 +181,8 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
             discord_username: session.discord_username,
           }
 
-          // Generer stats et assigner personnage
-          memberStats = generateMemberStats(linkedMember)
+          // Recuperer les vraies stats depuis l'API
+          memberStats = await fetchMemberStats() || getDefaultStats()
           const primaryStat = getPrimaryStat(memberStats)
           epicCharacter = assignCharacter(memberStats.percentile, primaryStat)
         }
@@ -207,13 +209,14 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
     }
   },
 
-  setLinkedMember: (member) => {
+  setLinkedMember: async (member) => {
     if (member) {
-      const stats = generateMemberStats(member)
+      set({ linkedMember: member })
+      // Recuperer les vraies stats depuis l'API
+      const stats = await fetchMemberStats() || getDefaultStats()
       const primaryStat = getPrimaryStat(stats)
       const character = assignCharacter(stats.percentile, primaryStat)
       set({
-        linkedMember: member,
         memberStats: stats,
         epicCharacter: character
       })
@@ -245,16 +248,18 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
     if (!linkedMember) return
 
     try {
-      // TODO: Appeler /api/portal/stats pour recuperer les vraies stats
-      const stats = generateMemberStats(linkedMember)
-      const primaryStat = getPrimaryStat(stats)
-      const character = assignCharacter(stats.percentile, primaryStat)
-      set({
-        memberStats: stats,
-        epicCharacter: character
-      })
-    } catch {
-      // Ignore errors
+      // Appeler /api/portal/stats pour recuperer les vraies stats
+      const stats = await fetchMemberStats()
+      if (stats) {
+        const primaryStat = getPrimaryStat(stats)
+        const character = assignCharacter(stats.percentile, primaryStat)
+        set({
+          memberStats: stats,
+          epicCharacter: character
+        })
+      }
+    } catch (error) {
+      console.error('Failed to refresh stats:', error)
     }
   },
 
@@ -269,11 +274,12 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
       if (response.ok) {
         const data = await response.json()
         if (data.member) {
-          const stats = generateMemberStats(data.member)
+          set({ linkedMember: data.member })
+          // Recuperer les vraies stats depuis l'API
+          const stats = await fetchMemberStats() || getDefaultStats()
           const primaryStat = getPrimaryStat(stats)
           const character = assignCharacter(stats.percentile, primaryStat)
           set({
-            linkedMember: data.member,
             memberStats: stats,
             epicCharacter: character
           })

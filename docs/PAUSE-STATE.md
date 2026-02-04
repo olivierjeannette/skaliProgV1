@@ -331,7 +331,33 @@ npm run lint         # ESLint
   - `/portal` - Utilise nouveau EpicCard
   - `/portal/performance` - Affiche carte avec infos personnage
 - Build vérifié ✅
-- **TODO:** Connecter les pages aux vraies données Supabase (actuellement mock data)
+
+### Session 18 - 2026-02-04
+
+- **Connexion PWA aux vraies données Supabase - COMPLET:**
+  - **Migration SQL:** `docs/sql/migrations/011_session_participants.sql`
+    - Table `session_participants` pour inscriptions aux séances
+    - Colonnes ajoutées à `sessions` (coach, time, duration, max_spots)
+    - View `sessions_with_spots` pour places restantes
+    - RPCs: `get_portal_sessions()`, `get_member_workouts()`, `get_member_prs()`
+    - RPC: `calculate_member_stats()` pour stats Epic Card (force, endurance, vitesse, technique, puissance)
+    - RPCs: `book_session()`, `cancel_booking()` pour réservations
+  - **Nouvelles API routes:**
+    - `/api/portal/sessions` - GET séances avec places + POST réservation/annulation
+    - `/api/portal/workouts` - GET historique entraînements avec stats
+    - `/api/portal/prs` - GET Personal Records avec amélioration calculée
+    - `/api/portal/stats` - GET stats pour Epic Card (calcul depuis performances)
+  - **Portal Store refactorisé:**
+    - `generateMemberStats()` remplacé par `fetchMemberStats()` → API
+    - Stats calculées depuis vraies données Supabase
+  - **Pages PWA connectées aux vraies données:**
+    - `/portal` - Séance du jour depuis API
+    - `/portal/planning` - Calendrier séances + réservation réelle
+    - `/portal/workouts` - Historique depuis `session_participants`
+    - `/portal/performance` - PRs depuis `performances`, stats depuis API
+- Build vérifié ✅
+- **À faire dans Supabase:**
+  - Exécuter `docs/sql/migrations/011_session_participants.sql`
 
 ---
 

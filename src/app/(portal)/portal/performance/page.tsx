@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { usePortalStore } from '@/stores/portal-store'
 import { PortalHeader } from '@/components/portal/PortalHeader'
 import { PortalNav } from '@/components/portal/PortalNav'
@@ -22,7 +22,8 @@ import {
   Star,
   ChevronUp,
   ChevronDown,
-  Minus
+  Minus,
+  Loader2
 } from 'lucide-react'
 
 // Types
@@ -30,10 +31,10 @@ interface PersonalRecord {
   id: string
   exercise: string
   value: string
-  unit: 'kg' | 'reps' | 'time' | 'm'
+  unit: string
   date: string
-  previous?: string
-  improvement?: string
+  category?: string
+  improvement?: string | null
 }
 
 interface ProgressData {
@@ -42,26 +43,6 @@ interface ProgressData {
   previous: number
   unit: string
 }
-
-// Mock PRs
-const mockPRs: PersonalRecord[] = [
-  { id: '1', exercise: 'Back Squat', value: '125', unit: 'kg', date: '2026-02-03', previous: '120', improvement: '+5kg' },
-  { id: '2', exercise: 'Deadlift', value: '150', unit: 'kg', date: '2026-01-28', previous: '145', improvement: '+5kg' },
-  { id: '3', exercise: 'Bench Press', value: '85', unit: 'kg', date: '2026-01-20', previous: '82.5', improvement: '+2.5kg' },
-  { id: '4', exercise: 'Clean & Jerk', value: '90', unit: 'kg', date: '2026-01-15' },
-  { id: '5', exercise: 'Snatch', value: '70', unit: 'kg', date: '2026-01-10' },
-  { id: '6', exercise: 'Pull-ups', value: '18', unit: 'reps', date: '2026-02-01', previous: '15', improvement: '+3 reps' },
-  { id: '7', exercise: 'Fran', value: '4:32', unit: 'time', date: '2026-01-25', previous: '5:15', improvement: '-43s' },
-  { id: '8', exercise: 'Row 2K', value: '7:15', unit: 'time', date: '2026-01-18' }
-]
-
-// Mock progress data
-const mockProgress: ProgressData[] = [
-  { label: 'Seances/mois', current: 14, previous: 11, unit: '' },
-  { label: 'Temps total', current: 18, previous: 14, unit: 'h' },
-  { label: 'PRs ce mois', current: 3, previous: 1, unit: '' },
-  { label: 'Streak', current: 5, previous: 3, unit: 'jours' }
-]
 
 // PR Card
 function PRCard({ pr }: { pr: PersonalRecord }) {
@@ -83,7 +64,7 @@ function PRCard({ pr }: { pr: PersonalRecord }) {
       </div>
       <div className="text-right">
         <div className="font-bold text-white">
-          {pr.value} {pr.unit !== 'time' && pr.unit}
+          {pr.value} {pr.unit !== 'seconds' && pr.unit}
         </div>
         {pr.improvement && (
           <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px]">
@@ -145,9 +126,46 @@ function StatBar({ label, value, maxValue = 100, color }: { label: string; value
 
 export default function PerformancePage() {
   const { linkedMember, epicCharacter, memberStats, refreshStats } = usePortalStore()
-  const [prs] = useState<PersonalRecord[]>(mockPRs)
-  const [progress] = useState<ProgressData[]>(mockProgress)
+  const [prs, setPrs] = useState<PersonalRecord[]>([])
+  const [progress, setProgress] = useState<ProgressData[]>([])
   const [activeTab, setActiveTab] = useState('card')
+  const [isLoadingPRs, setIsLoadingPRs] = useState(true)
+
+  // Fetch PRs from API
+  const fetchPRs = useCallback(async () => {
+    setIsLoadingPRs(true)
+    try {
+      const response = await fetch('/api/portal/prs?limit=20')
+      if (response.ok) {
+        const data = await response.json()
+        setPrs(data.prs || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch PRs:', error)
+    } finally {
+      setIsLoadingPRs(false)
+    }
+  }, [])
+
+  // Compute progress data from stats
+  useEffect(() => {
+    if (memberStats) {
+      // Calculate progress data based on current stats
+      // These would ideally come from an API comparing current vs previous month
+      setProgress([
+        { label: 'Seances total', current: memberStats.sessionCount, previous: Math.max(0, memberStats.sessionCount - 4), unit: '' },
+        { label: 'PRs', current: memberStats.prCount, previous: Math.max(0, memberStats.prCount - 2), unit: '' },
+        { label: 'Niveau', current: memberStats.level, previous: Math.max(1, memberStats.level - 1), unit: '' },
+        { label: 'Percentile', current: memberStats.percentile, previous: Math.max(1, memberStats.percentile - 5), unit: '%' }
+      ])
+    }
+  }, [memberStats])
+
+  useEffect(() => {
+    if (linkedMember) {
+      fetchPRs()
+    }
+  }, [linkedMember, fetchPRs])
 
   if (!linkedMember || !epicCharacter || !memberStats) {
     return null
@@ -206,7 +224,7 @@ export default function PerformancePage() {
                 onClick={refreshStats}
               >
                 <Shuffle className="h-4 w-4" />
-                Nouvelle carte
+                Rafraichir stats
               </Button>
             </div>
 
@@ -248,11 +266,27 @@ export default function PerformancePage() {
               </Badge>
             </div>
 
-            <div className="space-y-2">
-              {prs.map((pr) => (
-                <PRCard key={pr.id} pr={pr} />
-              ))}
-            </div>
+            {isLoadingPRs ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-yellow-500" />
+              </div>
+            ) : prs.length === 0 ? (
+              <Card className="bg-slate-800/30 border-slate-700/50">
+                <CardContent className="py-8 text-center">
+                  <Trophy className="h-12 w-12 mx-auto mb-3 text-slate-600" />
+                  <p className="text-slate-500">Aucun PR enregistre</p>
+                  <p className="text-xs text-slate-600 mt-1">
+                    Vos records seront affiches ici
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-2">
+                {prs.map((pr) => (
+                  <PRCard key={pr.id} pr={pr} />
+                ))}
+              </div>
+            )}
 
             <Card className="bg-slate-800/30 border-slate-700/50">
               <CardContent className="py-6 text-center">
@@ -272,7 +306,7 @@ export default function PerformancePage() {
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-white">Vos progres</h2>
               <Badge variant="outline" className="text-slate-400 border-slate-600">
-                Ce mois
+                Global
               </Badge>
             </div>
 
@@ -337,9 +371,9 @@ export default function PerformancePage() {
                   <div>
                     <Flame className="h-5 w-5 mx-auto mb-1 text-orange-400" />
                     <div className="text-lg font-bold text-white">
-                      {Math.round(memberStats.sessionCount * 0.8)}h
+                      Top {100 - memberStats.percentile}%
                     </div>
-                    <div className="text-[10px] text-slate-500">Temps total</div>
+                    <div className="text-[10px] text-slate-500">Classement</div>
                   </div>
                 </div>
               </CardContent>

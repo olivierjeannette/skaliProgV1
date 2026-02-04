@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { usePortalStore } from '@/stores/portal-store'
 import { PortalHeader } from '@/components/portal/PortalHeader'
 import { PortalNav } from '@/components/portal/PortalNav'
@@ -10,14 +10,13 @@ import { Button } from '@/components/ui/button'
 import {
   ChevronLeft,
   ChevronRight,
-  Clock,
   Users,
-  MapPin,
   Flame,
   Dumbbell,
   Heart,
   Zap,
-  Timer
+  Timer,
+  Loader2
 } from 'lucide-react'
 
 // Types
@@ -26,109 +25,32 @@ interface Session {
   date: string
   time: string
   title: string
-  type: 'CrossTraining' | 'Musculation' | 'Cardio' | 'Hyrox' | 'Recuperation' | 'Open'
+  type: string
   coach: string
   spots: number
-  maxSpots: number
+  max_spots: number
   duration: number
-  location?: string
-  isBooked?: boolean
+  is_booked?: boolean
+  description?: string
 }
 
-// Mock data - sera remplace par API
-const mockSessions: Session[] = [
-  {
-    id: '1',
-    date: '2026-02-04',
-    time: '06:30',
-    title: 'CrossTraining - AMRAP 20',
-    type: 'CrossTraining',
-    coach: 'Alex',
-    spots: 8,
-    maxSpots: 12,
-    duration: 60,
-    isBooked: true
-  },
-  {
-    id: '2',
-    date: '2026-02-04',
-    time: '12:00',
-    title: 'Musculation - Upper Body',
-    type: 'Musculation',
-    coach: 'Julie',
-    spots: 3,
-    maxSpots: 10,
-    duration: 75
-  },
-  {
-    id: '3',
-    date: '2026-02-04',
-    time: '18:30',
-    title: 'WOD - Murph Prep',
-    type: 'CrossTraining',
-    coach: 'Alex',
-    spots: 10,
-    maxSpots: 12,
-    duration: 60,
-    isBooked: false
-  },
-  {
-    id: '4',
-    date: '2026-02-05',
-    time: '07:00',
-    title: 'Hyrox Training',
-    type: 'Hyrox',
-    coach: 'Marc',
-    spots: 6,
-    maxSpots: 8,
-    duration: 90
-  },
-  {
-    id: '5',
-    date: '2026-02-05',
-    time: '19:00',
-    title: 'Open Gym',
-    type: 'Open',
-    coach: 'Tous',
-    spots: 15,
-    maxSpots: 20,
-    duration: 120
-  },
-  {
-    id: '6',
-    date: '2026-02-06',
-    time: '12:15',
-    title: 'Cardio Express',
-    type: 'Cardio',
-    coach: 'Julie',
-    spots: 2,
-    maxSpots: 10,
-    duration: 30
-  },
-  {
-    id: '7',
-    date: '2026-02-06',
-    time: '18:00',
-    title: 'Stretching & Recovery',
-    type: 'Recuperation',
-    coach: 'Sophie',
-    spots: 8,
-    maxSpots: 15,
-    duration: 45
-  }
-]
-
 // Helpers
-const getTypeConfig = (type: Session['type']) => {
-  const configs = {
-    CrossTraining: { color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', icon: Flame },
-    Musculation: { color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: Dumbbell },
-    Cardio: { color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: Heart },
-    Hyrox: { color: 'bg-purple-500/20 text-purple-400 border-purple-500/30', icon: Zap },
-    Recuperation: { color: 'bg-green-500/20 text-green-400 border-green-500/30', icon: Heart },
-    Open: { color: 'bg-slate-500/20 text-slate-400 border-slate-500/30', icon: Timer }
+const getTypeConfig = (type: string) => {
+  const configs: Record<string, { color: string; icon: React.ComponentType<{ className?: string }> }> = {
+    crossnfit: { color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', icon: Flame },
+    crosstraining: { color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', icon: Flame },
+    power: { color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: Dumbbell },
+    build: { color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: Dumbbell },
+    musculation: { color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: Dumbbell },
+    cardio: { color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: Heart },
+    hyrox: { color: 'bg-purple-500/20 text-purple-400 border-purple-500/30', icon: Zap },
+    hyrox_long: { color: 'bg-purple-500/20 text-purple-400 border-purple-500/30', icon: Zap },
+    hyrox_team: { color: 'bg-purple-500/20 text-purple-400 border-purple-500/30', icon: Zap },
+    tactical: { color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', icon: Zap },
+    recuperation: { color: 'bg-green-500/20 text-green-400 border-green-500/30', icon: Heart },
+    open: { color: 'bg-slate-500/20 text-slate-400 border-slate-500/30', icon: Timer }
   }
-  return configs[type] || configs.Open
+  return configs[type?.toLowerCase()] || configs.open
 }
 
 const formatDate = (date: Date) => {
@@ -146,12 +68,17 @@ const isSameDay = (d1: Date, d2: Date) => {
 }
 
 // Composant session card
-function SessionCard({ session, onBook }: { session: Session; onBook: (id: string) => void }) {
+function SessionCard({ session, onBook, isBooking }: {
+  session: Session
+  onBook: (id: string, action: 'book' | 'cancel') => void
+  isBooking: string | null
+}) {
   const typeConfig = getTypeConfig(session.type)
   const Icon = typeConfig.icon
-  const spotsLeft = session.maxSpots - session.spots
+  const spotsLeft = session.spots
   const isAlmostFull = spotsLeft <= 2
   const isFull = spotsLeft === 0
+  const isLoading = isBooking === session.id
 
   return (
     <Card className="bg-slate-800/50 border-slate-700 overflow-hidden">
@@ -173,7 +100,9 @@ function SessionCard({ session, onBook }: { session: Session; onBook: (id: strin
                     <Icon className="h-3 w-3 mr-1" />
                     {session.type}
                   </Badge>
-                  <span className="text-xs text-slate-400">Coach {session.coach}</span>
+                  {session.coach && (
+                    <span className="text-xs text-slate-400">Coach {session.coach}</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -186,18 +115,24 @@ function SessionCard({ session, onBook }: { session: Session; onBook: (id: strin
                 </span>
               </div>
 
-              {session.isBooked ? (
-                <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-                  Inscrit
-                </Badge>
+              {session.is_booked ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={isLoading}
+                  onClick={() => onBook(session.id, 'cancel')}
+                  className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/30"
+                >
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Inscrit'}
+                </Button>
               ) : (
                 <Button
                   size="sm"
-                  disabled={isFull}
-                  onClick={() => onBook(session.id)}
+                  disabled={isFull || isLoading}
+                  onClick={() => onBook(session.id, 'book')}
                   className={isFull ? 'bg-slate-700 text-slate-500' : 'bg-emerald-600 hover:bg-emerald-700'}
                 >
-                  {isFull ? 'Complet' : 'Reserver'}
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : isFull ? 'Complet' : 'Reserver'}
                 </Button>
               )}
             </div>
@@ -209,7 +144,12 @@ function SessionCard({ session, onBook }: { session: Session; onBook: (id: strin
 }
 
 // Composant jour
-function DayView({ date, sessions, onBook }: { date: Date; sessions: Session[]; onBook: (id: string) => void }) {
+function DayView({ date, sessions, onBook, isBooking }: {
+  date: Date
+  sessions: Session[]
+  onBook: (id: string, action: 'book' | 'cancel') => void
+  isBooking: string | null
+}) {
   const isToday = isSameDay(date, new Date())
 
   return (
@@ -234,7 +174,7 @@ function DayView({ date, sessions, onBook }: { date: Date; sessions: Session[]; 
       ) : (
         <div className="space-y-2">
           {sessions.map((session) => (
-            <SessionCard key={session.id} session={session} onBook={onBook} />
+            <SessionCard key={session.id} session={session} onBook={onBook} isBooking={isBooking} />
           ))}
         </div>
       )}
@@ -245,7 +185,9 @@ function DayView({ date, sessions, onBook }: { date: Date; sessions: Session[]; 
 export default function PlanningPage() {
   const { linkedMember } = usePortalStore()
   const [currentDate, setCurrentDate] = useState(new Date())
-  const [sessions] = useState<Session[]>(mockSessions)
+  const [sessions, setSessions] = useState<Session[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isBooking, setIsBooking] = useState<string | null>(null)
 
   // Get week dates
   const weekDates = useMemo(() => {
@@ -260,6 +202,29 @@ export default function PlanningPage() {
     }
     return dates
   }, [currentDate])
+
+  // Fetch sessions for the week
+  const fetchSessions = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const from = weekDates[0].toISOString().split('T')[0]
+      const to = weekDates[6].toISOString().split('T')[0]
+
+      const response = await fetch(`/api/portal/sessions?from=${from}&to=${to}`)
+      if (response.ok) {
+        const data = await response.json()
+        setSessions(data.sessions || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch sessions:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [weekDates])
+
+  useEffect(() => {
+    fetchSessions()
+  }, [fetchSessions])
 
   // Filter sessions for each day
   const getSessionsForDay = (date: Date) => {
@@ -284,10 +249,27 @@ export default function PlanningPage() {
     setCurrentDate(new Date())
   }
 
-  // Book session
-  const handleBook = (sessionId: string) => {
-    // TODO: Appeler API pour reserver
-    console.log('Booking session:', sessionId)
+  // Book/Cancel session
+  const handleBook = async (sessionId: string, action: 'book' | 'cancel') => {
+    if (!linkedMember) return
+
+    setIsBooking(sessionId)
+    try {
+      const response = await fetch('/api/portal/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, action })
+      })
+
+      if (response.ok) {
+        // Refresh sessions to get updated data
+        await fetchSessions()
+      }
+    } catch (error) {
+      console.error('Failed to book/cancel session:', error)
+    } finally {
+      setIsBooking(null)
+    }
   }
 
   // Week range label
@@ -364,18 +346,26 @@ export default function PlanningPage() {
           })}
         </div>
 
-        {/* Sessions by day */}
-        <div className="space-y-6">
-          {weekDates.map((date) => (
-            <div key={date.toISOString()} id={`day-${date.toISOString().split('T')[0]}`}>
-              <DayView
-                date={date}
-                sessions={getSessionsForDay(date)}
-                onBook={handleBook}
-              />
-            </div>
-          ))}
-        </div>
+        {/* Loading state */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+          </div>
+        ) : (
+          /* Sessions by day */
+          <div className="space-y-6">
+            {weekDates.map((date) => (
+              <div key={date.toISOString()} id={`day-${date.toISOString().split('T')[0]}`}>
+                <DayView
+                  date={date}
+                  sessions={getSessionsForDay(date)}
+                  onBook={handleBook}
+                  isBooking={isBooking}
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </main>
 
       <PortalNav />
