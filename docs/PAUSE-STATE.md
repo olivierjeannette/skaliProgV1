@@ -475,11 +475,21 @@ npm run lint         # ESLint
     - Correction `leads` → anon ne peut plus lire, seulement insérer
     - Restriction `week_templates` → lecture publique, écriture authentifiée
     - Activation RLS sur `members`, `sessions`, `performances`, `equipment`
+- **Code refactorisé:**
+  - `src/app/api/auth/login/route.ts` - Simplifié, lit mots de passe depuis variables d'env
+  - Plus de dépendance à `@supabase/supabase-js` dans le login
+  - Variables d'env requises: `AUTH_PASSWORD_ADMIN`, `AUTH_PASSWORD_COACH`, `AUTH_PASSWORD_ATHLETE`
 - Build vérifié ✅
-- **À FAIRE IMMÉDIATEMENT dans Supabase:**
-  - Exécuter `docs/sql/migrations/014_security_hardening.sql`
-  - Vérifier que l'app fonctionne toujours
-  - Migrer les mots de passe vers variables d'environnement
+- **À FAIRE DANS VERCEL:**
+  1. Ajouter les variables d'environnement:
+     ```
+     AUTH_PASSWORD_ADMIN=ton-mot-de-passe-admin
+     AUTH_PASSWORD_COACH=ton-mot-de-passe-coach
+     AUTH_PASSWORD_ATHLETE=ton-mot-de-passe-athlete
+     ```
+  2. Exécuter dans Supabase SQL Editor:
+     `docs/sql/migrations/014_security_hardening.sql`
+  3. Redéployer l'application
 
 ### Session 24 - 2026-02-04
 
