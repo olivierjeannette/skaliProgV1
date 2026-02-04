@@ -1,0 +1,44 @@
+name: Peppy Sync
+
+on:
+  # Toutes les heures de 6h à 21h (heures d'ouverture box)
+  schedule:
+    - cron: '0 6-21 * * *'  # UTC, donc 7h-22h en France
+  # Permet de lancer manuellement
+  workflow_dispatch:
+    inputs:
+      hour:
+        description: 'Hour to sync (optional, defaults to current)'
+        required: false
+        type: number
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium
+
+      - name: Run Peppy sync
+        env:
+          PEPPY_EMAIL: ${{ secrets.PEPPY_EMAIL }}
+          PEPPY_PASSWORD: ${{ secrets.PEPPY_PASSWORD }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: npx tsx scripts/peppy-sync-to-supabase.ts ${{ github.event.inputs.hour }}
+
+      - name: Log result
+        run: echo "Peppy sync completed at $(date)"
