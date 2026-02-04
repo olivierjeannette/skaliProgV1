@@ -382,6 +382,22 @@ npm run lint         # ESLint
 6. Uploader vidéos: `scp *.mp4 root@VPS_IP:/var/www/static/cards/`
 7. Ajouter dans `.env.local`: `NEXT_PUBLIC_VPS_VIDEO_URL=http://VPS_IP/cards`
 
+### Session 20 - 2026-02-04
+
+- **Vidéos hébergées sur Vercel (plus simple que VPS):**
+  - Dossier créé: `public/videos/cards/`
+  - `VIDEO_BASE_URL` utilise `/videos/cards` par défaut (local)
+  - Peut toujours utiliser VPS externe via `NEXT_PUBLIC_VPS_VIDEO_URL`
+  - `getVideoUrl()` génère automatiquement l'URL depuis l'ID du personnage
+  - `EPIC_CHARACTERS` construit dynamiquement avec `videoUrl`
+- Build vérifié ✅
+
+**Pour ajouter une vidéo:**
+1. Compresser avec FFmpeg: `ffmpeg -i original.mp4 -c:v libvpx-vp9 -crf 30 -b:v 0 -vf "scale=720:-2" -an phoenix-lord.webm`
+2. Placer dans `public/videos/cards/phoenix-lord.webm`
+3. Le personnage avec `id: 'phoenix-lord'` utilisera automatiquement la vidéo
+4. Commit + push → Vercel déploie avec les vidéos
+
 ---
 
 *Skali Prog - Next.js 16 + Supabase*

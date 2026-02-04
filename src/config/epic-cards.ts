@@ -18,9 +18,10 @@ export type CardRarity = 'legendary' | 'epic' | 'rare' | 'common' | 'starter'
 
 export type CardTheme = 'fire' | 'ice' | 'lightning' | 'nature' | 'shadow' | 'light' | 'cosmic' | 'blood'
 
-// URL de base pour les videos hebergees sur VPS
-// Modifier cette URL avec l'IP ou domaine de ton VPS
-export const VPS_VIDEO_BASE_URL = process.env.NEXT_PUBLIC_VPS_VIDEO_URL || ''
+// URL de base pour les videos
+// Option 1: Locales dans /public/videos/cards (recommandé pour Vercel)
+// Option 2: VPS externe via NEXT_PUBLIC_VPS_VIDEO_URL
+export const VIDEO_BASE_URL = process.env.NEXT_PUBLIC_VPS_VIDEO_URL || '/videos/cards'
 
 export interface EpicCharacter {
   id: string
@@ -187,8 +188,16 @@ export const CLASS_CONFIG: Record<CardClass, {
   }
 }
 
-// Personnages epiques
-export const EPIC_CHARACTERS: EpicCharacter[] = [
+/**
+ * Helper: Genere l'URL video pour un personnage
+ * Les fichiers doivent etre dans /public/videos/cards/{id}.webm (et .mp4 en fallback)
+ */
+export function getVideoUrl(characterId: string): string {
+  return `${VIDEO_BASE_URL}/${characterId}`
+}
+
+// Personnages epiques (sans videoUrl - ajouté dynamiquement)
+const CHARACTERS_DATA: Omit<EpicCharacter, 'videoUrl'>[] = [
   // ============ LEGENDARY - Les Titans ============
   {
     id: 'phoenix-lord',
@@ -523,6 +532,15 @@ export const EPIC_CHARACTERS: EpicCharacter[] = [
     effects: { particles: 'none', aura: false, holographic: false, animated: false }
   }
 ]
+
+/**
+ * EPIC_CHARACTERS avec videoUrl generee automatiquement
+ * Les videos doivent etre dans /public/videos/cards/{id}.webm
+ */
+export const EPIC_CHARACTERS: EpicCharacter[] = CHARACTERS_DATA.map(char => ({
+  ...char,
+  videoUrl: getVideoUrl(char.id)
+}))
 
 /**
  * Determine la rarete selon le percentile de performance
