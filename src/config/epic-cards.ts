@@ -18,6 +18,10 @@ export type CardRarity = 'legendary' | 'epic' | 'rare' | 'common' | 'starter'
 
 export type CardTheme = 'fire' | 'ice' | 'lightning' | 'nature' | 'shadow' | 'light' | 'cosmic' | 'blood'
 
+// URL de base pour les videos hebergees sur VPS
+// Modifier cette URL avec l'IP ou domaine de ton VPS
+export const VPS_VIDEO_BASE_URL = process.env.NEXT_PUBLIC_VPS_VIDEO_URL || ''
+
 export interface EpicCharacter {
   id: string
   name: string
@@ -28,6 +32,8 @@ export interface EpicCharacter {
   quote: string
   // Image depuis Unsplash/Pexels (libres de droits)
   imageUrl: string
+  // Video de fond (optionnel, hebergee sur VPS)
+  videoUrl?: string
   // Stats de base (multipliees par le niveau)
   baseStats: {
     strength: number   // Force

@@ -359,6 +359,29 @@ npm run lint         # ESLint
 - **À faire dans Supabase:**
   - Exécuter `docs/sql/migrations/011_session_participants.sql`
 
+### Session 19 - 2026-02-04
+
+- **Support vidéo pour cartes Epic:**
+  - **EpicCard.tsx modifié:** Support vidéo MP4 en background (autoplay, loop, muted)
+  - **epic-cards.ts modifié:** Ajout `videoUrl` optionnel + `VPS_VIDEO_BASE_URL` configurable
+  - **Variable d'environnement:** `NEXT_PUBLIC_VPS_VIDEO_URL` ajoutée
+- **Guide VPS créé:** `docs/VPS-VIDEO-SETUP.md`
+  - Installation Nginx sur Ubuntu
+  - Configuration serveur statique avec CORS
+  - Commandes FFmpeg pour compression vidéo (7-12MB → 500KB-1.5MB)
+  - Instructions upload SCP/SFTP
+  - Configuration HTTPS optionnelle (Certbot)
+- Build vérifié ✅
+
+**Configuration VPS requise:**
+1. Connecter SSH au VPS Ubuntu
+2. Installer Nginx: `apt install nginx -y`
+3. Créer dossier: `mkdir -p /var/www/static/cards`
+4. Créer config Nginx: `/etc/nginx/sites-available/static-cards`
+5. Compresser vidéos avec FFmpeg (voir guide)
+6. Uploader vidéos: `scp *.mp4 root@VPS_IP:/var/www/static/cards/`
+7. Ajouter dans `.env.local`: `NEXT_PUBLIC_VPS_VIDEO_URL=http://VPS_IP/cards`
+
 ---
 
 *Skali Prog - Next.js 16 + Supabase*

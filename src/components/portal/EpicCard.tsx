@@ -565,21 +565,38 @@ export function EpicCard({
               </div>
             </div>
 
-            {/* Character image area */}
+            {/* Character image/video area */}
             <div className="relative aspect-[4/3] overflow-hidden">
-              {/* Background image with gradient overlay */}
+              {/* Background video or image with gradient overlay */}
               <div className="absolute inset-0">
-                <Image
-                  src={character.imageUrl}
-                  alt={character.name}
-                  fill
-                  className="object-cover"
-                  style={{
-                    filter: 'brightness(0.6) saturate(1.2)',
-                    transform: `scale(${isHovered ? 1.05 : 1})`,
-                    transition: 'transform 0.5s ease-out'
-                  }}
-                />
+                {character.videoUrl ? (
+                  <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="absolute inset-0 w-full h-full object-cover"
+                    style={{
+                      filter: 'brightness(0.6) saturate(1.2)',
+                      transform: `scale(${isHovered ? 1.05 : 1})`,
+                      transition: 'transform 0.5s ease-out'
+                    }}
+                  >
+                    <source src={character.videoUrl} type="video/mp4" />
+                  </video>
+                ) : (
+                  <Image
+                    src={character.imageUrl}
+                    alt={character.name}
+                    fill
+                    className="object-cover"
+                    style={{
+                      filter: 'brightness(0.6) saturate(1.2)',
+                      transform: `scale(${isHovered ? 1.05 : 1})`,
+                      transition: 'transform 0.5s ease-out'
+                    }}
+                  />
+                )}
                 {/* Gradient overlays */}
                 <div
                   className="absolute inset-0"
