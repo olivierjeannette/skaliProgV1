@@ -1,10 +1,11 @@
 import { create } from 'zustand'
 import {
   EpicCharacter,
-  Universe,
+  CardTheme,
   assignCharacter,
-  getTierFromPercentile,
-  TIER_CONFIG
+  getRarityFromPercentile,
+  RARITY_CONFIG,
+  THEME_OPTIONS
 } from '@/config/epic-cards'
 
 interface PortalUser {
@@ -29,10 +30,10 @@ interface LinkedMember {
   status?: 'active' | 'inactive'
   created_at?: string
   // Preferences utilisateur
-  preferred_universe?: Universe
+  preferred_theme?: CardTheme
 }
 
-// Nouveau systeme de stats pour les cartes epiques
+// Systeme de stats pour les cartes epiques
 interface MemberStats {
   // Stats de base (calculees depuis les performances)
   strength: number   // Force (1RM squats, deadlifts, etc.)
@@ -48,19 +49,6 @@ interface MemberStats {
   // Compteurs
   sessionCount: number
   prCount: number
-}
-
-// Legacy Pokemon stats (pour compatibilite)
-interface PokemonStats {
-  atk: number
-  def: number
-  spd: number
-  end: number
-  tec: number
-  level: number
-  xp: number
-  type: string
-  rarity: string
 }
 
 interface SessionMember {
@@ -81,11 +69,8 @@ interface PortalSession {
 interface PortalStore {
   currentUser: PortalUser | null
   linkedMember: LinkedMember | null
-  // Nouveau systeme
   memberStats: MemberStats | null
   epicCharacter: EpicCharacter | null
-  // Legacy (pour compatibilite)
-  pokemonStats: PokemonStats | null
   isLoading: boolean
   error: string | null
 
@@ -93,9 +78,8 @@ interface PortalStore {
   logout: () => Promise<void>
   checkSession: () => Promise<void>
   setLinkedMember: (member: LinkedMember | null) => void
-  setPokemonStats: (stats: PokemonStats | null) => void
   linkMemberToDiscord: (memberId: string) => Promise<boolean>
-  setPreferredUniverse: (universe: Universe) => void
+  setPreferredTheme: (theme: CardTheme) => void
   refreshStats: () => Promise<void>
 }
 
@@ -126,20 +110,19 @@ const generateMemberStats = (member: LinkedMember): MemberStats => {
   }
 }
 
-// Convertit les nouvelles stats en ancien format Pokemon (compatibilite)
-const statsToLegacyPokemon = (stats: MemberStats, character: EpicCharacter): PokemonStats => {
-  const tier = TIER_CONFIG[character.tier]
-  return {
-    atk: stats.strength,
-    def: stats.endurance,
-    spd: stats.speed,
-    end: stats.power,
-    tec: stats.technique,
-    level: stats.level,
-    xp: stats.xp,
-    type: character.universe === 'villain' ? 'Mechant' : 'Heros',
-    rarity: tier.nameFr
-  }
+// Trouve la stat principale du membre
+type StatKey = 'strength' | 'endurance' | 'speed' | 'technique' | 'power'
+
+const getPrimaryStat = (stats: MemberStats): StatKey => {
+  const statValues: { key: StatKey; value: number }[] = [
+    { key: 'strength', value: stats.strength },
+    { key: 'endurance', value: stats.endurance },
+    { key: 'speed', value: stats.speed },
+    { key: 'technique', value: stats.technique },
+    { key: 'power', value: stats.power }
+  ]
+  statValues.sort((a, b) => b.value - a.value)
+  return statValues[0].key
 }
 
 export const usePortalStore = create<PortalStore>((set, get) => ({
@@ -147,7 +130,6 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
   linkedMember: null,
   memberStats: null,
   epicCharacter: null,
-  pokemonStats: null,
   isLoading: true,
   error: null,
 
@@ -162,7 +144,6 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
       linkedMember: null,
       memberStats: null,
       epicCharacter: null,
-      pokemonStats: null,
       error: null
     })
   },
@@ -186,7 +167,6 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
         let linkedMember: LinkedMember | null = null
         let memberStats: MemberStats | null = null
         let epicCharacter: EpicCharacter | null = null
-        let pokemonStats: PokemonStats | null = null
 
         if (session.member) {
           linkedMember = {
@@ -201,8 +181,8 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
 
           // Generer stats et assigner personnage
           memberStats = generateMemberStats(linkedMember)
-          epicCharacter = assignCharacter(memberStats.percentile, linkedMember.preferred_universe)
-          pokemonStats = statsToLegacyPokemon(memberStats, epicCharacter)
+          const primaryStat = getPrimaryStat(memberStats)
+          epicCharacter = assignCharacter(memberStats.percentile, primaryStat)
         }
 
         set({
@@ -210,7 +190,6 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
           linkedMember,
           memberStats,
           epicCharacter,
-          pokemonStats,
           isLoading: false
         })
         return
@@ -221,7 +200,6 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
         linkedMember: null,
         memberStats: null,
         epicCharacter: null,
-        pokemonStats: null,
         isLoading: false
       })
     } catch {
@@ -232,36 +210,31 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
   setLinkedMember: (member) => {
     if (member) {
       const stats = generateMemberStats(member)
-      const character = assignCharacter(stats.percentile, member.preferred_universe)
-      const pokemon = statsToLegacyPokemon(stats, character)
+      const primaryStat = getPrimaryStat(stats)
+      const character = assignCharacter(stats.percentile, primaryStat)
       set({
         linkedMember: member,
         memberStats: stats,
-        epicCharacter: character,
-        pokemonStats: pokemon
+        epicCharacter: character
       })
     } else {
       set({
         linkedMember: null,
         memberStats: null,
-        epicCharacter: null,
-        pokemonStats: null
+        epicCharacter: null
       })
     }
   },
 
-  setPokemonStats: (stats) => set({ pokemonStats: stats }),
-
-  setPreferredUniverse: (universe) => {
+  setPreferredTheme: (theme) => {
     const { linkedMember, memberStats } = get()
     if (linkedMember && memberStats) {
-      const updatedMember = { ...linkedMember, preferred_universe: universe }
-      const character = assignCharacter(memberStats.percentile, universe)
-      const pokemon = statsToLegacyPokemon(memberStats, character)
+      const updatedMember = { ...linkedMember, preferred_theme: theme }
+      const primaryStat = getPrimaryStat(memberStats)
+      const character = assignCharacter(memberStats.percentile, primaryStat)
       set({
         linkedMember: updatedMember,
-        epicCharacter: character,
-        pokemonStats: pokemon
+        epicCharacter: character
       })
       // TODO: Sauvegarder preference dans Supabase
     }
@@ -274,12 +247,11 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
     try {
       // TODO: Appeler /api/portal/stats pour recuperer les vraies stats
       const stats = generateMemberStats(linkedMember)
-      const character = assignCharacter(stats.percentile, linkedMember.preferred_universe)
-      const pokemon = statsToLegacyPokemon(stats, character)
+      const primaryStat = getPrimaryStat(stats)
+      const character = assignCharacter(stats.percentile, primaryStat)
       set({
         memberStats: stats,
-        epicCharacter: character,
-        pokemonStats: pokemon
+        epicCharacter: character
       })
     } catch {
       // Ignore errors
@@ -298,13 +270,12 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
         const data = await response.json()
         if (data.member) {
           const stats = generateMemberStats(data.member)
-          const character = assignCharacter(stats.percentile, data.member.preferred_universe)
-          const pokemon = statsToLegacyPokemon(stats, character)
+          const primaryStat = getPrimaryStat(stats)
+          const character = assignCharacter(stats.percentile, primaryStat)
           set({
             linkedMember: data.member,
             memberStats: stats,
-            epicCharacter: character,
-            pokemonStats: pokemon
+            epicCharacter: character
           })
           return true
         }
@@ -343,3 +314,6 @@ export const getMemberById = async (id: string): Promise<LinkedMember | null> =>
   }
   return null
 }
+
+// Export des options de theme pour les selecteurs
+export { THEME_OPTIONS, RARITY_CONFIG, getRarityFromPercentile }

@@ -308,6 +308,31 @@ npm run lint         # ESLint
   - Stats résumées (niveau, séances, PRs)
 - Build vérifié ✅
 
+### Session 17 - 2026-02-04
+
+- **Refonte COMPLETE système de cartes Epic v2:**
+  - **Nouveau concept:** Personnages génériques fantasy/sci-fi (pas de copyright!)
+  - **Classes de héros:** Warrior, Mage, Ranger, Paladin, Assassin, Berserker, Guardian, Mystic
+  - **Raretés:** Legendary (top 5%) → Epic (top 20%) → Rare (50%) → Common (80%) → Starter
+  - **Thèmes visuels:** Fire, Ice, Lightning, Nature, Shadow, Light, Cosmic, Blood
+- **Effets visuels INCROYABLES:**
+  - **Particules animées:** Flammes qui montent, flocons de glace, éclairs dynamiques, étoiles scintillantes
+  - **Effet holographique:** Rainbow shimmer + glossy reflection pour cartes Legendary/Epic
+  - **Effet 3D gyroscope:** Carte qui suit le mouvement souris/touch avec perspective 3D
+  - **Aura pulsante:** Glow animé autour des cartes selon leur rareté
+  - **Background images:** Images Unsplash en fond avec overlays gradient
+- **Nouveaux fichiers/modifiés:**
+  - `src/config/epic-cards.ts` - 16 personnages avec stats, couleurs, effets
+  - `src/components/portal/EpicCard.tsx` - Composant refait avec systèmes de particules
+  - `src/app/globals.css` - 15+ nouvelles animations CSS (fire-rise, ice-float, holo-shimmer, etc.)
+  - `src/stores/portal-store.ts` - Simplifié, utilise nouveau système
+  - `next.config.ts` - Support images Unsplash
+- **Pages portail mises à jour:**
+  - `/portal` - Utilise nouveau EpicCard
+  - `/portal/performance` - Affiche carte avec infos personnage
+- Build vérifié ✅
+- **TODO:** Connecter les pages aux vraies données Supabase (actuellement mock data)
+
 ---
 
 *Skali Prog - Next.js 16 + Supabase*

@@ -1,458 +1,590 @@
 /**
- * Systeme de cartes "Univers Epiques"
- * Heros multivers: Lord of the Rings, Harry Potter, Game of Thrones, Star Wars
- *
- * Concept: Les performants = Heros, Les debutants = Mechants (motivation pour progresser!)
+ * Systeme de cartes "Heros Epiques" v2
+ * Personnages generiques inspires d'archetypes fantasy/sci-fi
+ * Effets holographiques, 3D, animations premium
  */
 
-export type Universe = 'lotr' | 'starwars' | 'harrypotter' | 'got' | 'villain'
+export type CardClass =
+  | 'warrior'      // Guerrier - Force brute
+  | 'mage'         // Mage - Intelligence/Technique
+  | 'ranger'       // Rodeur - Vitesse/Precision
+  | 'paladin'      // Paladin - Equilibre/Tank
+  | 'assassin'     // Assassin - Agilite/Critique
+  | 'berserker'    // Berserker - Puissance extreme
+  | 'guardian'     // Gardien - Defense/Endurance
+  | 'mystic'       // Mystique - Sagesse/Puissance cachee
 
-export type Tier = 'legendary' | 'epic' | 'rare' | 'common' | 'beginner'
+export type CardRarity = 'legendary' | 'epic' | 'rare' | 'common' | 'starter'
+
+export type CardTheme = 'fire' | 'ice' | 'lightning' | 'nature' | 'shadow' | 'light' | 'cosmic' | 'blood'
 
 export interface EpicCharacter {
   id: string
   name: string
   title: string
-  universe: Universe
-  tier: Tier
+  cardClass: CardClass
+  rarity: CardRarity
+  theme: CardTheme
   quote: string
-  imageUrl?: string
-  // Stats modifiers (multiplicateurs visuels)
-  statBonus: {
-    strength: number  // Force
-    endurance: number // Endurance
-    speed: number     // Vitesse
-    technique: number // Technique
-    power: number     // Puissance
+  // Image depuis Unsplash/Pexels (libres de droits)
+  imageUrl: string
+  // Stats de base (multipliees par le niveau)
+  baseStats: {
+    strength: number   // Force
+    endurance: number  // Endurance
+    speed: number      // Vitesse
+    technique: number  // Technique
+    power: number      // Puissance
   }
   // Couleurs du theme
   colors: {
     primary: string
     secondary: string
     accent: string
-    gradient: string
+    glow: string
+  }
+  // Effets speciaux
+  effects: {
+    particles: 'fire' | 'ice' | 'lightning' | 'sparkles' | 'smoke' | 'stars' | 'none'
+    aura: boolean
+    holographic: boolean
+    animated: boolean
   }
 }
 
-// Configuration des tiers
-export const TIER_CONFIG: Record<Tier, {
+// Configuration des raretes
+export const RARITY_CONFIG: Record<CardRarity, {
   name: string
   nameFr: string
   minPercentile: number
   maxPercentile: number
   xpMultiplier: number
-  borderStyle: string
+  glowIntensity: number
+  borderWidth: number
+  particleCount: number
 }> = {
   legendary: {
     name: 'Legendary',
     nameFr: 'Legendaire',
-    minPercentile: 99,
+    minPercentile: 95,
     maxPercentile: 100,
     xpMultiplier: 2.0,
-    borderStyle: 'border-4 border-yellow-400 shadow-yellow-400/50'
+    glowIntensity: 1.0,
+    borderWidth: 4,
+    particleCount: 50
   },
   epic: {
     name: 'Epic',
     nameFr: 'Epique',
-    minPercentile: 90,
-    maxPercentile: 98,
+    minPercentile: 80,
+    maxPercentile: 94,
     xpMultiplier: 1.5,
-    borderStyle: 'border-4 border-purple-500 shadow-purple-500/50'
+    glowIntensity: 0.7,
+    borderWidth: 3,
+    particleCount: 35
   },
   rare: {
     name: 'Rare',
     nameFr: 'Rare',
-    minPercentile: 75,
-    maxPercentile: 89,
+    minPercentile: 50,
+    maxPercentile: 79,
     xpMultiplier: 1.25,
-    borderStyle: 'border-4 border-blue-500 shadow-blue-500/50'
+    glowIntensity: 0.5,
+    borderWidth: 2,
+    particleCount: 20
   },
   common: {
     name: 'Common',
     nameFr: 'Commun',
-    minPercentile: 40,
-    maxPercentile: 74,
+    minPercentile: 20,
+    maxPercentile: 49,
     xpMultiplier: 1.0,
-    borderStyle: 'border-2 border-slate-500'
+    glowIntensity: 0.3,
+    borderWidth: 2,
+    particleCount: 10
   },
-  beginner: {
-    name: 'Beginner',
-    nameFr: 'Apprenti',
+  starter: {
+    name: 'Starter',
+    nameFr: 'Novice',
     minPercentile: 0,
-    maxPercentile: 39,
+    maxPercentile: 19,
     xpMultiplier: 0.8,
-    borderStyle: 'border-2 border-red-900'
+    glowIntensity: 0.1,
+    borderWidth: 1,
+    particleCount: 5
   }
 }
 
-// Personnages par univers et tier
-export const EPIC_CHARACTERS: EpicCharacter[] = [
-  // ============ LEGENDARY (Top 1%) - Lord of the Rings ============
-  {
-    id: 'aragorn',
-    name: 'Aragorn',
-    title: 'Roi du Gondor',
-    universe: 'lotr',
-    tier: 'legendary',
-    quote: '"Je suis Aragorn, fils d\'Arathorn. Si par ma vie ou ma mort je peux vous proteger, je le ferai."',
-    statBonus: { strength: 1.5, endurance: 1.4, speed: 1.3, technique: 1.4, power: 1.5 },
-    colors: {
-      primary: '#1a365d',
-      secondary: '#c9a227',
-      accent: '#ffffff',
-      gradient: 'from-slate-900 via-blue-900 to-slate-800'
-    }
+// Configuration des classes
+export const CLASS_CONFIG: Record<CardClass, {
+  name: string
+  nameFr: string
+  icon: string
+  description: string
+  primaryStat: keyof EpicCharacter['baseStats']
+}> = {
+  warrior: {
+    name: 'Warrior',
+    nameFr: 'Guerrier',
+    icon: '⚔️',
+    description: 'Maitre des armes',
+    primaryStat: 'strength'
   },
-  {
-    id: 'gandalf',
-    name: 'Gandalf',
-    title: 'Le Blanc',
-    universe: 'lotr',
-    tier: 'legendary',
-    quote: '"Un magicien n\'est jamais en retard, ni en avance. Il arrive precisement quand il le souhaite."',
-    statBonus: { strength: 1.2, endurance: 1.6, speed: 1.1, technique: 1.8, power: 1.5 },
-    colors: {
-      primary: '#f5f5f5',
-      secondary: '#c9a227',
-      accent: '#1a365d',
-      gradient: 'from-white via-gray-100 to-gray-300'
-    }
+  mage: {
+    name: 'Mage',
+    nameFr: 'Mage',
+    icon: '🔮',
+    description: 'Maitre des arcanes',
+    primaryStat: 'technique'
   },
-  {
-    id: 'legolas',
-    name: 'Legolas',
-    title: 'Prince de la Foret Noire',
-    universe: 'lotr',
-    tier: 'legendary',
-    quote: '"Ils prennent les Hobbits vers Isengard!"',
-    statBonus: { strength: 1.2, endurance: 1.3, speed: 1.8, technique: 1.6, power: 1.3 },
-    colors: {
-      primary: '#065f46',
-      secondary: '#fbbf24',
-      accent: '#ffffff',
-      gradient: 'from-emerald-900 via-green-800 to-emerald-900'
-    }
+  ranger: {
+    name: 'Ranger',
+    nameFr: 'Rodeur',
+    icon: '🏹',
+    description: 'Oeil de faucon',
+    primaryStat: 'speed'
   },
+  paladin: {
+    name: 'Paladin',
+    nameFr: 'Paladin',
+    icon: '🛡️',
+    description: 'Bouclier sacre',
+    primaryStat: 'endurance'
+  },
+  assassin: {
+    name: 'Assassin',
+    nameFr: 'Assassin',
+    icon: '🗡️',
+    description: 'Frappe mortelle',
+    primaryStat: 'speed'
+  },
+  berserker: {
+    name: 'Berserker',
+    nameFr: 'Berserker',
+    icon: '🔥',
+    description: 'Rage incontrôlable',
+    primaryStat: 'power'
+  },
+  guardian: {
+    name: 'Guardian',
+    nameFr: 'Gardien',
+    icon: '🏰',
+    description: 'Mur infranchissable',
+    primaryStat: 'endurance'
+  },
+  mystic: {
+    name: 'Mystic',
+    nameFr: 'Mystique',
+    icon: '✨',
+    description: 'Secrets anciens',
+    primaryStat: 'power'
+  }
+}
 
-  // ============ EPIC (Top 10%) - Star Wars ============
+// Personnages epiques
+export const EPIC_CHARACTERS: EpicCharacter[] = [
+  // ============ LEGENDARY - Les Titans ============
   {
-    id: 'luke',
-    name: 'Luke Skywalker',
-    title: 'Maitre Jedi',
-    universe: 'starwars',
-    tier: 'epic',
-    quote: '"Je suis un Jedi, comme mon pere avant moi."',
-    statBonus: { strength: 1.3, endurance: 1.3, speed: 1.4, technique: 1.4, power: 1.4 },
+    id: 'phoenix-lord',
+    name: 'Seigneur Phenix',
+    title: 'Flamme Eternelle',
+    cardClass: 'berserker',
+    rarity: 'legendary',
+    theme: 'fire',
+    quote: '"De mes cendres, je renais plus fort."',
+    imageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&q=80',
+    baseStats: { strength: 95, endurance: 80, speed: 85, technique: 75, power: 100 },
     colors: {
-      primary: '#1e3a5f',
-      secondary: '#00ff00',
-      accent: '#ffffff',
-      gradient: 'from-slate-900 via-blue-950 to-black'
-    }
+      primary: '#dc2626',
+      secondary: '#f97316',
+      accent: '#fbbf24',
+      glow: '#ef4444'
+    },
+    effects: { particles: 'fire', aura: true, holographic: true, animated: true }
   },
   {
-    id: 'obiwan',
-    name: 'Obi-Wan Kenobi',
-    title: 'General Jedi',
-    universe: 'starwars',
-    tier: 'epic',
-    quote: '"Hello there."',
-    statBonus: { strength: 1.3, endurance: 1.4, speed: 1.2, technique: 1.5, power: 1.3 },
+    id: 'frost-emperor',
+    name: 'Empereur Givre',
+    title: 'Zero Absolu',
+    cardClass: 'mage',
+    rarity: 'legendary',
+    theme: 'ice',
+    quote: '"Le froid preserve, le froid detruit."',
+    imageUrl: 'https://images.unsplash.com/photo-1551582045-6ec9c11d8697?w=800&q=80',
+    baseStats: { strength: 70, endurance: 90, speed: 75, technique: 100, power: 95 },
+    colors: {
+      primary: '#0ea5e9',
+      secondary: '#38bdf8',
+      accent: '#e0f2fe',
+      glow: '#06b6d4'
+    },
+    effects: { particles: 'ice', aura: true, holographic: true, animated: true }
+  },
+  {
+    id: 'storm-titan',
+    name: 'Titan Tempete',
+    title: 'Maitre des Eclairs',
+    cardClass: 'warrior',
+    rarity: 'legendary',
+    theme: 'lightning',
+    quote: '"La foudre ne frappe jamais deux fois? Regarde bien."',
+    imageUrl: 'https://images.unsplash.com/photo-1605806616949-1e87b487fc2f?w=800&q=80',
+    baseStats: { strength: 100, endurance: 85, speed: 90, technique: 80, power: 95 },
     colors: {
       primary: '#7c3aed',
-      secondary: '#22d3ee',
-      accent: '#ffffff',
-      gradient: 'from-violet-900 via-purple-900 to-slate-900'
-    }
+      secondary: '#a78bfa',
+      accent: '#e9d5ff',
+      glow: '#8b5cf6'
+    },
+    effects: { particles: 'lightning', aura: true, holographic: true, animated: true }
   },
   {
-    id: 'yoda',
-    name: 'Yoda',
-    title: 'Grand Maitre Jedi',
-    universe: 'starwars',
-    tier: 'epic',
-    quote: '"Fais-le ou ne le fais pas. Il n\'y a pas d\'essai."',
-    statBonus: { strength: 1.1, endurance: 1.2, speed: 1.3, technique: 1.8, power: 1.4 },
+    id: 'void-walker',
+    name: 'Marcheur du Vide',
+    title: 'Entre les Mondes',
+    cardClass: 'mystic',
+    rarity: 'legendary',
+    theme: 'cosmic',
+    quote: '"L\'univers entier est mon terrain de jeu."',
+    imageUrl: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=800&q=80',
+    baseStats: { strength: 75, endurance: 80, speed: 95, technique: 90, power: 100 },
     colors: {
-      primary: '#064e3b',
-      secondary: '#84cc16',
-      accent: '#ffffff',
-      gradient: 'from-green-950 via-emerald-900 to-green-950'
-    }
-  },
-  {
-    id: 'mando',
-    name: 'Din Djarin',
-    title: 'Le Mandalorien',
-    universe: 'starwars',
-    tier: 'epic',
-    quote: '"C\'est la Voie."',
-    statBonus: { strength: 1.4, endurance: 1.4, speed: 1.3, technique: 1.3, power: 1.4 },
-    colors: {
-      primary: '#374151',
-      secondary: '#ef4444',
-      accent: '#d4d4d4',
-      gradient: 'from-gray-800 via-gray-700 to-gray-900'
-    }
+      primary: '#1e1b4b',
+      secondary: '#6366f1',
+      accent: '#c7d2fe',
+      glow: '#818cf8'
+    },
+    effects: { particles: 'stars', aura: true, holographic: true, animated: true }
   },
 
-  // ============ RARE (Top 25%) - Harry Potter ============
+  // ============ EPIC - Les Champions ============
   {
-    id: 'harry',
-    name: 'Harry Potter',
-    title: 'L\'Elu',
-    universe: 'harrypotter',
-    tier: 'rare',
-    quote: '"Je fais confiance a Hagrid de ma vie."',
-    statBonus: { strength: 1.2, endurance: 1.3, speed: 1.3, technique: 1.2, power: 1.3 },
+    id: 'blade-dancer',
+    name: 'Danseur de Lames',
+    title: 'Mille Coupures',
+    cardClass: 'assassin',
+    rarity: 'epic',
+    theme: 'shadow',
+    quote: '"Tu ne verras pas la derniere."',
+    imageUrl: 'https://images.unsplash.com/photo-1589656966895-2f33e7653819?w=800&q=80',
+    baseStats: { strength: 75, endurance: 60, speed: 100, technique: 90, power: 70 },
     colors: {
-      primary: '#7f1d1d',
-      secondary: '#fbbf24',
-      accent: '#ffffff',
-      gradient: 'from-red-950 via-red-900 to-red-950'
-    }
+      primary: '#18181b',
+      secondary: '#71717a',
+      accent: '#d4d4d8',
+      glow: '#52525b'
+    },
+    effects: { particles: 'smoke', aura: true, holographic: true, animated: true }
   },
   {
-    id: 'hermione',
-    name: 'Hermione Granger',
-    title: 'La Plus Brillante',
-    universe: 'harrypotter',
-    tier: 'rare',
-    quote: '"Ce n\'est pas Wingardium LevioSA, c\'est Wingardium LeviOsa!"',
-    statBonus: { strength: 1.0, endurance: 1.2, speed: 1.1, technique: 1.6, power: 1.2 },
+    id: 'light-bringer',
+    name: 'Porteur de Lumiere',
+    title: 'Aube Radieuse',
+    cardClass: 'paladin',
+    rarity: 'epic',
+    theme: 'light',
+    quote: '"Meme l\'obscurite la plus profonde craint ma lumiere."',
+    imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
+    baseStats: { strength: 85, endurance: 95, speed: 70, technique: 80, power: 85 },
     colors: {
-      primary: '#1e40af',
-      secondary: '#f59e0b',
-      accent: '#ffffff',
-      gradient: 'from-blue-950 via-blue-900 to-blue-950'
-    }
+      primary: '#fbbf24',
+      secondary: '#fde68a',
+      accent: '#fef9c3',
+      glow: '#f59e0b'
+    },
+    effects: { particles: 'sparkles', aura: true, holographic: true, animated: true }
   },
   {
-    id: 'dumbledore',
-    name: 'Albus Dumbledore',
-    title: 'Directeur de Poudlard',
-    universe: 'harrypotter',
-    tier: 'rare',
-    quote: '"Le bonheur peut etre trouve meme dans les moments les plus sombres."',
-    statBonus: { strength: 1.1, endurance: 1.3, speed: 1.0, technique: 1.7, power: 1.4 },
+    id: 'nature-warden',
+    name: 'Gardien Nature',
+    title: 'Coeur de la Foret',
+    cardClass: 'guardian',
+    rarity: 'epic',
+    theme: 'nature',
+    quote: '"La nature ne pardonne jamais."',
+    imageUrl: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=800&q=80',
+    baseStats: { strength: 80, endurance: 100, speed: 65, technique: 85, power: 80 },
     colors: {
-      primary: '#581c87',
-      secondary: '#fcd34d',
-      accent: '#ffffff',
-      gradient: 'from-purple-950 via-violet-900 to-purple-950'
-    }
+      primary: '#166534',
+      secondary: '#4ade80',
+      accent: '#bbf7d0',
+      glow: '#22c55e'
+    },
+    effects: { particles: 'sparkles', aura: true, holographic: false, animated: true }
   },
   {
-    id: 'ron',
-    name: 'Ron Weasley',
-    title: 'Le Fidele',
-    universe: 'harrypotter',
-    tier: 'rare',
-    quote: '"Bloody hell!"',
-    statBonus: { strength: 1.2, endurance: 1.2, speed: 1.1, technique: 1.1, power: 1.2 },
+    id: 'blood-hunter',
+    name: 'Chasseur de Sang',
+    title: 'Predateur Ultime',
+    cardClass: 'ranger',
+    rarity: 'epic',
+    theme: 'blood',
+    quote: '"Je sens ta peur. Elle est delicieuse."',
+    imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&q=80',
+    baseStats: { strength: 85, endurance: 75, speed: 95, technique: 85, power: 75 },
     colors: {
-      primary: '#c2410c',
-      secondary: '#fef08a',
-      accent: '#ffffff',
-      gradient: 'from-orange-950 via-orange-900 to-orange-950'
-    }
+      primary: '#991b1b',
+      secondary: '#f87171',
+      accent: '#fecaca',
+      glow: '#dc2626'
+    },
+    effects: { particles: 'smoke', aura: true, holographic: false, animated: true }
   },
 
-  // ============ COMMON (50%) - Game of Thrones ============
+  // ============ RARE - Les Veterans ============
   {
-    id: 'jonsnow',
-    name: 'Jon Snow',
-    title: 'Le Batard du Nord',
-    universe: 'got',
-    tier: 'common',
-    quote: '"Je ne sais rien."',
-    statBonus: { strength: 1.1, endurance: 1.2, speed: 1.1, technique: 1.1, power: 1.1 },
-    colors: {
-      primary: '#1f2937',
-      secondary: '#6b7280',
-      accent: '#ffffff',
-      gradient: 'from-gray-900 via-gray-800 to-gray-900'
-    }
-  },
-  {
-    id: 'arya',
-    name: 'Arya Stark',
-    title: 'Personne',
-    universe: 'got',
-    tier: 'common',
-    quote: '"Pas aujourd\'hui."',
-    statBonus: { strength: 1.0, endurance: 1.1, speed: 1.3, technique: 1.2, power: 1.0 },
+    id: 'iron-fist',
+    name: 'Poing d\'Acier',
+    title: 'Force Brute',
+    cardClass: 'warrior',
+    rarity: 'rare',
+    theme: 'lightning',
+    quote: '"Un coup suffit."',
+    imageUrl: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=800&q=80',
+    baseStats: { strength: 90, endurance: 80, speed: 70, technique: 65, power: 80 },
     colors: {
       primary: '#374151',
       secondary: '#9ca3af',
-      accent: '#ffffff',
-      gradient: 'from-slate-900 via-slate-800 to-slate-900'
-    }
+      accent: '#e5e7eb',
+      glow: '#6b7280'
+    },
+    effects: { particles: 'lightning', aura: false, holographic: false, animated: true }
   },
   {
-    id: 'daenerys',
-    name: 'Daenerys Targaryen',
-    title: 'Mere des Dragons',
-    universe: 'got',
-    tier: 'common',
-    quote: '"Je suis le sang du dragon."',
-    statBonus: { strength: 1.0, endurance: 1.1, speed: 1.0, technique: 1.2, power: 1.3 },
-    colors: {
-      primary: '#7f1d1d',
-      secondary: '#fbbf24',
-      accent: '#ffffff',
-      gradient: 'from-red-950 via-amber-900 to-red-950'
-    }
-  },
-  {
-    id: 'tyrion',
-    name: 'Tyrion Lannister',
-    title: 'Le Lutin',
-    universe: 'got',
-    tier: 'common',
-    quote: '"Je bois et je sais des choses."',
-    statBonus: { strength: 0.9, endurance: 1.0, speed: 0.9, technique: 1.4, power: 0.9 },
-    colors: {
-      primary: '#92400e',
-      secondary: '#dc2626',
-      accent: '#fef3c7',
-      gradient: 'from-amber-950 via-amber-900 to-amber-950'
-    }
-  },
-
-  // ============ BEGINNER / VILLAINS (Motivation!) ============
-  {
-    id: 'sauron',
-    name: 'Sauron',
-    title: 'Le Seigneur Tenebreux',
-    universe: 'villain',
-    tier: 'beginner',
-    quote: '"Un Anneau pour les gouverner tous."',
-    statBonus: { strength: 0.8, endurance: 0.9, speed: 0.8, technique: 0.9, power: 0.8 },
-    colors: {
-      primary: '#1c1917',
-      secondary: '#f97316',
-      accent: '#fef3c7',
-      gradient: 'from-black via-orange-950 to-black'
-    }
-  },
-  {
-    id: 'vader',
-    name: 'Dark Vador',
-    title: 'Seigneur Sith',
-    universe: 'villain',
-    tier: 'beginner',
-    quote: '"Je suis ton pere."',
-    statBonus: { strength: 0.9, endurance: 0.8, speed: 0.8, technique: 0.9, power: 0.9 },
-    colors: {
-      primary: '#0a0a0a',
-      secondary: '#ef4444',
-      accent: '#ffffff',
-      gradient: 'from-black via-red-950 to-black'
-    }
-  },
-  {
-    id: 'voldemort',
-    name: 'Voldemort',
-    title: 'Le Seigneur des Tenebres',
-    universe: 'villain',
-    tier: 'beginner',
-    quote: '"Il n\'y a pas de bien ou de mal, seulement le pouvoir."',
-    statBonus: { strength: 0.8, endurance: 0.8, speed: 0.9, technique: 1.0, power: 0.9 },
-    colors: {
-      primary: '#0f172a',
-      secondary: '#22c55e',
-      accent: '#ffffff',
-      gradient: 'from-slate-950 via-green-950 to-slate-950'
-    }
-  },
-  {
-    id: 'nightking',
-    name: 'Night King',
-    title: 'Roi de la Nuit',
-    universe: 'villain',
-    tier: 'beginner',
-    quote: '"..."',
-    statBonus: { strength: 0.9, endurance: 0.9, speed: 0.7, technique: 0.8, power: 0.9 },
-    colors: {
-      primary: '#0c4a6e',
-      secondary: '#38bdf8',
-      accent: '#e0f2fe',
-      gradient: 'from-sky-950 via-blue-900 to-sky-950'
-    }
-  },
-  {
-    id: 'saruman',
-    name: 'Saruman',
-    title: 'Le Blanc Corrompu',
-    universe: 'villain',
-    tier: 'beginner',
-    quote: '"Contre le pouvoir du Mordor, il ne peut y avoir de victoire."',
-    statBonus: { strength: 0.7, endurance: 0.8, speed: 0.7, technique: 1.0, power: 0.8 },
+    id: 'shadow-step',
+    name: 'Pas d\'Ombre',
+    title: 'Invisible',
+    cardClass: 'assassin',
+    rarity: 'rare',
+    theme: 'shadow',
+    quote: '"Tu ne m\'as pas vu venir."',
+    imageUrl: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&q=80',
+    baseStats: { strength: 65, endurance: 55, speed: 95, technique: 85, power: 60 },
     colors: {
       primary: '#1f2937',
-      secondary: '#d4d4d8',
-      accent: '#ffffff',
-      gradient: 'from-gray-900 via-gray-700 to-gray-900'
-    }
+      secondary: '#6b7280',
+      accent: '#d1d5db',
+      glow: '#4b5563'
+    },
+    effects: { particles: 'smoke', aura: false, holographic: false, animated: true }
+  },
+  {
+    id: 'flame-keeper',
+    name: 'Gardien Flamme',
+    title: 'Braise Vivante',
+    cardClass: 'mage',
+    rarity: 'rare',
+    theme: 'fire',
+    quote: '"Le feu purifie tout."',
+    imageUrl: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80',
+    baseStats: { strength: 60, endurance: 70, speed: 75, technique: 90, power: 85 },
+    colors: {
+      primary: '#ea580c',
+      secondary: '#fb923c',
+      accent: '#fed7aa',
+      glow: '#f97316'
+    },
+    effects: { particles: 'fire', aura: false, holographic: false, animated: true }
+  },
+  {
+    id: 'frost-archer',
+    name: 'Archer Givre',
+    title: 'Fleche Glaciale',
+    cardClass: 'ranger',
+    rarity: 'rare',
+    theme: 'ice',
+    quote: '"Chaque tir, un arret cardiaque."',
+    imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&q=80',
+    baseStats: { strength: 55, endurance: 65, speed: 90, technique: 95, power: 70 },
+    colors: {
+      primary: '#0284c7',
+      secondary: '#7dd3fc',
+      accent: '#e0f2fe',
+      glow: '#0ea5e9'
+    },
+    effects: { particles: 'ice', aura: false, holographic: false, animated: true }
+  },
+
+  // ============ COMMON - Les Guerriers ============
+  {
+    id: 'steel-guard',
+    name: 'Garde d\'Acier',
+    title: 'Sentinelle',
+    cardClass: 'guardian',
+    rarity: 'common',
+    theme: 'light',
+    quote: '"Je ne recule jamais."',
+    imageUrl: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80',
+    baseStats: { strength: 70, endurance: 85, speed: 55, technique: 60, power: 65 },
+    colors: {
+      primary: '#475569',
+      secondary: '#94a3b8',
+      accent: '#cbd5e1',
+      glow: '#64748b'
+    },
+    effects: { particles: 'none', aura: false, holographic: false, animated: false }
+  },
+  {
+    id: 'wild-striker',
+    name: 'Frappeur Sauvage',
+    title: 'Instinct',
+    cardClass: 'berserker',
+    rarity: 'common',
+    theme: 'fire',
+    quote: '"RAAAAGH!"',
+    imageUrl: 'https://images.unsplash.com/photo-1581009146145-b5ef050c149a?w=800&q=80',
+    baseStats: { strength: 80, endurance: 60, speed: 70, technique: 50, power: 75 },
+    colors: {
+      primary: '#78350f',
+      secondary: '#d97706',
+      accent: '#fde68a',
+      glow: '#b45309'
+    },
+    effects: { particles: 'fire', aura: false, holographic: false, animated: false }
+  },
+  {
+    id: 'swift-blade',
+    name: 'Lame Rapide',
+    title: 'Premier Sang',
+    cardClass: 'assassin',
+    rarity: 'common',
+    theme: 'shadow',
+    quote: '"Vite fait, bien fait."',
+    imageUrl: 'https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?w=800&q=80',
+    baseStats: { strength: 60, endurance: 50, speed: 85, technique: 75, power: 55 },
+    colors: {
+      primary: '#27272a',
+      secondary: '#71717a',
+      accent: '#a1a1aa',
+      glow: '#52525b'
+    },
+    effects: { particles: 'none', aura: false, holographic: false, animated: false }
+  },
+  {
+    id: 'apprentice-mage',
+    name: 'Apprenti Mage',
+    title: 'Etudiant',
+    cardClass: 'mage',
+    rarity: 'common',
+    theme: 'cosmic',
+    quote: '"Je progresse chaque jour."',
+    imageUrl: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&q=80',
+    baseStats: { strength: 45, endurance: 55, speed: 65, technique: 80, power: 70 },
+    colors: {
+      primary: '#3730a3',
+      secondary: '#818cf8',
+      accent: '#c7d2fe',
+      glow: '#6366f1'
+    },
+    effects: { particles: 'sparkles', aura: false, holographic: false, animated: false }
+  },
+
+  // ============ STARTER - Les Debutants ============
+  {
+    id: 'rookie-fighter',
+    name: 'Combattant Rookie',
+    title: 'Premiere Bataille',
+    cardClass: 'warrior',
+    rarity: 'starter',
+    theme: 'light',
+    quote: '"C\'est mon premier jour!"',
+    imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&q=80',
+    baseStats: { strength: 50, endurance: 50, speed: 50, technique: 50, power: 50 },
+    colors: {
+      primary: '#64748b',
+      secondary: '#94a3b8',
+      accent: '#cbd5e1',
+      glow: '#475569'
+    },
+    effects: { particles: 'none', aura: false, holographic: false, animated: false }
+  },
+  {
+    id: 'trainee',
+    name: 'Stagiaire',
+    title: 'En Formation',
+    cardClass: 'paladin',
+    rarity: 'starter',
+    theme: 'light',
+    quote: '"Un jour, je serai legendaire."',
+    imageUrl: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80',
+    baseStats: { strength: 45, endurance: 55, speed: 45, technique: 45, power: 40 },
+    colors: {
+      primary: '#78716c',
+      secondary: '#a8a29e',
+      accent: '#d6d3d1',
+      glow: '#57534e'
+    },
+    effects: { particles: 'none', aura: false, holographic: false, animated: false }
   }
 ]
 
 /**
- * Determine le tier d'un membre selon son percentile
+ * Determine la rarete selon le percentile de performance
  */
-export function getTierFromPercentile(percentile: number): Tier {
-  for (const [tier, config] of Object.entries(TIER_CONFIG)) {
-    if (percentile >= config.minPercentile && percentile <= config.maxPercentile) {
-      return tier as Tier
-    }
-  }
-  return 'beginner'
+export function getRarityFromPercentile(percentile: number): CardRarity {
+  if (percentile >= 95) return 'legendary'
+  if (percentile >= 80) return 'epic'
+  if (percentile >= 50) return 'rare'
+  if (percentile >= 20) return 'common'
+  return 'starter'
 }
 
 /**
- * Assigne un personnage aleatoire du tier correspondant
+ * Assigne un personnage selon les stats du membre
  */
-export function assignCharacter(percentile: number, preferredUniverse?: Universe): EpicCharacter {
-  const tier = getTierFromPercentile(percentile)
+export function assignCharacter(
+  percentile: number,
+  primaryStatType?: keyof EpicCharacter['baseStats']
+): EpicCharacter {
+  const rarity = getRarityFromPercentile(percentile)
 
-  // Filtre par tier
-  let candidates = EPIC_CHARACTERS.filter(c => c.tier === tier)
+  // Filtre par rarete
+  let candidates = EPIC_CHARACTERS.filter(c => c.rarity === rarity)
 
-  // Si univers prefere, essayer de matcher
-  if (preferredUniverse && preferredUniverse !== 'villain') {
-    const universeMatch = candidates.filter(c => c.universe === preferredUniverse)
-    if (universeMatch.length > 0) {
-      candidates = universeMatch
+  // Si stat principale specifiee, priorise la classe correspondante
+  if (primaryStatType) {
+    const matchingClass = Object.entries(CLASS_CONFIG).find(
+      ([, config]) => config.primaryStat === primaryStatType
+    )
+    if (matchingClass) {
+      const classCandidates = candidates.filter(c => c.cardClass === matchingClass[0])
+      if (classCandidates.length > 0) {
+        candidates = classCandidates
+      }
     }
   }
 
   // Random parmi les candidats
-  return candidates[Math.floor(Math.random() * candidates.length)]
+  return candidates[Math.floor(Math.random() * candidates.length)] || candidates[0]
 }
 
 /**
- * Calcule les stats finales avec les bonus du personnage
+ * Calcule les stats finales avec le niveau
  */
-export function calculateFinalStats(
-  baseStats: { strength: number; endurance: number; speed: number; technique: number; power: number },
-  character: EpicCharacter
-) {
+export function calculateStats(
+  character: EpicCharacter,
+  level: number
+): EpicCharacter['baseStats'] {
+  const multiplier = 1 + (level - 1) * 0.1 // +10% par niveau
   return {
-    strength: Math.round(baseStats.strength * character.statBonus.strength),
-    endurance: Math.round(baseStats.endurance * character.statBonus.endurance),
-    speed: Math.round(baseStats.speed * character.statBonus.speed),
-    technique: Math.round(baseStats.technique * character.statBonus.technique),
-    power: Math.round(baseStats.power * character.statBonus.power)
+    strength: Math.round(character.baseStats.strength * multiplier),
+    endurance: Math.round(character.baseStats.endurance * multiplier),
+    speed: Math.round(character.baseStats.speed * multiplier),
+    technique: Math.round(character.baseStats.technique * multiplier),
+    power: Math.round(character.baseStats.power * multiplier)
   }
 }
 
 /**
- * Univers disponibles pour les preferences
+ * Themes disponibles pour le choix utilisateur
  */
-export const UNIVERSE_OPTIONS = [
-  { id: 'lotr', name: 'Le Seigneur des Anneaux', emoji: '🧙' },
-  { id: 'starwars', name: 'Star Wars', emoji: '⚔️' },
-  { id: 'harrypotter', name: 'Harry Potter', emoji: '🪄' },
-  { id: 'got', name: 'Game of Thrones', emoji: '🐺' }
+export const THEME_OPTIONS = [
+  { id: 'fire', name: 'Feu', emoji: '🔥', color: '#ef4444' },
+  { id: 'ice', name: 'Glace', emoji: '❄️', color: '#06b6d4' },
+  { id: 'lightning', name: 'Foudre', emoji: '⚡', color: '#8b5cf6' },
+  { id: 'nature', name: 'Nature', emoji: '🌿', color: '#22c55e' },
+  { id: 'shadow', name: 'Ombre', emoji: '🌑', color: '#52525b' },
+  { id: 'light', name: 'Lumiere', emoji: '✨', color: '#fbbf24' },
+  { id: 'cosmic', name: 'Cosmique', emoji: '🌌', color: '#818cf8' },
+  { id: 'blood', name: 'Sang', emoji: '🩸', color: '#dc2626' }
 ] as const

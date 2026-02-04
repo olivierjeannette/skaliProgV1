@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
+import Image from 'next/image'
 import {
   EpicCharacter,
-  TIER_CONFIG,
-  calculateFinalStats,
-  UNIVERSE_OPTIONS
+  RARITY_CONFIG,
+  CLASS_CONFIG,
+  calculateStats
 } from '@/config/epic-cards'
-import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 import {
   Sword,
   Heart,
@@ -15,7 +16,9 @@ import {
   Target,
   Flame,
   Star,
-  Sparkles
+  Sparkles,
+  Shield,
+  Crown
 } from 'lucide-react'
 
 interface EpicCardProps {
@@ -24,32 +27,40 @@ interface EpicCardProps {
   level: number
   xp: number
   xpToNextLevel: number
-  baseStats: {
-    strength: number
-    endurance: number
-    speed: number
-    technique: number
-    power: number
-  }
   sessionCount?: number
   prCount?: number
+  className?: string
+  size?: 'sm' | 'md' | 'lg'
 }
 
-// Composant particules animees
-function ParticleField({ color, count = 20 }: { color: string; count?: number }) {
+// ============ PARTICLE SYSTEMS ============
+
+function FireParticles({ count, intensity }: { count: number; intensity: number }) {
+  const particles = useMemo(() =>
+    Array.from({ length: count }).map((_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      delay: Math.random() * 3,
+      duration: 2 + Math.random() * 2,
+      size: 2 + Math.random() * 4
+    })), [count])
+
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {Array.from({ length: count }).map((_, i) => (
+      {particles.map((p) => (
         <div
-          key={i}
-          className="absolute w-1 h-1 rounded-full animate-float"
+          key={p.id}
+          className="absolute rounded-full animate-fire-rise"
           style={{
-            backgroundColor: color,
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            opacity: 0.3 + Math.random() * 0.4,
-            animationDelay: `${Math.random() * 5}s`,
-            animationDuration: `${3 + Math.random() * 4}s`
+            left: `${p.left}%`,
+            bottom: '-10%',
+            width: p.size,
+            height: p.size,
+            background: `radial-gradient(circle, #fbbf24 0%, #f97316 40%, #ef4444 70%, transparent 100%)`,
+            boxShadow: `0 0 ${p.size * 2}px #f97316`,
+            animationDelay: `${p.delay}s`,
+            animationDuration: `${p.duration}s`,
+            opacity: intensity
           }}
         />
       ))}
@@ -57,94 +68,338 @@ function ParticleField({ color, count = 20 }: { color: string; count?: number })
   )
 }
 
-// Background anime selon l'univers
-function UniverseBackground({ character }: { character: EpicCharacter }) {
-  const getBackgroundElements = () => {
-    switch (character.universe) {
-      case 'lotr':
-        return (
-          <>
-            {/* Montagnes + anneau */}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
-            <svg className="absolute bottom-0 left-0 right-0 h-24 text-slate-800" viewBox="0 0 400 100" preserveAspectRatio="none">
-              <path d="M0,100 L50,40 L100,70 L150,20 L200,50 L250,10 L300,60 L350,30 L400,100 Z" fill="currentColor" />
-            </svg>
-            <div
-              className="absolute top-8 right-8 w-12 h-12 rounded-full border-4 animate-pulse"
-              style={{ borderColor: character.colors.secondary, boxShadow: `0 0 20px ${character.colors.secondary}` }}
-            />
-          </>
-        )
-      case 'starwars':
-        return (
-          <>
-            {/* Etoiles + lightsaber glow */}
-            <div className="absolute inset-0">
-              {Array.from({ length: 30 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="absolute w-0.5 h-0.5 bg-white rounded-full animate-twinkle"
-                  style={{
-                    left: `${Math.random() * 100}%`,
-                    top: `${Math.random() * 60}%`,
-                    animationDelay: `${Math.random() * 3}s`
-                  }}
-                />
-              ))}
-            </div>
-            <div
-              className="absolute bottom-4 left-1/2 -translate-x-1/2 w-1 h-32 rounded-full"
-              style={{
-                background: `linear-gradient(to top, transparent, ${character.colors.secondary})`,
-                boxShadow: `0 0 15px ${character.colors.secondary}`
-              }}
-            />
-          </>
-        )
-      case 'harrypotter':
-        return (
-          <>
-            {/* Magie + etoiles */}
-            <ParticleField color={character.colors.secondary} count={15} />
-            <Sparkles
-              className="absolute top-6 left-6 h-8 w-8 animate-pulse"
-              style={{ color: character.colors.secondary }}
-            />
-            <Sparkles
-              className="absolute bottom-12 right-8 h-6 w-6 animate-pulse delay-500"
-              style={{ color: character.colors.secondary }}
-            />
-          </>
-        )
-      case 'got':
-        return (
-          <>
-            {/* Neige / braise */}
-            <ParticleField color="#ffffff" count={25} />
-            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-slate-900 to-transparent" />
-          </>
-        )
-      case 'villain':
-        return (
-          <>
-            {/* Flammes / energie sombre */}
-            <div className="absolute inset-0 bg-gradient-to-t from-red-950/50 via-transparent to-transparent" />
-            <ParticleField color={character.colors.secondary} count={30} />
-            <div
-              className="absolute bottom-0 left-0 right-0 h-20"
-              style={{
-                background: `linear-gradient(to top, ${character.colors.secondary}30, transparent)`
-              }}
-            />
-          </>
-        )
-      default:
-        return null
-    }
-  }
+function IceParticles({ count, intensity }: { count: number; intensity: number }) {
+  const particles = useMemo(() =>
+    Array.from({ length: count }).map((_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      delay: Math.random() * 4,
+      duration: 3 + Math.random() * 3,
+      size: 1 + Math.random() * 3
+    })), [count])
 
-  return <>{getBackgroundElements()}</>
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          className="absolute animate-ice-float"
+          style={{
+            left: `${p.left}%`,
+            top: `${p.top}%`,
+            width: p.size,
+            height: p.size,
+            background: '#e0f2fe',
+            boxShadow: `0 0 ${p.size * 3}px #38bdf8`,
+            borderRadius: '50%',
+            animationDelay: `${p.delay}s`,
+            animationDuration: `${p.duration}s`,
+            opacity: intensity
+          }}
+        />
+      ))}
+      {/* Frost overlay */}
+      <div
+        className="absolute inset-0 animate-frost-breath"
+        style={{
+          background: 'radial-gradient(ellipse at bottom, rgba(56, 189, 248, 0.1) 0%, transparent 70%)',
+          opacity: intensity * 0.5
+        }}
+      />
+    </div>
+  )
 }
+
+function LightningParticles({ intensity }: { count: number; intensity: number }) {
+  const [bolts, setBolts] = useState<{ id: number; path: string; opacity: number }[]>([])
+
+  useEffect(() => {
+    const generateBolt = () => {
+      const startX = 20 + Math.random() * 60
+      let path = `M ${startX} 0`
+      let y = 0
+      while (y < 100) {
+        y += 5 + Math.random() * 15
+        const x = startX + (Math.random() - 0.5) * 30
+        path += ` L ${x} ${y}`
+      }
+      return path
+    }
+
+    const interval = setInterval(() => {
+      if (Math.random() > 0.7) {
+        const newBolt = { id: Date.now(), path: generateBolt(), opacity: 1 }
+        setBolts(prev => [...prev.slice(-3), newBolt])
+        setTimeout(() => {
+          setBolts(prev => prev.filter(b => b.id !== newBolt.id))
+        }, 200)
+      }
+    }, 500)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <svg className="absolute inset-0 w-full h-full">
+        {bolts.map((bolt) => (
+          <path
+            key={bolt.id}
+            d={bolt.path}
+            fill="none"
+            stroke="#a78bfa"
+            strokeWidth="2"
+            style={{
+              filter: 'drop-shadow(0 0 8px #8b5cf6) drop-shadow(0 0 16px #7c3aed)',
+              opacity: bolt.opacity * intensity
+            }}
+          />
+        ))}
+      </svg>
+      {/* Electric glow at bottom */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-20 animate-electric-pulse"
+        style={{
+          background: 'linear-gradient(to top, rgba(139, 92, 246, 0.3), transparent)',
+          opacity: intensity
+        }}
+      />
+    </div>
+  )
+}
+
+function SparkleParticles({ count, color, intensity }: { count: number; color: string; intensity: number }) {
+  const particles = useMemo(() =>
+    Array.from({ length: count }).map((_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      delay: Math.random() * 3,
+      duration: 1.5 + Math.random() * 2,
+      size: 2 + Math.random() * 4
+    })), [count])
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {particles.map((p) => (
+        <Sparkles
+          key={p.id}
+          className="absolute animate-sparkle"
+          style={{
+            left: `${p.left}%`,
+            top: `${p.top}%`,
+            width: p.size * 4,
+            height: p.size * 4,
+            color: color,
+            filter: `drop-shadow(0 0 ${p.size}px ${color})`,
+            animationDelay: `${p.delay}s`,
+            animationDuration: `${p.duration}s`,
+            opacity: intensity
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+function SmokeParticles({ count, intensity }: { count: number; intensity: number }) {
+  const particles = useMemo(() =>
+    Array.from({ length: count }).map((_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      delay: Math.random() * 5,
+      duration: 4 + Math.random() * 4,
+      size: 20 + Math.random() * 40
+    })), [count])
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          className="absolute rounded-full animate-smoke-rise"
+          style={{
+            left: `${p.left}%`,
+            bottom: '-20%',
+            width: p.size,
+            height: p.size,
+            background: 'radial-gradient(circle, rgba(100, 100, 100, 0.3) 0%, transparent 70%)',
+            animationDelay: `${p.delay}s`,
+            animationDuration: `${p.duration}s`,
+            opacity: intensity * 0.5
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+function StarParticles({ count, intensity }: { count: number; intensity: number }) {
+  const particles = useMemo(() =>
+    Array.from({ length: count }).map((_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      delay: Math.random() * 5,
+      duration: 2 + Math.random() * 3,
+      size: 1 + Math.random() * 2
+    })), [count])
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {/* Nebula background */}
+      <div
+        className="absolute inset-0 animate-nebula"
+        style={{
+          background: `
+            radial-gradient(ellipse at 30% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+            radial-gradient(ellipse at 70% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 50%)
+          `,
+          opacity: intensity
+        }}
+      />
+      {/* Stars */}
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          className="absolute rounded-full animate-star-twinkle"
+          style={{
+            left: `${p.left}%`,
+            top: `${p.top}%`,
+            width: p.size,
+            height: p.size,
+            background: '#fff',
+            boxShadow: `0 0 ${p.size * 3}px #fff, 0 0 ${p.size * 6}px #c7d2fe`,
+            animationDelay: `${p.delay}s`,
+            animationDuration: `${p.duration}s`,
+            opacity: intensity
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// ============ PARTICLE RENDERER ============
+
+function ParticleSystem({ character, intensity }: { character: EpicCharacter; intensity: number }) {
+  const rarityConfig = RARITY_CONFIG[character.rarity]
+  const count = rarityConfig.particleCount
+
+  switch (character.effects.particles) {
+    case 'fire':
+      return <FireParticles count={count} intensity={intensity} />
+    case 'ice':
+      return <IceParticles count={count} intensity={intensity} />
+    case 'lightning':
+      return <LightningParticles count={count} intensity={intensity} />
+    case 'sparkles':
+      return <SparkleParticles count={count} color={character.colors.secondary} intensity={intensity} />
+    case 'smoke':
+      return <SmokeParticles count={count} intensity={intensity} />
+    case 'stars':
+      return <StarParticles count={count} intensity={intensity} />
+    default:
+      return null
+  }
+}
+
+// ============ HOLOGRAPHIC OVERLAY ============
+
+function HolographicOverlay({ active }: { active: boolean; colors: EpicCharacter['colors'] }) {
+  if (!active) return null
+
+  return (
+    <>
+      {/* Rainbow shimmer */}
+      <div
+        className="absolute inset-0 pointer-events-none animate-holo-shimmer"
+        style={{
+          background: `linear-gradient(
+            105deg,
+            transparent 20%,
+            rgba(255, 0, 0, 0.1) 25%,
+            rgba(255, 165, 0, 0.1) 30%,
+            rgba(255, 255, 0, 0.1) 35%,
+            rgba(0, 255, 0, 0.1) 40%,
+            rgba(0, 0, 255, 0.1) 45%,
+            rgba(128, 0, 128, 0.1) 50%,
+            transparent 55%
+          )`,
+          backgroundSize: '200% 200%',
+          mixBlendMode: 'overlay'
+        }}
+      />
+      {/* Glossy reflection */}
+      <div
+        className="absolute inset-0 pointer-events-none animate-holo-reflect"
+        style={{
+          background: `linear-gradient(
+            135deg,
+            transparent 40%,
+            rgba(255, 255, 255, 0.2) 45%,
+            rgba(255, 255, 255, 0.3) 50%,
+            rgba(255, 255, 255, 0.2) 55%,
+            transparent 60%
+          )`,
+          backgroundSize: '200% 200%'
+        }}
+      />
+    </>
+  )
+}
+
+// ============ AURA EFFECT ============
+
+function AuraEffect({ active, color, intensity }: { active: boolean; color: string; intensity: number }) {
+  if (!active) return null
+
+  return (
+    <div
+      className="absolute -inset-4 rounded-3xl animate-aura-pulse pointer-events-none"
+      style={{
+        background: `radial-gradient(circle, ${color}40 0%, ${color}20 40%, transparent 70%)`,
+        filter: `blur(${20 * intensity}px)`,
+        opacity: intensity
+      }}
+    />
+  )
+}
+
+// ============ STAT BAR ============
+
+function StatBar({
+  value,
+  maxValue,
+  color,
+  animated
+}: {
+  value: number
+  maxValue: number
+  color: string
+  animated: boolean
+}) {
+  const percentage = Math.min((value / maxValue) * 100, 100)
+
+  return (
+    <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+      <div
+        className={cn(
+          "h-full rounded-full transition-all duration-1000",
+          animated && "animate-stat-fill"
+        )}
+        style={{
+          width: `${percentage}%`,
+          background: `linear-gradient(90deg, ${color}80, ${color})`,
+          boxShadow: `0 0 8px ${color}60`
+        }}
+      />
+    </div>
+  )
+}
+
+// ============ MAIN CARD COMPONENT ============
 
 export function EpicCard({
   memberName,
@@ -152,268 +407,351 @@ export function EpicCard({
   level,
   xp,
   xpToNextLevel,
-  baseStats,
   sessionCount = 0,
-  prCount = 0
+  prCount = 0,
+  className,
+  size = 'md'
 }: EpicCardProps) {
+  const cardRef = useRef<HTMLDivElement>(null)
   const [rotation, setRotation] = useState({ x: 0, y: 0 })
   const [isHovered, setIsHovered] = useState(false)
-  const cardRef = useRef<HTMLDivElement>(null)
-  const tierConfig = TIER_CONFIG[character.tier]
-  const finalStats = calculateFinalStats(baseStats, character)
+  const [isLoaded, setIsLoaded] = useState(false)
 
-  // Effet 3D au mouvement de souris/touch
+  const rarityConfig = RARITY_CONFIG[character.rarity]
+  const classConfig = CLASS_CONFIG[character.cardClass]
+  const stats = calculateStats(character, level)
+  const glowIntensity = rarityConfig.glowIntensity
+
+  // 3D tilt effect
   const handleMove = (clientX: number, clientY: number) => {
     if (!cardRef.current) return
     const rect = cardRef.current.getBoundingClientRect()
     const centerX = rect.left + rect.width / 2
     const centerY = rect.top + rect.height / 2
-    const rotateX = ((clientY - centerY) / (rect.height / 2)) * -15
-    const rotateY = ((clientX - centerX) / (rect.width / 2)) * 15
+    const maxRotation = 15
+    const rotateX = ((clientY - centerY) / (rect.height / 2)) * -maxRotation
+    const rotateY = ((clientX - centerX) / (rect.width / 2)) * maxRotation
     setRotation({ x: rotateX, y: rotateY })
   }
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    handleMove(e.clientX, e.clientY)
-  }
-
+  const handleMouseMove = (e: React.MouseEvent) => handleMove(e.clientX, e.clientY)
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.touches[0]) {
-      handleMove(e.touches[0].clientX, e.touches[0].clientY)
-    }
+    if (e.touches[0]) handleMove(e.touches[0].clientX, e.touches[0].clientY)
   }
-
-  const handleMouseLeave = () => {
+  const handleLeave = () => {
     setRotation({ x: 0, y: 0 })
     setIsHovered(false)
   }
 
-  const stats = [
-    { name: 'STR', label: 'Force', value: finalStats.strength, icon: Sword, color: 'text-red-400' },
-    { name: 'END', label: 'Endurance', value: finalStats.endurance, icon: Heart, color: 'text-green-400' },
-    { name: 'SPD', label: 'Vitesse', value: finalStats.speed, icon: Zap, color: 'text-yellow-400' },
-    { name: 'TEC', label: 'Technique', value: finalStats.technique, icon: Target, color: 'text-blue-400' },
-    { name: 'PWR', label: 'Puissance', value: finalStats.power, icon: Flame, color: 'text-orange-400' }
+  useEffect(() => {
+    setIsLoaded(true)
+  }, [])
+
+  const statsList = [
+    { key: 'strength', name: 'STR', label: 'Force', value: stats.strength, icon: Sword, color: '#ef4444' },
+    { key: 'endurance', name: 'END', label: 'Endurance', value: stats.endurance, icon: Heart, color: '#22c55e' },
+    { key: 'speed', name: 'SPD', label: 'Vitesse', value: stats.speed, icon: Zap, color: '#eab308' },
+    { key: 'technique', name: 'TEC', label: 'Technique', value: stats.technique, icon: Target, color: '#3b82f6' },
+    { key: 'power', name: 'PWR', label: 'Puissance', value: stats.power, icon: Flame, color: '#f97316' }
   ]
 
-  const getUniverseEmoji = (universe: string) => {
-    const found = UNIVERSE_OPTIONS.find(u => u.id === universe)
-    return found?.emoji || '🎭'
-  }
-
-  const getUniverseIcon = (universe: string) => {
-    switch (universe) {
-      case 'lotr': return '🧙'
-      case 'starwars': return '⚔️'
-      case 'harrypotter': return '🪄'
-      case 'got': return '🐺'
-      case 'villain': return '💀'
-      default: return '🎭'
-    }
-  }
-
-  const getTierGlow = () => {
-    switch (character.tier) {
-      case 'legendary': return '0 0 40px rgba(251,191,36,0.6), 0 0 80px rgba(251,191,36,0.3)'
-      case 'epic': return '0 0 30px rgba(168,85,247,0.5), 0 0 60px rgba(168,85,247,0.2)'
-      case 'rare': return '0 0 25px rgba(59,130,246,0.4)'
-      default: return 'none'
-    }
+  const sizeClasses = {
+    sm: 'max-w-[280px]',
+    md: 'max-w-[340px]',
+    lg: 'max-w-[400px]'
   }
 
   return (
-    <div className="relative w-full max-w-sm mx-auto" style={{ perspective: '1000px' }}>
+    <div
+      className={cn("relative w-full mx-auto", sizeClasses[size], className)}
+      style={{ perspective: '1200px' }}
+    >
+      {/* Aura effect (behind card) */}
+      <AuraEffect
+        active={character.effects.aura}
+        color={character.colors.glow}
+        intensity={isHovered ? glowIntensity : glowIntensity * 0.5}
+      />
+
       <div
         ref={cardRef}
-        className="relative transition-transform duration-200 ease-out cursor-pointer"
+        className={cn(
+          "relative transition-all duration-300 ease-out cursor-pointer",
+          isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+        )}
         style={{
-          transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) ${isHovered ? 'scale(1.02)' : 'scale(1)'}`,
+          transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(${isHovered ? 1.02 : 1})`,
           transformStyle: 'preserve-3d'
         }}
         onMouseMove={handleMouseMove}
         onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={handleMouseLeave}
+        onMouseLeave={handleLeave}
         onTouchMove={handleTouchMove}
-        onTouchEnd={handleMouseLeave}
+        onTouchEnd={handleLeave}
       >
-        {/* Halo/Glow effect */}
+        {/* Outer glow */}
         <div
-          className="absolute -inset-2 rounded-3xl blur-xl transition-opacity duration-300"
+          className="absolute -inset-1 rounded-2xl transition-opacity duration-300"
           style={{
-            background: `radial-gradient(circle, ${character.colors.secondary}40, transparent 70%)`,
-            opacity: isHovered ? 1 : 0.5
+            background: `linear-gradient(135deg, ${character.colors.primary}, ${character.colors.secondary}, ${character.colors.primary})`,
+            opacity: isHovered ? 1 : 0.7,
+            filter: `blur(${isHovered ? 8 : 4}px)`
           }}
         />
 
         {/* Main card */}
         <div
-          className={`relative rounded-2xl overflow-hidden ${tierConfig.borderStyle}`}
-          style={{ boxShadow: getTierGlow() }}
+          className="relative rounded-2xl overflow-hidden"
+          style={{
+            border: `${rarityConfig.borderWidth}px solid ${character.colors.secondary}`,
+            boxShadow: `
+              0 0 ${20 * glowIntensity}px ${character.colors.glow}40,
+              0 0 ${40 * glowIntensity}px ${character.colors.glow}20,
+              inset 0 0 ${30 * glowIntensity}px ${character.colors.primary}20
+            `
+          }}
         >
-          {/* Background gradient + universe elements */}
-          <div className={`bg-gradient-to-br ${character.colors.gradient} p-1`}>
-            <div className="bg-slate-900/90 backdrop-blur rounded-xl overflow-hidden">
+          {/* Background */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(135deg, ${character.colors.primary} 0%, #0f172a 50%, ${character.colors.primary}40 100%)`
+            }}
+          />
 
-              {/* Header */}
-              <div
-                className="px-4 py-3 flex items-center justify-between relative"
-                style={{ backgroundColor: character.colors.primary + '50' }}
-              >
-                <div className="z-10">
-                  <h3 className="text-lg font-bold text-white drop-shadow-lg">{memberName}</h3>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-lg">{getUniverseIcon(character.universe)}</span>
-                    <span
-                      className="text-sm font-medium"
-                      style={{ color: character.colors.secondary }}
-                    >
-                      {character.name}
-                    </span>
-                  </div>
-                </div>
-                <div className="text-right z-10">
-                  <div className="flex items-center gap-1">
-                    <Star className="h-5 w-5" style={{ color: character.colors.secondary }} />
-                    <span className="text-2xl font-bold text-white drop-shadow-lg">Nv.{level}</span>
-                  </div>
-                  <Badge
-                    className="text-[10px] px-2 py-0 backdrop-blur-sm"
-                    style={{
-                      backgroundColor: character.colors.secondary + '40',
-                      color: character.colors.secondary,
-                      borderColor: character.colors.secondary
-                    }}
+          {/* Particle system */}
+          <ParticleSystem character={character} intensity={glowIntensity} />
+
+          {/* Content */}
+          <div className="relative">
+            {/* Header */}
+            <div
+              className="px-4 py-3 flex items-center justify-between"
+              style={{
+                background: `linear-gradient(180deg, ${character.colors.primary}60 0%, transparent 100%)`
+              }}
+            >
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-bold text-white truncate drop-shadow-lg">
+                  {memberName}
+                </h3>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-lg">{classConfig.icon}</span>
+                  <span
+                    className="text-sm font-medium truncate"
+                    style={{ color: character.colors.secondary }}
                   >
-                    {tierConfig.nameFr}
-                  </Badge>
+                    {character.name}
+                  </span>
                 </div>
               </div>
-
-              {/* Character visual area - FIGURINE STYLE */}
-              <div
-                className={`aspect-[4/3] relative bg-gradient-to-br ${character.colors.gradient} overflow-hidden`}
-              >
-                {/* Animated background */}
-                <UniverseBackground character={character} />
-
-                {/* Socle/plateforme */}
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-40 h-8">
-                  <div
-                    className="w-full h-full rounded-full"
-                    style={{
-                      background: `radial-gradient(ellipse, ${character.colors.primary}80, transparent)`,
-                      boxShadow: `0 0 30px ${character.colors.secondary}40`
-                    }}
-                  />
+              <div className="text-right flex-shrink-0">
+                <div className="flex items-center gap-1 justify-end">
+                  <Crown className="h-4 w-4" style={{ color: character.colors.secondary }} />
+                  <span className="text-2xl font-black text-white drop-shadow-lg">
+                    {level}
+                  </span>
                 </div>
+                <div
+                  className="text-xs font-bold px-2 py-0.5 rounded-full mt-1"
+                  style={{
+                    background: `${character.colors.secondary}30`,
+                    color: character.colors.secondary,
+                    border: `1px solid ${character.colors.secondary}50`
+                  }}
+                >
+                  {rarityConfig.nameFr}
+                </div>
+              </div>
+            </div>
 
-                {/* Figurine/Character silhouette */}
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center">
-                  {/* Aura effect */}
-                  <div
-                    className="absolute -inset-4 rounded-full animate-pulse"
-                    style={{
-                      background: `radial-gradient(circle, ${character.colors.secondary}30, transparent 70%)`
-                    }}
-                  />
+            {/* Character image area */}
+            <div className="relative aspect-[4/3] overflow-hidden">
+              {/* Background image with gradient overlay */}
+              <div className="absolute inset-0">
+                <Image
+                  src={character.imageUrl}
+                  alt={character.name}
+                  fill
+                  className="object-cover"
+                  style={{
+                    filter: 'brightness(0.6) saturate(1.2)',
+                    transform: `scale(${isHovered ? 1.05 : 1})`,
+                    transition: 'transform 0.5s ease-out'
+                  }}
+                />
+                {/* Gradient overlays */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: `
+                      linear-gradient(180deg, ${character.colors.primary}80 0%, transparent 30%),
+                      linear-gradient(0deg, ${character.colors.primary} 0%, transparent 40%),
+                      radial-gradient(circle at center, transparent 30%, ${character.colors.primary}90 100%)
+                    `
+                  }}
+                />
+              </div>
 
-                  {/* Character figure */}
+              {/* Character silhouette/icon overlay */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div
+                  className={cn(
+                    "relative flex flex-col items-center",
+                    character.effects.animated && "animate-character-float"
+                  )}
+                >
+                  {/* Aura ring */}
+                  {character.effects.aura && (
+                    <div
+                      className="absolute inset-0 -m-8 rounded-full animate-aura-ring"
+                      style={{
+                        border: `2px solid ${character.colors.secondary}40`,
+                        boxShadow: `0 0 30px ${character.colors.glow}40`
+                      }}
+                    />
+                  )}
+
+                  {/* Class icon with glow */}
                   <div
-                    className="relative w-28 h-28 rounded-full flex items-center justify-center"
+                    className="text-7xl drop-shadow-2xl"
                     style={{
-                      background: `linear-gradient(135deg, ${character.colors.primary}, ${character.colors.secondary}40)`,
-                      boxShadow: `0 10px 40px ${character.colors.primary}80, inset 0 -5px 20px ${character.colors.secondary}40`
+                      filter: `drop-shadow(0 0 20px ${character.colors.glow}) drop-shadow(0 0 40px ${character.colors.secondary}50)`
                     }}
                   >
-                    <span className="text-5xl drop-shadow-2xl">{getUniverseIcon(character.universe)}</span>
+                    {classConfig.icon}
                   </div>
 
                   {/* Title plate */}
                   <div
-                    className="mt-3 px-4 py-1 rounded-full backdrop-blur-md"
+                    className="mt-4 px-4 py-1.5 rounded-full backdrop-blur-md"
                     style={{
-                      backgroundColor: character.colors.primary + '90',
-                      boxShadow: `0 4px 15px ${character.colors.primary}60`
+                      background: `${character.colors.primary}cc`,
+                      border: `1px solid ${character.colors.secondary}50`,
+                      boxShadow: `0 4px 20px ${character.colors.primary}80`
                     }}
                   >
                     <span
-                      className="text-sm font-medium"
+                      className="text-sm font-bold tracking-wide"
                       style={{ color: character.colors.secondary }}
                     >
                       {character.title}
                     </span>
                   </div>
                 </div>
-
-                {/* Holographic overlay for legendary/epic */}
-                {(character.tier === 'legendary' || character.tier === 'epic') && (
-                  <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                      background: `linear-gradient(135deg, transparent 40%, ${character.colors.secondary}10 50%, transparent 60%)`,
-                      mixBlendMode: 'overlay'
-                    }}
-                  />
-                )}
               </div>
 
-              {/* XP Bar */}
-              <div className="px-4 py-2" style={{ backgroundColor: character.colors.primary + '30' }}>
-                <div className="flex justify-between text-xs text-slate-400 mb-1">
-                  <span>Experience</span>
-                  <span>{xp}/{xpToNextLevel} XP</span>
-                </div>
-                <div className="relative h-2.5 bg-slate-800 rounded-full overflow-hidden">
-                  <div
-                    className="h-full transition-all duration-500 rounded-full"
-                    style={{
-                      width: `${(xp / xpToNextLevel) * 100}%`,
-                      background: `linear-gradient(90deg, ${character.colors.primary}, ${character.colors.secondary})`,
-                      boxShadow: `0 0 10px ${character.colors.secondary}`
-                    }}
-                  />
-                </div>
-              </div>
+              {/* Holographic overlay */}
+              <HolographicOverlay active={character.effects.holographic} colors={character.colors} />
+            </div>
 
-              {/* Stats */}
-              <div className="px-4 py-3 grid grid-cols-5 gap-2 bg-slate-900/70">
-                {stats.map((stat) => (
-                  <div key={stat.name} className="text-center group">
-                    <div className="relative">
-                      <stat.icon className={`h-5 w-5 mx-auto mb-1 ${stat.color} transition-transform group-hover:scale-125`} />
+            {/* XP Bar */}
+            <div
+              className="px-4 py-2"
+              style={{ background: `${character.colors.primary}40` }}
+            >
+              <div className="flex justify-between text-xs mb-1">
+                <span className="text-slate-400 flex items-center gap-1">
+                  <Star className="h-3 w-3" style={{ color: character.colors.secondary }} />
+                  Experience
+                </span>
+                <span style={{ color: character.colors.secondary }}>
+                  {xp.toLocaleString()}/{xpToNextLevel.toLocaleString()} XP
+                </span>
+              </div>
+              <div className="h-2 bg-slate-800/80 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-1000 animate-xp-glow"
+                  style={{
+                    width: `${(xp / xpToNextLevel) * 100}%`,
+                    background: `linear-gradient(90deg, ${character.colors.primary}, ${character.colors.secondary}, ${character.colors.accent})`,
+                    boxShadow: `0 0 10px ${character.colors.glow}`
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Stats grid */}
+            <div className="px-4 py-3 bg-slate-900/80 grid grid-cols-5 gap-2">
+              {statsList.map((stat) => {
+                const isPrimary = classConfig.primaryStat === stat.key
+                return (
+                  <div
+                    key={stat.key}
+                    className={cn(
+                      "text-center p-1.5 rounded-lg transition-all",
+                      isPrimary && "bg-slate-800/50",
+                      isHovered && isPrimary && "scale-105"
+                    )}
+                    style={{
+                      boxShadow: isPrimary ? `inset 0 0 0 1px ${character.colors.secondary}50` : undefined
+                    }}
+                  >
+                    <stat.icon
+                      className="h-4 w-4 mx-auto mb-0.5 transition-transform"
+                      style={{
+                        color: stat.color,
+                        filter: isPrimary ? `drop-shadow(0 0 4px ${stat.color})` : undefined
+                      }}
+                    />
+                    <div className="text-[9px] text-slate-500 font-medium">{stat.name}</div>
+                    <div
+                      className="text-sm font-bold"
+                      style={{ color: isPrimary ? character.colors.secondary : '#fff' }}
+                    >
+                      {stat.value}
                     </div>
-                    <div className="text-[10px] text-slate-500">{stat.name}</div>
-                    <div className="text-sm font-bold text-white">{stat.value}</div>
+                    <StatBar
+                      value={stat.value}
+                      maxValue={150}
+                      color={stat.color}
+                      animated={character.effects.animated}
+                    />
                   </div>
-                ))}
-              </div>
+                )
+              })}
+            </div>
 
-              {/* Footer */}
+            {/* Footer */}
+            <div
+              className="px-4 py-2 flex justify-between items-center text-xs"
+              style={{
+                background: `linear-gradient(180deg, transparent 0%, ${character.colors.primary}30 100%)`,
+                borderTop: `1px solid ${character.colors.secondary}20`
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1 text-slate-400">
+                  <Shield className="h-3.5 w-3.5" />
+                  <span>{sessionCount} seances</span>
+                </div>
+                <div className="flex items-center gap-1" style={{ color: character.colors.secondary }}>
+                  <Star className="h-3.5 w-3.5" />
+                  <span className="font-bold">{prCount} PRs</span>
+                </div>
+              </div>
               <div
-                className="px-4 py-2 flex justify-between items-center text-xs border-t"
+                className="text-[10px] px-2 py-0.5 rounded"
                 style={{
-                  backgroundColor: character.colors.primary + '20',
-                  borderColor: character.colors.secondary + '30'
+                  background: `${character.colors.primary}50`,
+                  color: character.colors.accent
                 }}
               >
-                <div className="flex items-center gap-1 text-slate-400">
-                  <span>{sessionCount}</span>
-                  <span>seances</span>
-                </div>
-                <div
-                  className="font-bold"
-                  style={{ color: character.colors.secondary }}
-                >
-                  {prCount} PRs
-                </div>
+                {classConfig.nameFr}
               </div>
+            </div>
 
-              {/* Quote teaser */}
-              <div className="px-4 py-2 bg-slate-900/50 border-t border-slate-800">
-                <p className="text-xs text-slate-500 italic truncate">
-                  &quot;{character.quote.substring(0, 50)}...&quot;
-                </p>
-              </div>
+            {/* Quote */}
+            <div
+              className="px-4 py-2 text-center"
+              style={{ background: `${character.colors.primary}20` }}
+            >
+              <p
+                className="text-xs italic opacity-70 truncate"
+                style={{ color: character.colors.accent }}
+              >
+                {character.quote}
+              </p>
             </div>
           </div>
         </div>
@@ -422,58 +760,77 @@ export function EpicCard({
   )
 }
 
-// Version mini pour les listes
+// ============ MINI CARD VERSION ============
+
 export function EpicCardMini({
   memberName,
   character,
-  level
+  level,
+  onClick
 }: {
   memberName: string
   character: EpicCharacter
   level: number
+  onClick?: () => void
 }) {
-  const tierConfig = TIER_CONFIG[character.tier]
-  const getUniverseIcon = (universe: string) => {
-    switch (universe) {
-      case 'lotr': return '🧙'
-      case 'starwars': return '⚔️'
-      case 'harrypotter': return '🪄'
-      case 'got': return '🐺'
-      case 'villain': return '💀'
-      default: return '🎭'
-    }
-  }
+  const rarityConfig = RARITY_CONFIG[character.rarity]
+  const classConfig = CLASS_CONFIG[character.cardClass]
 
   return (
-    <div className={`rounded-lg overflow-hidden ${tierConfig.borderStyle} hover:scale-105 transition-transform`}>
-      <div className={`bg-gradient-to-br ${character.colors.gradient} p-0.5`}>
-        <div className="bg-slate-900/90 rounded-md p-3 flex items-center gap-3">
+    <div
+      onClick={onClick}
+      className={cn(
+        "relative rounded-xl overflow-hidden cursor-pointer transition-all duration-300",
+        "hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]"
+      )}
+      style={{
+        border: `${Math.max(rarityConfig.borderWidth - 1, 1)}px solid ${character.colors.secondary}60`,
+        boxShadow: `0 0 ${10 * rarityConfig.glowIntensity}px ${character.colors.glow}30`
+      }}
+    >
+      {/* Background */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `linear-gradient(135deg, ${character.colors.primary} 0%, #0f172a 100%)`
+        }}
+      />
+
+      {/* Content */}
+      <div className="relative p-3 flex items-center gap-3">
+        {/* Icon */}
+        <div
+          className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+          style={{
+            background: `linear-gradient(135deg, ${character.colors.primary}80, ${character.colors.secondary}40)`,
+            boxShadow: `0 4px 15px ${character.colors.glow}40`
+          }}
+        >
+          <span className="text-2xl">{classConfig.icon}</span>
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-white truncate">{memberName}</p>
+          <p
+            className="text-xs truncate"
+            style={{ color: character.colors.secondary }}
+          >
+            {character.name}
+          </p>
+        </div>
+
+        {/* Level */}
+        <div className="text-right flex-shrink-0">
+          <div className="text-lg font-black text-white">Nv.{level}</div>
           <div
-            className="w-12 h-12 rounded-full flex items-center justify-center"
+            className="text-[10px] px-1.5 py-0.5 rounded"
             style={{
-              background: `linear-gradient(135deg, ${character.colors.primary}, ${character.colors.secondary}40)`,
-              boxShadow: `0 4px 15px ${character.colors.primary}60`
+              background: `${character.colors.secondary}30`,
+              color: character.colors.secondary
             }}
           >
-            <span className="text-xl">{getUniverseIcon(character.universe)}</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-medium text-white truncate">{memberName}</p>
-            <p className="text-xs truncate" style={{ color: character.colors.secondary }}>
-              {character.name}
-            </p>
-          </div>
-          <div className="text-right">
-            <div className="text-sm font-bold text-white">Nv.{level}</div>
-            <Badge
-              className="text-[9px] px-1.5 py-0"
-              style={{
-                backgroundColor: character.colors.secondary + '30',
-                color: character.colors.secondary
-              }}
-            >
-              {tierConfig.nameFr}
-            </Badge>
+            {rarityConfig.nameFr}
           </div>
         </div>
       </div>

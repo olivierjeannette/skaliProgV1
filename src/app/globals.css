@@ -174,3 +174,244 @@
 .safe-area-pb {
   padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 }
+
+/* ============ EPIC CARD ANIMATIONS v2 ============ */
+
+/* Fire particles rising */
+@keyframes fire-rise {
+  0% {
+    transform: translateY(0) translateX(0) scale(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-50px) translateX(10px) scale(0.8);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-120px) translateX(-5px) scale(0.3);
+    opacity: 0;
+  }
+}
+
+.animate-fire-rise {
+  animation: fire-rise 3s ease-out infinite;
+}
+
+/* Ice floating particles */
+@keyframes ice-float {
+  0%, 100% {
+    transform: translateY(0) translateX(0) rotate(0deg);
+    opacity: 0.3;
+  }
+  25% {
+    transform: translateY(-10px) translateX(5px) rotate(90deg);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(-5px) translateX(-5px) rotate(180deg);
+    opacity: 0.5;
+  }
+  75% {
+    transform: translateY(-15px) translateX(3px) rotate(270deg);
+    opacity: 0.7;
+  }
+}
+
+.animate-ice-float {
+  animation: ice-float 4s ease-in-out infinite;
+}
+
+/* Frost breathing effect */
+@keyframes frost-breath {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scaleY(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scaleY(1.1);
+  }
+}
+
+.animate-frost-breath {
+  animation: frost-breath 4s ease-in-out infinite;
+}
+
+/* Electric pulse */
+@keyframes electric-pulse {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.animate-electric-pulse {
+  animation: electric-pulse 0.5s ease-in-out infinite;
+}
+
+/* Sparkle effect */
+@keyframes sparkle {
+  0%, 100% {
+    transform: scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1) rotate(180deg);
+    opacity: 1;
+  }
+}
+
+.animate-sparkle {
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+/* Smoke rising */
+@keyframes smoke-rise {
+  0% {
+    transform: translateY(0) scale(0.5);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateY(-150px) scale(1.5);
+    opacity: 0;
+  }
+}
+
+.animate-smoke-rise {
+  animation: smoke-rise 6s ease-out infinite;
+}
+
+/* Star twinkle */
+@keyframes star-twinkle {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+}
+
+.animate-star-twinkle {
+  animation: star-twinkle 3s ease-in-out infinite;
+}
+
+/* Nebula movement */
+@keyframes nebula {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05) rotate(1deg);
+  }
+}
+
+.animate-nebula {
+  animation: nebula 8s ease-in-out infinite;
+}
+
+/* Holographic shimmer */
+@keyframes holo-shimmer {
+  0% {
+    background-position: 200% 200%;
+  }
+  100% {
+    background-position: -200% -200%;
+  }
+}
+
+.animate-holo-shimmer {
+  animation: holo-shimmer 3s linear infinite;
+}
+
+/* Holographic reflection */
+@keyframes holo-reflect {
+  0% {
+    background-position: -200% -200%;
+  }
+  100% {
+    background-position: 200% 200%;
+  }
+}
+
+.animate-holo-reflect {
+  animation: holo-reflect 4s linear infinite;
+}
+
+/* Aura pulse */
+@keyframes aura-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+.animate-aura-pulse {
+  animation: aura-pulse 2s ease-in-out infinite;
+}
+
+/* Aura ring expansion */
+@keyframes aura-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+.animate-aura-ring {
+  animation: aura-ring 2s ease-out infinite;
+}
+
+/* Character float */
+@keyframes character-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-character-float {
+  animation: character-float 3s ease-in-out infinite;
+}
+
+/* XP bar glow */
+@keyframes xp-glow {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.3);
+  }
+}
+
+.animate-xp-glow {
+  animation: xp-glow 2s ease-in-out infinite;
+}
+
+/* Stat bar fill */
+@keyframes stat-fill {
+  0% {
+    width: 0;
+  }
+}
