@@ -107,7 +107,7 @@ AUTH_SECRET=<générer avec: openssl rand -base64 32>
 | CRM | `/crm` | 8 onglets, gestion leads |
 | TV Mode | `/tv` | Affichage 1080p/4K |
 | Member Portal | `/portal` | Auth Discord 2 étapes, liaison membre, carte Epic |
-| Portal Planning | `/portal/planning` | Calendrier séances + réservation (PWA) |
+| Portal Planning | `/portal/planning` | Calendrier séances + Mode TV smartphone (PWA) |
 | Portal Workouts | `/portal/workouts` | Historique WODs + détails blocs (PWA) |
 | Portal Performance | `/portal/performance` | Carte Epic, PRs, progression (PWA) |
 | Portal Profile | `/portal/profile` | Profil complet + paramètres (PWA) |
@@ -397,6 +397,18 @@ npm run lint         # ESLint
 2. Placer dans `public/videos/cards/phoenix-lord.webm`
 3. Le personnage avec `id: 'phoenix-lord'` utilisera automatiquement la vidéo
 4. Commit + push → Vercel déploie avec les vidéos
+
+### Session 21 - 2026-02-04
+
+- **Refonte page Planning Portal - Mode Visualisation:**
+  - **Suppression réservation:** Le planning est maintenant en lecture seule (pas de booking)
+  - **Cartes expandables:** Cliquer sur une séance pour voir les détails + blocs
+  - **Mode TV smartphone:** Overlay plein écran optimisé pour smartphone
+    - Navigation swipe gauche/droite entre séances
+    - Affichage grand format des blocs (warmup, strength, WOD, etc.)
+    - Bouton fermer pour revenir à la liste
+  - **Couleurs par type de bloc:** Config BLOCK_TYPE_CONFIG utilisée
+- Build vérifié ✅
 
 ---
 
