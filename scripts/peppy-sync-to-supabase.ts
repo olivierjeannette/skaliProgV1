@@ -30,6 +30,14 @@ interface PeppySession {
   scraped_at: string;
 }
 
+// Obtenir l'heure française (UTC+1 ou UTC+2 en été)
+function getFrenchHour(): number {
+  const now = new Date();
+  // Créer une date en timezone Paris
+  const parisTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Paris' }));
+  return parisTime.getHours();
+}
+
 async function scrapePeppy(targetHour?: number): Promise<PeppySession | null> {
   console.log('🚀 Starting Peppy scraper...');
 
@@ -57,8 +65,8 @@ async function scrapePeppy(targetHour?: number): Promise<PeppySession | null> {
     await page.goto('https://pro.peppy.cool/#/activities/calendar', { waitUntil: 'networkidle' });
     await page.waitForTimeout(3000);
 
-    // Click on session
-    const hour = targetHour ?? new Date().getHours();
+    // Click on session - utilise l'heure française
+    const hour = targetHour ?? getFrenchHour();
     const hourStr = hour.toString().padStart(2, '0');
 
     console.log(`🖱️ Looking for session at ${hour}:00...`);
