@@ -9,17 +9,7 @@ import {
   calculateStats
 } from '@/config/epic-cards'
 import { cn } from '@/lib/utils'
-import {
-  Sword,
-  Heart,
-  Zap,
-  Target,
-  Flame,
-  Star,
-  Sparkles,
-  Shield,
-  Crown
-} from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 
 interface EpicCardProps {
   memberName: string
@@ -448,11 +438,11 @@ export function EpicCard({
   }, [])
 
   const statsList = [
-    { key: 'strength', name: 'STR', label: 'Force', value: stats.strength, icon: Sword, color: '#ef4444' },
-    { key: 'endurance', name: 'END', label: 'Endurance', value: stats.endurance, icon: Heart, color: '#22c55e' },
-    { key: 'speed', name: 'SPD', label: 'Vitesse', value: stats.speed, icon: Zap, color: '#eab308' },
-    { key: 'technique', name: 'TEC', label: 'Technique', value: stats.technique, icon: Target, color: '#3b82f6' },
-    { key: 'power', name: 'PWR', label: 'Puissance', value: stats.power, icon: Flame, color: '#f97316' }
+    { key: 'strength', name: 'STR', value: stats.strength, color: '#ef4444' },
+    { key: 'endurance', name: 'END', value: stats.endurance, color: '#22c55e' },
+    { key: 'speed', name: 'SPD', value: stats.speed, color: '#eab308' },
+    { key: 'technique', name: 'TEC', value: stats.technique, color: '#3b82f6' },
+    { key: 'power', name: 'PWR', value: stats.power, color: '#f97316' }
   ]
 
   const sizeClasses = {
@@ -524,34 +514,28 @@ export function EpicCard({
 
           {/* Content */}
           <div className="relative">
-            {/* Header */}
+            {/* Header - simplifié */}
             <div
               className="px-4 py-3 flex items-center justify-between"
               style={{
-                background: `linear-gradient(180deg, ${character.colors.primary}60 0%, transparent 100%)`
+                background: `linear-gradient(180deg, ${character.colors.primary}80 0%, transparent 100%)`
               }}
             >
               <div className="flex-1 min-w-0">
                 <h3 className="text-lg font-bold text-white truncate drop-shadow-lg">
                   {memberName}
                 </h3>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-lg">{classConfig.icon}</span>
-                  <span
-                    className="text-sm font-medium truncate"
-                    style={{ color: character.colors.secondary }}
-                  >
-                    {character.name}
-                  </span>
-                </div>
+                <span
+                  className="text-sm font-medium truncate"
+                  style={{ color: character.colors.secondary }}
+                >
+                  {character.name}
+                </span>
               </div>
               <div className="text-right flex-shrink-0">
-                <div className="flex items-center gap-1 justify-end">
-                  <Crown className="h-4 w-4" style={{ color: character.colors.secondary }} />
-                  <span className="text-2xl font-black text-white drop-shadow-lg">
-                    {level}
-                  </span>
-                </div>
+                <span className="text-2xl font-black text-white drop-shadow-lg">
+                  Nv.{level}
+                </span>
                 <div
                   className="text-xs font-bold px-2 py-0.5 rounded-full mt-1"
                   style={{
@@ -565,9 +549,8 @@ export function EpicCard({
               </div>
             </div>
 
-            {/* Character image/video area */}
+            {/* Character video/image area - VIDEO PURE sans filtre */}
             <div className="relative aspect-[4/3] overflow-hidden">
-              {/* Background video or image with gradient overlay */}
               <div className="absolute inset-0">
                 {character.videoUrl ? (
                   <video
@@ -577,14 +560,11 @@ export function EpicCard({
                     playsInline
                     className="absolute inset-0 w-full h-full object-cover"
                     style={{
-                      filter: 'brightness(0.6) saturate(1.2)',
                       transform: `scale(${isHovered ? 1.05 : 1})`,
                       transition: 'transform 0.5s ease-out'
                     }}
                   >
-                    {/* WebM VP9 en priorité (meilleur ratio qualité/taille) */}
                     <source src={character.videoUrl.replace(/\.(mp4|webm)$/, '.webm')} type="video/webm" />
-                    {/* Fallback MP4 H.264 (compatibilité maximale) */}
                     <source src={character.videoUrl.replace(/\.(mp4|webm)$/, '.mp4')} type="video/mp4" />
                   </video>
                 ) : (
@@ -594,104 +574,41 @@ export function EpicCard({
                     fill
                     className="object-cover"
                     style={{
-                      filter: 'brightness(0.6) saturate(1.2)',
                       transform: `scale(${isHovered ? 1.05 : 1})`,
                       transition: 'transform 0.5s ease-out'
                     }}
                   />
                 )}
-                {/* Gradient overlays */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background: `
-                      linear-gradient(180deg, ${character.colors.primary}80 0%, transparent 30%),
-                      linear-gradient(0deg, ${character.colors.primary} 0%, transparent 40%),
-                      radial-gradient(circle at center, transparent 30%, ${character.colors.primary}90 100%)
-                    `
-                  }}
-                />
               </div>
 
-              {/* Character silhouette/icon overlay */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div
-                  className={cn(
-                    "relative flex flex-col items-center",
-                    character.effects.animated && "animate-character-float"
-                  )}
-                >
-                  {/* Aura ring */}
-                  {character.effects.aura && (
-                    <div
-                      className="absolute inset-0 -m-8 rounded-full animate-aura-ring"
-                      style={{
-                        border: `2px solid ${character.colors.secondary}40`,
-                        boxShadow: `0 0 30px ${character.colors.glow}40`
-                      }}
-                    />
-                  )}
-
-                  {/* Class icon with glow */}
-                  <div
-                    className="text-7xl drop-shadow-2xl"
-                    style={{
-                      filter: `drop-shadow(0 0 20px ${character.colors.glow}) drop-shadow(0 0 40px ${character.colors.secondary}50)`
-                    }}
-                  >
-                    {classConfig.icon}
-                  </div>
-
-                  {/* Title plate */}
-                  <div
-                    className="mt-4 px-4 py-1.5 rounded-full backdrop-blur-md"
-                    style={{
-                      background: `${character.colors.primary}cc`,
-                      border: `1px solid ${character.colors.secondary}50`,
-                      boxShadow: `0 4px 20px ${character.colors.primary}80`
-                    }}
-                  >
-                    <span
-                      className="text-sm font-bold tracking-wide"
-                      style={{ color: character.colors.secondary }}
-                    >
-                      {character.title}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Holographic overlay */}
+              {/* Holographic overlay (leger, optionnel) */}
               <HolographicOverlay active={character.effects.holographic} colors={character.colors} />
             </div>
 
-            {/* XP Bar */}
+            {/* XP Bar - simplifié */}
             <div
               className="px-4 py-2"
               style={{ background: `${character.colors.primary}40` }}
             >
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-slate-400 flex items-center gap-1">
-                  <Star className="h-3 w-3" style={{ color: character.colors.secondary }} />
-                  Experience
-                </span>
+                <span className="text-slate-400">XP</span>
                 <span style={{ color: character.colors.secondary }}>
-                  {xp.toLocaleString()}/{xpToNextLevel.toLocaleString()} XP
+                  {xp.toLocaleString()}/{xpToNextLevel.toLocaleString()}
                 </span>
               </div>
               <div className="h-2 bg-slate-800/80 rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full transition-all duration-1000 animate-xp-glow"
+                  className="h-full rounded-full transition-all duration-1000"
                   style={{
                     width: `${(xp / xpToNextLevel) * 100}%`,
-                    background: `linear-gradient(90deg, ${character.colors.primary}, ${character.colors.secondary}, ${character.colors.accent})`,
+                    background: `linear-gradient(90deg, ${character.colors.primary}, ${character.colors.secondary})`,
                     boxShadow: `0 0 10px ${character.colors.glow}`
                   }}
                 />
               </div>
             </div>
 
-            {/* Stats grid */}
+            {/* Stats grid - simplifié sans icônes */}
             <div className="px-4 py-3 bg-slate-900/80 grid grid-cols-5 gap-2">
               {statsList.map((stat) => {
                 const isPrimary = classConfig.primaryStat === stat.key
@@ -700,20 +617,12 @@ export function EpicCard({
                     key={stat.key}
                     className={cn(
                       "text-center p-1.5 rounded-lg transition-all",
-                      isPrimary && "bg-slate-800/50",
-                      isHovered && isPrimary && "scale-105"
+                      isPrimary && "bg-slate-800/50"
                     )}
                     style={{
                       boxShadow: isPrimary ? `inset 0 0 0 1px ${character.colors.secondary}50` : undefined
                     }}
                   >
-                    <stat.icon
-                      className="h-4 w-4 mx-auto mb-0.5 transition-transform"
-                      style={{
-                        color: stat.color,
-                        filter: isPrimary ? `drop-shadow(0 0 4px ${stat.color})` : undefined
-                      }}
-                    />
                     <div className="text-[9px] text-slate-500 font-medium">{stat.name}</div>
                     <div
                       className="text-sm font-bold"
@@ -732,7 +641,7 @@ export function EpicCard({
               })}
             </div>
 
-            {/* Footer */}
+            {/* Footer - simplifié */}
             <div
               className="px-4 py-2 flex justify-between items-center text-xs"
               style={{
@@ -741,24 +650,18 @@ export function EpicCard({
               }}
             >
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1 text-slate-400">
-                  <Shield className="h-3.5 w-3.5" />
-                  <span>{sessionCount} seances</span>
-                </div>
-                <div className="flex items-center gap-1" style={{ color: character.colors.secondary }}>
-                  <Star className="h-3.5 w-3.5" />
-                  <span className="font-bold">{prCount} PRs</span>
-                </div>
+                <span className="text-slate-400">{sessionCount} seances</span>
+                <span className="font-bold" style={{ color: character.colors.secondary }}>{prCount} PRs</span>
               </div>
-              <div
+              <span
                 className="text-[10px] px-2 py-0.5 rounded"
                 style={{
                   background: `${character.colors.primary}50`,
                   color: character.colors.accent
                 }}
               >
-                {classConfig.nameFr}
-              </div>
+                {character.title}
+              </span>
             </div>
 
             {/* Quote */}

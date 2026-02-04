@@ -457,6 +457,30 @@ npm run lint         # ESLint
 - **À faire dans Supabase:**
   - Exécuter `docs/sql/migrations/013_dashboard_errors_tasks.sql`
 
+### Session 25 - 2026-02-04
+
+- **Audit Sécurité Supabase - CRITIQUE:**
+  - **Rapport complet:** `docs/SECURITY-AUDIT.md`
+  - **Migration correctif:** `docs/sql/migrations/014_security_hardening.sql`
+  - **Vulnérabilités identifiées:**
+    - `api_keys` - CRITIQUE: Toutes les clés API lisibles par tous (policies `USING(true)`)
+    - `settings` - CRITIQUE: Mots de passe en clair accessibles (admin, coach, athlete)
+    - `leads` - HAUTE: Données personnelles lisibles en mode anon
+    - 9 tables avec RLS trop permissives (`USING(true)` ou `WITH CHECK(true)`)
+    - 20+ fonctions SECURITY DEFINER sans vérification d'identité
+  - **Corrections appliquées (migration 014):**
+    - Suppression policies `api_keys` → accessible uniquement via service_role
+    - Suppression mots de passe de la table `settings`
+    - Restriction `settings` → seuls les settings publics lisibles
+    - Correction `leads` → anon ne peut plus lire, seulement insérer
+    - Restriction `week_templates` → lecture publique, écriture authentifiée
+    - Activation RLS sur `members`, `sessions`, `performances`, `equipment`
+- Build vérifié ✅
+- **À FAIRE IMMÉDIATEMENT dans Supabase:**
+  - Exécuter `docs/sql/migrations/014_security_hardening.sql`
+  - Vérifier que l'app fonctionne toujours
+  - Migrer les mots de passe vers variables d'environnement
+
 ### Session 24 - 2026-02-04
 
 - **Refonte complète système de cartes Epic v3:**
