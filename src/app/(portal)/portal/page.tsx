@@ -2,13 +2,22 @@
 
 import { useState } from 'react'
 import { usePortalStore } from '@/stores/portal-store'
+import { EpicCard } from '@/components/portal/EpicCard'
+import { UNIVERSE_OPTIONS, Universe } from '@/config/epic-cards'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import {
   Home,
   User,
@@ -16,107 +25,71 @@ import {
   History,
   LogOut,
   Dumbbell,
-  Zap,
-  Shield,
-  Wind,
-  Heart,
-  Target,
   TrendingUp,
   Calendar,
   Award,
   Edit,
   Save,
-  X
+  X,
+  Settings,
+  Shuffle,
+  RefreshCw
 } from 'lucide-react'
 
-// Composant Carte Pokémon
-function PokemonCard() {
-  const { linkedMember, pokemonStats } = usePortalStore()
+// Selecteur d'univers prefere
+function UniverseSelector() {
+  const { linkedMember, setPreferredUniverse, refreshStats } = usePortalStore()
+  const [isOpen, setIsOpen] = useState(false)
 
-  if (!linkedMember || !pokemonStats) {
-    return (
-      <div className="text-center py-12 text-slate-400">
-        <User className="h-16 w-16 mx-auto mb-4 opacity-50" />
-        <p>Aucun profil lié</p>
-      </div>
-    )
+  const handleSelect = (universe: Universe) => {
+    setPreferredUniverse(universe)
+    setIsOpen(false)
   }
 
-  const getTypeColor = (type: string) => {
-    const colors: Record<string, string> = {
-      'Force': 'from-red-500 to-orange-500',
-      'Cardio': 'from-blue-500 to-cyan-500',
-      'Hybrid': 'from-purple-500 to-pink-500',
-      'Endurance': 'from-green-500 to-emerald-500',
-      'Technique': 'from-yellow-500 to-amber-500'
-    }
-    return colors[type] || 'from-slate-500 to-slate-600'
+  const handleRandomize = () => {
+    refreshStats()
+    setIsOpen(false)
   }
-
-  const getRarityColor = (rarity: string) => {
-    const colors: Record<string, string> = {
-      'Commun': 'border-slate-500',
-      'Peu Commun': 'border-emerald-500',
-      'Rare': 'border-purple-500',
-      'Épique': 'border-orange-500',
-      'Légendaire': 'border-yellow-500'
-    }
-    return colors[rarity] || 'border-slate-500'
-  }
-
-  const stats = [
-    { name: 'ATK', value: pokemonStats.atk, icon: Zap, color: 'text-red-400' },
-    { name: 'DEF', value: pokemonStats.def, icon: Shield, color: 'text-blue-400' },
-    { name: 'SPD', value: pokemonStats.spd, icon: Wind, color: 'text-cyan-400' },
-    { name: 'END', value: pokemonStats.end, icon: Heart, color: 'text-green-400' },
-    { name: 'TEC', value: pokemonStats.tec, icon: Target, color: 'text-yellow-400' }
-  ]
 
   return (
-    <div className={`relative w-full max-w-sm mx-auto rounded-2xl bg-gradient-to-br ${getTypeColor(pokemonStats.type)} p-1 shadow-2xl`}>
-      <div className={`bg-slate-900 rounded-xl p-4 border-4 ${getRarityColor(pokemonStats.rarity)}`}>
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-xl font-bold text-white">{linkedMember.firstName || linkedMember.name}</h3>
-            <Badge variant="outline" className="mt-1 border-slate-500 text-slate-300">
-              {pokemonStats.type}
-            </Badge>
-          </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold text-white">Nv.{pokemonStats.level}</div>
-            <div className="text-xs text-slate-400">{pokemonStats.rarity}</div>
-          </div>
-        </div>
-
-        {/* Avatar area */}
-        <div className={`aspect-square rounded-lg bg-gradient-to-br ${getTypeColor(pokemonStats.type)} p-4 mb-4 flex items-center justify-center`}>
-          <div className="w-32 h-32 rounded-full bg-slate-800/50 flex items-center justify-center backdrop-blur-sm">
-            <User className="h-16 w-16 text-white" />
-          </div>
-        </div>
-
-        {/* XP Bar */}
-        <div className="mb-4">
-          <div className="flex justify-between text-xs text-slate-400 mb-1">
-            <span>XP</span>
-            <span>{pokemonStats.xp}/1000</span>
-          </div>
-          <Progress value={(pokemonStats.xp / 1000) * 100} className="h-2 bg-slate-700" />
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-5 gap-2">
-          {stats.map((stat) => (
-            <div key={stat.name} className="text-center">
-              <stat.icon className={`h-4 w-4 mx-auto mb-1 ${stat.color}`} />
-              <div className="text-xs text-slate-400">{stat.name}</div>
-              <div className="text-sm font-bold text-white">{stat.value}</div>
-            </div>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-2">
+          <Settings className="h-4 w-4" />
+          Changer d&apos;univers
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Choisir votre univers</DialogTitle>
+          <DialogDescription>
+            Selectionnez l&apos;univers qui vous correspond le mieux. Votre personnage sera choisi selon votre niveau de performance.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid grid-cols-2 gap-3 py-4">
+          {UNIVERSE_OPTIONS.map((universe) => (
+            <button
+              key={universe.id}
+              onClick={() => handleSelect(universe.id as Universe)}
+              className={`p-4 rounded-lg border-2 transition-all hover:scale-105 ${
+                linkedMember?.preferred_universe === universe.id
+                  ? 'border-primary bg-primary/10'
+                  : 'border-slate-700 hover:border-slate-500'
+              }`}
+            >
+              <span className="text-3xl block mb-2">{universe.emoji}</span>
+              <span className="text-sm font-medium">{universe.name}</span>
+            </button>
           ))}
         </div>
-      </div>
-    </div>
+        <div className="flex justify-center pt-2">
+          <Button variant="ghost" onClick={handleRandomize} className="gap-2">
+            <Shuffle className="h-4 w-4" />
+            Aleatoire
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -132,7 +105,7 @@ function PersonalInfoTab() {
   })
 
   if (!linkedMember) {
-    return <div className="text-center py-8 text-slate-400">Profil non lié</div>
+    return <div className="text-center py-8 text-slate-400">Profil non lie</div>
   }
 
   const handleSave = () => {
@@ -190,7 +163,7 @@ function PersonalInfoTab() {
             <CardContent className="p-4">
               <Label className="text-slate-400 text-xs">Genre</Label>
               <p className="text-white font-medium">
-                {linkedMember.gender === 'M' ? '♂ Homme' : '♀ Femme'}
+                {linkedMember.gender === 'M' ? 'Homme' : 'Femme'}
               </p>
             </CardContent>
           </Card>
@@ -199,7 +172,7 @@ function PersonalInfoTab() {
         {age && (
           <Card className="bg-slate-800/50 border-slate-700">
             <CardContent className="p-4">
-              <Label className="text-slate-400 text-xs">Âge</Label>
+              <Label className="text-slate-400 text-xs">Age</Label>
               <p className="text-white font-medium">{age} ans</p>
             </CardContent>
           </Card>
@@ -239,7 +212,7 @@ function PersonalInfoTab() {
 
         <Card className="bg-slate-800/50 border-slate-700">
           <CardContent className="p-4">
-            <Label className="text-slate-400 text-xs">Téléphone</Label>
+            <Label className="text-slate-400 text-xs">Telephone</Label>
             {isEditing ? (
               <Input
                 type="tel"
@@ -275,9 +248,9 @@ function PersonalInfoTab() {
 
 // Onglet Performances
 function PerformancesTab() {
-  const { linkedMember, pokemonStats } = usePortalStore()
+  const { memberStats } = usePortalStore()
 
-  // Performances mock
+  // Performances mock (TODO: depuis API)
   const performances = [
     { exercise: 'Back Squat', value: '120 kg', pr: true, date: '2024-01-15' },
     { exercise: 'Deadlift', value: '150 kg', pr: true, date: '2024-01-10' },
@@ -297,20 +270,20 @@ function PerformancesTab() {
       </div>
 
       {/* Stats summary */}
-      {pokemonStats && (
+      {memberStats && (
         <div className="grid grid-cols-2 gap-3">
           <Card className="bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border-emerald-500/30">
             <CardContent className="p-4 text-center">
               <Award className="h-8 w-8 mx-auto mb-2 text-emerald-400" />
-              <div className="text-2xl font-bold text-white">{pokemonStats.level}</div>
+              <div className="text-2xl font-bold text-white">{memberStats.level}</div>
               <div className="text-xs text-emerald-300">Niveau</div>
             </CardContent>
           </Card>
           <Card className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-purple-500/30">
             <CardContent className="p-4 text-center">
               <Trophy className="h-8 w-8 mx-auto mb-2 text-purple-400" />
-              <div className="text-2xl font-bold text-white">3</div>
-              <div className="text-xs text-purple-300">Nouveaux PRs</div>
+              <div className="text-2xl font-bold text-white">{memberStats.prCount}</div>
+              <div className="text-xs text-purple-300">PRs</div>
             </CardContent>
           </Card>
         </div>
@@ -352,7 +325,9 @@ function PerformancesTab() {
 
 // Onglet Historique
 function HistoryTab() {
-  // Sessions mock
+  const { memberStats } = usePortalStore()
+
+  // Sessions mock (TODO: depuis API)
   const sessions = [
     { date: '2024-01-20', type: 'CrossTraining', name: 'WOD Murph', duration: '45 min' },
     { date: '2024-01-18', type: 'Musculation', name: 'Upper Body', duration: '60 min' },
@@ -367,7 +342,7 @@ function HistoryTab() {
       'Musculation': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
       'Cardio': 'bg-red-500/20 text-red-400 border-red-500/30',
       'Hyrox': 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-      'Récupération': 'bg-green-500/20 text-green-400 border-green-500/30'
+      'Recuperation': 'bg-green-500/20 text-green-400 border-green-500/30'
     }
     return colors[type] || 'bg-slate-500/20 text-slate-400 border-slate-500/30'
   }
@@ -377,7 +352,7 @@ function HistoryTab() {
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-white">Historique</h3>
         <Badge variant="outline" className="border-slate-600 text-slate-300">
-          {sessions.length} sessions
+          {memberStats?.sessionCount || 0} seances
         </Badge>
       </div>
 
@@ -400,7 +375,7 @@ function HistoryTab() {
         <Card className="bg-slate-800/50 border-slate-700">
           <CardContent className="p-3 text-center">
             <Dumbbell className="h-6 w-6 mx-auto mb-1 text-blue-400" />
-            <div className="text-xl font-bold text-white">48</div>
+            <div className="text-xl font-bold text-white">{memberStats?.sessionCount || 0}</div>
             <div className="text-xs text-slate-400">Total</div>
           </CardContent>
         </Card>
@@ -435,22 +410,21 @@ function HistoryTab() {
 
 // Page principale
 export default function PortalPage() {
-  const { linkedMember, logout } = usePortalStore()
+  const { linkedMember, epicCharacter, memberStats, logout, refreshStats } = usePortalStore()
   const [activeTab, setActiveTab] = useState('home')
 
-  // Si pas de membre lié, on ne devrait pas arriver ici
-  // mais on gère le cas au cas où
+  // Si pas de membre lie
   if (!linkedMember) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="bg-slate-800/80 border-slate-700 p-6">
           <div className="text-center">
             <User className="h-16 w-16 mx-auto mb-4 text-slate-500" />
-            <h2 className="text-xl font-bold text-white mb-2">Profil non lié</h2>
-            <p className="text-slate-400 mb-4">Veuillez lier votre profil à votre Discord</p>
+            <h2 className="text-xl font-bold text-white mb-2">Profil non lie</h2>
+            <p className="text-slate-400 mb-4">Veuillez lier votre profil a votre Discord</p>
             <Button onClick={logout}>
               <LogOut className="h-4 w-4 mr-2" />
-              Déconnexion
+              Deconnexion
             </Button>
           </div>
         </Card>
@@ -465,11 +439,16 @@ export default function PortalPage() {
         <div className="flex items-center justify-between max-w-lg mx-auto">
           <div className="flex items-center gap-2">
             <Dumbbell className="h-6 w-6 text-emerald-400" />
-            <span className="font-bold text-white">Skàli Portal</span>
+            <span className="font-bold text-white">Skali Portal</span>
           </div>
-          <Button variant="ghost" size="sm" onClick={logout}>
-            <LogOut className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={refreshStats}>
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={logout}>
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -481,9 +460,33 @@ export default function PortalPage() {
               <h1 className="text-2xl font-bold text-white mb-1">
                 Bienvenue, {linkedMember.firstName || linkedMember.name} !
               </h1>
-              <p className="text-slate-400 text-sm">Voici votre carte Pokémon</p>
+              <p className="text-slate-400 text-sm">Voici votre carte de heros</p>
             </div>
-            <PokemonCard />
+
+            {/* Epic Card */}
+            {epicCharacter && memberStats && (
+              <EpicCard
+                memberName={linkedMember.firstName || linkedMember.name}
+                character={epicCharacter}
+                level={memberStats.level}
+                xp={memberStats.xp}
+                xpToNextLevel={memberStats.xpToNextLevel}
+                baseStats={{
+                  strength: memberStats.strength,
+                  endurance: memberStats.endurance,
+                  speed: memberStats.speed,
+                  technique: memberStats.technique,
+                  power: memberStats.power
+                }}
+                sessionCount={memberStats.sessionCount}
+                prCount={memberStats.prCount}
+              />
+            )}
+
+            {/* Universe selector */}
+            <div className="flex justify-center">
+              <UniverseSelector />
+            </div>
           </div>
         )}
 
@@ -539,7 +542,7 @@ export default function PortalPage() {
             }`}
           >
             <User className="h-6 w-6" />
-            <span className="text-xs font-medium">Mes Données</span>
+            <span className="text-xs font-medium">Mes Donnees</span>
           </button>
         </div>
       </nav>

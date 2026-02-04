@@ -252,6 +252,24 @@ npm run lint         # ESLint
 - **À faire dans Supabase:**
   - Exécuter `docs/sql/migrations/010_discord_members_linking.sql`
 
+### Session 15 - 2026-02-04
+
+- **Refonte système de cartes - Univers Épiques:**
+  - **Adieu Pokemon, bonjour héros!** Cartes basées sur LotR, Star Wars, Harry Potter, Game of Thrones
+  - **Système de tiers:** Légendaire (Aragorn, Gandalf) → Épique (Luke, Obi-Wan) → Rare (Harry, Hermione) → Commun (Jon Snow) → Apprenti (méchants: Vader, Voldemort)
+  - **Progression motivante:** Plus performant = héros, débutant = méchants (motivation pour progresser!)
+  - **Carte 3D interactive:** Effet gyroscope au mouvement souris/touch, glow selon tier
+  - **Backgrounds animés par univers:** Montagnes LotR, étoiles Star Wars, particules magiques HP, neige GoT
+  - **Sélecteur d'univers:** L'utilisateur peut choisir son univers préféré
+- **Nouveaux fichiers:**
+  - `src/config/epic-cards.ts` - Configuration complète des personnages et tiers
+  - `src/components/portal/EpicCard.tsx` - Composant carte avec animations 3D
+  - `src/app/globals.css` - Animations float, twinkle, pulse-glow
+- **Store mis à jour:** `portal-store.ts` supporte le nouveau système (epicCharacter, memberStats)
+- **Page portal refaite:** Utilise EpicCard + sélecteur d'univers
+- Build vérifié ✅
+- **À FAIRE:** Développer les vraies pages PWA (/portal/planning, /portal/workouts, etc.)
+
 ---
 
 *Skali Prog - Next.js 16 + Supabase*
