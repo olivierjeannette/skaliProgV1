@@ -457,6 +457,56 @@ npm run lint         # ESLint
 - **À faire dans Supabase:**
   - Exécuter `docs/sql/migrations/013_dashboard_errors_tasks.sql`
 
+### Session 24 - 2026-02-04
+
+- **Refonte complète système de cartes Epic v3:**
+  - **21 personnages iconiques avec vidéos:**
+    - **Legendary (4):** Dark Vador, Thanos, Sauron, Zeus
+    - **Epic (4):** Iron Man, Yoda, Aragorn, Batman
+    - **Rare (5):** Spider-Man, Captain America, Obi-Wan, Legolas, Superman
+    - **Common (4):** Anakin, Gimli, Groot, R2-D2
+    - **Starter (3):** Frodon, Baby Groot, C-3PO
+  - **Vidéos WebM dans `/public/videos/cards/`:**
+    - 21 vidéos compressées (~1-4MB chacune)
+    - Format WebM VP9 optimisé pour le web
+    - Nommage: `{id}.webm` (ex: darkvador.webm, thanos.webm)
+  - **Système aléatoire:**
+    - `assignRandomCharacter(percentile)` - Carte aléatoire selon rareté
+    - Nouvelle carte à chaque nouveau PR détecté
+    - Bouton "Nouveau héros" pour reroll manuel
+  - **portal-store.ts mis à jour:**
+    - `rerollCharacter()` - Force une nouvelle carte
+    - Détection automatique des nouveaux PRs (compare prCount)
+  - **Page Performance:**
+    - Bouton "Nouveau héros" ajouté (violet)
+    - Rafraîchir les stats conserve la carte actuelle
+  - **Univers disponibles:** Star Wars, Marvel, LOTR, DC, Autre
+- Build vérifié ✅
+
+**Personnages et vidéos:**
+| Rareté | Personnage | Fichier vidéo |
+|--------|------------|---------------|
+| Legendary | Dark Vador | darkvador.webm |
+| Legendary | Thanos | thanos.webm |
+| Legendary | Sauron | Sauron.webm |
+| Legendary | Zeus | Dieu.webm |
+| Epic | Iron Man | ironman.webm |
+| Epic | Yoda | yoda.webm |
+| Epic | Aragorn | aragorn.webm |
+| Epic | Batman | batman.webm |
+| Rare | Spider-Man | spiderman.webm |
+| Rare | Captain America | captainamerica.webm |
+| Rare | Obi-Wan | obiwan.webm |
+| Rare | Legolas | legolas.webm |
+| Rare | Superman | superman.webm |
+| Common | Anakin | anakin.webm |
+| Common | Gimli | gimli.webm |
+| Common | Groot | Groot.webm |
+| Common | R2-D2 | R2D2.webm |
+| Starter | Frodon | frodon.webm |
+| Starter | Baby Groot | babygroot.webm |
+| Starter | C-3PO | C3PO.webm |
+
 ---
 
 *Skali Prog - Next.js 16 + Supabase*

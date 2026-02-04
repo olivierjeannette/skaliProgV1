@@ -1,7 +1,7 @@
 /**
- * Systeme de cartes "Heros Epiques" v2
- * Personnages generiques inspires d'archetypes fantasy/sci-fi
- * Effets holographiques, 3D, animations premium
+ * Systeme de cartes "Heros Epiques" v3
+ * Personnages iconiques avec videos
+ * Carte aleatoire assignee a chaque nouvelle performance
  */
 
 export type CardClass =
@@ -18,10 +18,8 @@ export type CardRarity = 'legendary' | 'epic' | 'rare' | 'common' | 'starter'
 
 export type CardTheme = 'fire' | 'ice' | 'lightning' | 'nature' | 'shadow' | 'light' | 'cosmic' | 'blood'
 
-// URL de base pour les videos
-// Option 1: Locales dans /public/videos/cards (recommandé pour Vercel)
-// Option 2: VPS externe via NEXT_PUBLIC_VPS_VIDEO_URL
-export const VIDEO_BASE_URL = process.env.NEXT_PUBLIC_VPS_VIDEO_URL || '/videos/cards'
+// URL de base pour les videos (locales dans /public/videos/cards)
+export const VIDEO_BASE_URL = '/videos/cards'
 
 export interface EpicCharacter {
   id: string
@@ -31,10 +29,10 @@ export interface EpicCharacter {
   rarity: CardRarity
   theme: CardTheme
   quote: string
-  // Image depuis Unsplash/Pexels (libres de droits)
+  // Video de fond
+  videoUrl: string
+  // Image fallback (si pas de video)
   imageUrl: string
-  // Video de fond (optionnel, hebergee sur VPS)
-  videoUrl?: string
   // Stats de base (multipliees par le niveau)
   baseStats: {
     strength: number   // Force
@@ -57,6 +55,8 @@ export interface EpicCharacter {
     holographic: boolean
     animated: boolean
   }
+  // Univers du personnage
+  universe: 'star-wars' | 'marvel' | 'lotr' | 'dc' | 'other'
 }
 
 // Configuration des raretes
@@ -189,358 +189,419 @@ export const CLASS_CONFIG: Record<CardClass, {
 }
 
 /**
- * Helper: Genere l'URL video pour un personnage
- * Les fichiers doivent etre dans /public/videos/cards/{id}.webm (et .mp4 en fallback)
+ * PERSONNAGES EPIC - Basés sur les vidéos disponibles
  */
-export function getVideoUrl(characterId: string): string {
-  return `${VIDEO_BASE_URL}/${characterId}`
-}
-
-// Personnages epiques (sans videoUrl - ajouté dynamiquement)
-const CHARACTERS_DATA: Omit<EpicCharacter, 'videoUrl'>[] = [
+export const EPIC_CHARACTERS: EpicCharacter[] = [
   // ============ LEGENDARY - Les Titans ============
   {
-    id: 'phoenix-lord',
-    name: 'Seigneur Phenix',
-    title: 'Flamme Eternelle',
+    id: 'darkvador',
+    name: 'Dark Vador',
+    title: 'Seigneur Sith',
     cardClass: 'berserker',
     rarity: 'legendary',
-    theme: 'fire',
-    quote: '"De mes cendres, je renais plus fort."',
-    imageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&q=80',
-    baseStats: { strength: 95, endurance: 80, speed: 85, technique: 75, power: 100 },
+    theme: 'shadow',
+    quote: '"Je suis ton pere."',
+    videoUrl: `${VIDEO_BASE_URL}/darkvador.webm`,
+    imageUrl: 'https://images.unsplash.com/photo-1608889825103-eb5ed706fc64?w=800&q=80',
+    baseStats: { strength: 95, endurance: 90, speed: 75, technique: 85, power: 100 },
     colors: {
-      primary: '#dc2626',
-      secondary: '#f97316',
-      accent: '#fbbf24',
-      glow: '#ef4444'
+      primary: '#1a1a2e',
+      secondary: '#e63946',
+      accent: '#f4a261',
+      glow: '#e63946'
     },
-    effects: { particles: 'fire', aura: true, holographic: true, animated: true }
+    effects: { particles: 'smoke', aura: true, holographic: true, animated: true },
+    universe: 'star-wars'
   },
   {
-    id: 'frost-emperor',
-    name: 'Empereur Givre',
-    title: 'Zero Absolu',
-    cardClass: 'mage',
-    rarity: 'legendary',
-    theme: 'ice',
-    quote: '"Le froid preserve, le froid detruit."',
-    imageUrl: 'https://images.unsplash.com/photo-1551582045-6ec9c11d8697?w=800&q=80',
-    baseStats: { strength: 70, endurance: 90, speed: 75, technique: 100, power: 95 },
-    colors: {
-      primary: '#0ea5e9',
-      secondary: '#38bdf8',
-      accent: '#e0f2fe',
-      glow: '#06b6d4'
-    },
-    effects: { particles: 'ice', aura: true, holographic: true, animated: true }
-  },
-  {
-    id: 'storm-titan',
-    name: 'Titan Tempete',
-    title: 'Maitre des Eclairs',
-    cardClass: 'warrior',
-    rarity: 'legendary',
-    theme: 'lightning',
-    quote: '"La foudre ne frappe jamais deux fois? Regarde bien."',
-    imageUrl: 'https://images.unsplash.com/photo-1605806616949-1e87b487fc2f?w=800&q=80',
-    baseStats: { strength: 100, endurance: 85, speed: 90, technique: 80, power: 95 },
-    colors: {
-      primary: '#7c3aed',
-      secondary: '#a78bfa',
-      accent: '#e9d5ff',
-      glow: '#8b5cf6'
-    },
-    effects: { particles: 'lightning', aura: true, holographic: true, animated: true }
-  },
-  {
-    id: 'void-walker',
-    name: 'Marcheur du Vide',
-    title: 'Entre les Mondes',
+    id: 'thanos',
+    name: 'Thanos',
+    title: 'Le Titan Fou',
     cardClass: 'mystic',
     rarity: 'legendary',
     theme: 'cosmic',
-    quote: '"L\'univers entier est mon terrain de jeu."',
-    imageUrl: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=800&q=80',
-    baseStats: { strength: 75, endurance: 80, speed: 95, technique: 90, power: 100 },
+    quote: '"Je suis inevitable."',
+    videoUrl: `${VIDEO_BASE_URL}/thanos.webm`,
+    imageUrl: 'https://images.unsplash.com/photo-1635805737707-575885ab0820?w=800&q=80',
+    baseStats: { strength: 100, endurance: 95, speed: 70, technique: 80, power: 100 },
     colors: {
-      primary: '#1e1b4b',
-      secondary: '#6366f1',
-      accent: '#c7d2fe',
-      glow: '#818cf8'
+      primary: '#4a0e4e',
+      secondary: '#c77dff',
+      accent: '#ffd700',
+      glow: '#9d4edd'
     },
-    effects: { particles: 'stars', aura: true, holographic: true, animated: true }
+    effects: { particles: 'stars', aura: true, holographic: true, animated: true },
+    universe: 'marvel'
+  },
+  {
+    id: 'Sauron',
+    name: 'Sauron',
+    title: 'Le Seigneur des Tenebres',
+    cardClass: 'mystic',
+    rarity: 'legendary',
+    theme: 'fire',
+    quote: '"Un Anneau pour les gouverner tous."',
+    videoUrl: `${VIDEO_BASE_URL}/Sauron.webm`,
+    imageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&q=80',
+    baseStats: { strength: 90, endurance: 100, speed: 60, technique: 95, power: 100 },
+    colors: {
+      primary: '#1a0a0a',
+      secondary: '#ff4500',
+      accent: '#ffd700',
+      glow: '#ff6600'
+    },
+    effects: { particles: 'fire', aura: true, holographic: true, animated: true },
+    universe: 'lotr'
+  },
+  {
+    id: 'Dieu',
+    name: 'Zeus',
+    title: 'Roi des Dieux',
+    cardClass: 'mystic',
+    rarity: 'legendary',
+    theme: 'lightning',
+    quote: '"Le tonnerre repond a ma volonte."',
+    videoUrl: `${VIDEO_BASE_URL}/Dieu.webm`,
+    imageUrl: 'https://images.unsplash.com/photo-1605806616949-1e87b487fc2f?w=800&q=80',
+    baseStats: { strength: 85, endurance: 85, speed: 95, technique: 90, power: 100 },
+    colors: {
+      primary: '#1a1a3e',
+      secondary: '#00d4ff',
+      accent: '#ffffff',
+      glow: '#7df9ff'
+    },
+    effects: { particles: 'lightning', aura: true, holographic: true, animated: true },
+    universe: 'other'
   },
 
   // ============ EPIC - Les Champions ============
   {
-    id: 'blade-dancer',
-    name: 'Danseur de Lames',
-    title: 'Mille Coupures',
+    id: 'ironman',
+    name: 'Iron Man',
+    title: 'Genie Milliardaire',
+    cardClass: 'mage',
+    rarity: 'epic',
+    theme: 'fire',
+    quote: '"Je suis Iron Man."',
+    videoUrl: `${VIDEO_BASE_URL}/ironman.webm`,
+    imageUrl: 'https://images.unsplash.com/photo-1608889825103-eb5ed706fc64?w=800&q=80',
+    baseStats: { strength: 80, endurance: 75, speed: 85, technique: 100, power: 90 },
+    colors: {
+      primary: '#8b0000',
+      secondary: '#ffd700',
+      accent: '#00d4ff',
+      glow: '#ff4500'
+    },
+    effects: { particles: 'fire', aura: true, holographic: true, animated: true },
+    universe: 'marvel'
+  },
+  {
+    id: 'yoda',
+    name: 'Yoda',
+    title: 'Maitre Jedi',
+    cardClass: 'mystic',
+    rarity: 'epic',
+    theme: 'nature',
+    quote: '"Fais-le ou ne le fais pas. Il n\'y a pas d\'essai."',
+    videoUrl: `${VIDEO_BASE_URL}/yoda.webm`,
+    imageUrl: 'https://images.unsplash.com/photo-1472457897821-70d3819a0e24?w=800&q=80',
+    baseStats: { strength: 60, endurance: 80, speed: 95, technique: 100, power: 95 },
+    colors: {
+      primary: '#1a3a1a',
+      secondary: '#90ee90',
+      accent: '#ffffff',
+      glow: '#00ff00'
+    },
+    effects: { particles: 'sparkles', aura: true, holographic: true, animated: true },
+    universe: 'star-wars'
+  },
+  {
+    id: 'aragorn',
+    name: 'Aragorn',
+    title: 'Roi du Gondor',
+    cardClass: 'warrior',
+    rarity: 'epic',
+    theme: 'light',
+    quote: '"Pour Frodon."',
+    videoUrl: `${VIDEO_BASE_URL}/aragorn.webm`,
+    imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
+    baseStats: { strength: 90, endurance: 85, speed: 80, technique: 85, power: 80 },
+    colors: {
+      primary: '#2c3e50',
+      secondary: '#bdc3c7',
+      accent: '#f1c40f',
+      glow: '#95a5a6'
+    },
+    effects: { particles: 'sparkles', aura: true, holographic: true, animated: true },
+    universe: 'lotr'
+  },
+  {
+    id: 'batman',
+    name: 'Batman',
+    title: 'Le Chevalier Noir',
     cardClass: 'assassin',
     rarity: 'epic',
     theme: 'shadow',
-    quote: '"Tu ne verras pas la derniere."',
-    imageUrl: 'https://images.unsplash.com/photo-1589656966895-2f33e7653819?w=800&q=80',
-    baseStats: { strength: 75, endurance: 60, speed: 100, technique: 90, power: 70 },
+    quote: '"Je suis la nuit."',
+    videoUrl: `${VIDEO_BASE_URL}/batman.webm`,
+    imageUrl: 'https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?w=800&q=80',
+    baseStats: { strength: 85, endurance: 80, speed: 90, technique: 95, power: 75 },
     colors: {
-      primary: '#18181b',
-      secondary: '#71717a',
-      accent: '#d4d4d8',
-      glow: '#52525b'
+      primary: '#0d0d0d',
+      secondary: '#2c2c2c',
+      accent: '#ffd700',
+      glow: '#333333'
     },
-    effects: { particles: 'smoke', aura: true, holographic: true, animated: true }
-  },
-  {
-    id: 'light-bringer',
-    name: 'Porteur de Lumiere',
-    title: 'Aube Radieuse',
-    cardClass: 'paladin',
-    rarity: 'epic',
-    theme: 'light',
-    quote: '"Meme l\'obscurite la plus profonde craint ma lumiere."',
-    imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
-    baseStats: { strength: 85, endurance: 95, speed: 70, technique: 80, power: 85 },
-    colors: {
-      primary: '#fbbf24',
-      secondary: '#fde68a',
-      accent: '#fef9c3',
-      glow: '#f59e0b'
-    },
-    effects: { particles: 'sparkles', aura: true, holographic: true, animated: true }
-  },
-  {
-    id: 'nature-warden',
-    name: 'Gardien Nature',
-    title: 'Coeur de la Foret',
-    cardClass: 'guardian',
-    rarity: 'epic',
-    theme: 'nature',
-    quote: '"La nature ne pardonne jamais."',
-    imageUrl: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=800&q=80',
-    baseStats: { strength: 80, endurance: 100, speed: 65, technique: 85, power: 80 },
-    colors: {
-      primary: '#166534',
-      secondary: '#4ade80',
-      accent: '#bbf7d0',
-      glow: '#22c55e'
-    },
-    effects: { particles: 'sparkles', aura: true, holographic: false, animated: true }
-  },
-  {
-    id: 'blood-hunter',
-    name: 'Chasseur de Sang',
-    title: 'Predateur Ultime',
-    cardClass: 'ranger',
-    rarity: 'epic',
-    theme: 'blood',
-    quote: '"Je sens ta peur. Elle est delicieuse."',
-    imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&q=80',
-    baseStats: { strength: 85, endurance: 75, speed: 95, technique: 85, power: 75 },
-    colors: {
-      primary: '#991b1b',
-      secondary: '#f87171',
-      accent: '#fecaca',
-      glow: '#dc2626'
-    },
-    effects: { particles: 'smoke', aura: true, holographic: false, animated: true }
+    effects: { particles: 'smoke', aura: true, holographic: true, animated: true },
+    universe: 'dc'
   },
 
   // ============ RARE - Les Veterans ============
   {
-    id: 'iron-fist',
-    name: 'Poing d\'Acier',
-    title: 'Force Brute',
-    cardClass: 'warrior',
-    rarity: 'rare',
-    theme: 'lightning',
-    quote: '"Un coup suffit."',
-    imageUrl: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=800&q=80',
-    baseStats: { strength: 90, endurance: 80, speed: 70, technique: 65, power: 80 },
-    colors: {
-      primary: '#374151',
-      secondary: '#9ca3af',
-      accent: '#e5e7eb',
-      glow: '#6b7280'
-    },
-    effects: { particles: 'lightning', aura: false, holographic: false, animated: true }
-  },
-  {
-    id: 'shadow-step',
-    name: 'Pas d\'Ombre',
-    title: 'Invisible',
+    id: 'spiderman',
+    name: 'Spider-Man',
+    title: 'Le Tisseur',
     cardClass: 'assassin',
     rarity: 'rare',
-    theme: 'shadow',
-    quote: '"Tu ne m\'as pas vu venir."',
-    imageUrl: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&q=80',
-    baseStats: { strength: 65, endurance: 55, speed: 95, technique: 85, power: 60 },
+    theme: 'blood',
+    quote: '"Un grand pouvoir implique de grandes responsabilites."',
+    videoUrl: `${VIDEO_BASE_URL}/spiderman.webm`,
+    imageUrl: 'https://images.unsplash.com/photo-1635805737707-575885ab0820?w=800&q=80',
+    baseStats: { strength: 75, endurance: 70, speed: 95, technique: 85, power: 70 },
     colors: {
-      primary: '#1f2937',
-      secondary: '#6b7280',
-      accent: '#d1d5db',
-      glow: '#4b5563'
+      primary: '#8b0000',
+      secondary: '#00008b',
+      accent: '#ffffff',
+      glow: '#dc143c'
     },
-    effects: { particles: 'smoke', aura: false, holographic: false, animated: true }
+    effects: { particles: 'none', aura: false, holographic: false, animated: true },
+    universe: 'marvel'
   },
   {
-    id: 'flame-keeper',
-    name: 'Gardien Flamme',
-    title: 'Braise Vivante',
-    cardClass: 'mage',
+    id: 'captainamerica',
+    name: 'Captain America',
+    title: 'Le Premier Avenger',
+    cardClass: 'paladin',
     rarity: 'rare',
-    theme: 'fire',
-    quote: '"Le feu purifie tout."',
-    imageUrl: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80',
-    baseStats: { strength: 60, endurance: 70, speed: 75, technique: 90, power: 85 },
+    theme: 'light',
+    quote: '"Je peux faire ca toute la journee."',
+    videoUrl: `${VIDEO_BASE_URL}/captainamerica.webm`,
+    imageUrl: 'https://images.unsplash.com/photo-1569003339405-ea396a5a8a90?w=800&q=80',
+    baseStats: { strength: 85, endurance: 90, speed: 80, technique: 80, power: 75 },
     colors: {
-      primary: '#ea580c',
-      secondary: '#fb923c',
-      accent: '#fed7aa',
-      glow: '#f97316'
+      primary: '#002868',
+      secondary: '#bf0a30',
+      accent: '#ffffff',
+      glow: '#4169e1'
     },
-    effects: { particles: 'fire', aura: false, holographic: false, animated: true }
+    effects: { particles: 'sparkles', aura: false, holographic: false, animated: true },
+    universe: 'marvel'
   },
   {
-    id: 'frost-archer',
-    name: 'Archer Givre',
-    title: 'Fleche Glaciale',
+    id: 'obiwan',
+    name: 'Obi-Wan Kenobi',
+    title: 'Le Negociateur',
+    cardClass: 'paladin',
+    rarity: 'rare',
+    theme: 'light',
+    quote: '"Hello there."',
+    videoUrl: `${VIDEO_BASE_URL}/obiwan.webm`,
+    imageUrl: 'https://images.unsplash.com/photo-1472457897821-70d3819a0e24?w=800&q=80',
+    baseStats: { strength: 75, endurance: 80, speed: 85, technique: 90, power: 80 },
+    colors: {
+      primary: '#8b4513',
+      secondary: '#d2b48c',
+      accent: '#00bfff',
+      glow: '#87ceeb'
+    },
+    effects: { particles: 'sparkles', aura: false, holographic: false, animated: true },
+    universe: 'star-wars'
+  },
+  {
+    id: 'legolas',
+    name: 'Legolas',
+    title: 'Prince des Elfes',
     cardClass: 'ranger',
     rarity: 'rare',
-    theme: 'ice',
-    quote: '"Chaque tir, un arret cardiaque."',
-    imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&q=80',
-    baseStats: { strength: 55, endurance: 65, speed: 90, technique: 95, power: 70 },
+    theme: 'nature',
+    quote: '"Ils prennent les Hobbits vers l\'Isengard!"',
+    videoUrl: `${VIDEO_BASE_URL}/legolas.webm`,
+    imageUrl: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=800&q=80',
+    baseStats: { strength: 70, endurance: 75, speed: 100, technique: 95, power: 65 },
     colors: {
-      primary: '#0284c7',
-      secondary: '#7dd3fc',
-      accent: '#e0f2fe',
-      glow: '#0ea5e9'
+      primary: '#228b22',
+      secondary: '#ffd700',
+      accent: '#f0fff0',
+      glow: '#32cd32'
     },
-    effects: { particles: 'ice', aura: false, holographic: false, animated: true }
+    effects: { particles: 'sparkles', aura: false, holographic: false, animated: true },
+    universe: 'lotr'
+  },
+  {
+    id: 'superman',
+    name: 'Superman',
+    title: 'L\'Homme d\'Acier',
+    cardClass: 'guardian',
+    rarity: 'rare',
+    theme: 'light',
+    quote: '"L\'espoir ne meurt jamais."',
+    videoUrl: `${VIDEO_BASE_URL}/superman.webm`,
+    imageUrl: 'https://images.unsplash.com/photo-1569003339405-ea396a5a8a90?w=800&q=80',
+    baseStats: { strength: 100, endurance: 95, speed: 90, technique: 70, power: 90 },
+    colors: {
+      primary: '#0033a0',
+      secondary: '#c8102e',
+      accent: '#ffd700',
+      glow: '#4169e1'
+    },
+    effects: { particles: 'sparkles', aura: false, holographic: false, animated: true },
+    universe: 'dc'
   },
 
   // ============ COMMON - Les Guerriers ============
   {
-    id: 'steel-guard',
-    name: 'Garde d\'Acier',
-    title: 'Sentinelle',
-    cardClass: 'guardian',
+    id: 'anakin',
+    name: 'Anakin Skywalker',
+    title: 'L\'Elu',
+    cardClass: 'warrior',
     rarity: 'common',
-    theme: 'light',
-    quote: '"Je ne recule jamais."',
-    imageUrl: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80',
-    baseStats: { strength: 70, endurance: 85, speed: 55, technique: 60, power: 65 },
+    theme: 'fire',
+    quote: '"Je n\'aime pas le sable."',
+    videoUrl: `${VIDEO_BASE_URL}/anakin.webm`,
+    imageUrl: 'https://images.unsplash.com/photo-1472457897821-70d3819a0e24?w=800&q=80',
+    baseStats: { strength: 80, endurance: 70, speed: 85, technique: 80, power: 85 },
     colors: {
-      primary: '#475569',
-      secondary: '#94a3b8',
-      accent: '#cbd5e1',
-      glow: '#64748b'
+      primary: '#1a1a1a',
+      secondary: '#4169e1',
+      accent: '#ffd700',
+      glow: '#4169e1'
     },
-    effects: { particles: 'none', aura: false, holographic: false, animated: false }
+    effects: { particles: 'fire', aura: false, holographic: false, animated: false },
+    universe: 'star-wars'
   },
   {
-    id: 'wild-striker',
-    name: 'Frappeur Sauvage',
-    title: 'Instinct',
+    id: 'gimli',
+    name: 'Gimli',
+    title: 'Fils de Gloin',
     cardClass: 'berserker',
     rarity: 'common',
     theme: 'fire',
-    quote: '"RAAAAGH!"',
-    imageUrl: 'https://images.unsplash.com/photo-1581009146145-b5ef050c149a?w=800&q=80',
-    baseStats: { strength: 80, endurance: 60, speed: 70, technique: 50, power: 75 },
+    quote: '"ET MA HACHE!"',
+    videoUrl: `${VIDEO_BASE_URL}/gimli.webm`,
+    imageUrl: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=800&q=80',
+    baseStats: { strength: 90, endurance: 85, speed: 50, technique: 70, power: 80 },
     colors: {
-      primary: '#78350f',
-      secondary: '#d97706',
-      accent: '#fde68a',
-      glow: '#b45309'
+      primary: '#8b4513',
+      secondary: '#cd853f',
+      accent: '#ffd700',
+      glow: '#d2691e'
     },
-    effects: { particles: 'fire', aura: false, holographic: false, animated: false }
+    effects: { particles: 'fire', aura: false, holographic: false, animated: false },
+    universe: 'lotr'
   },
   {
-    id: 'swift-blade',
-    name: 'Lame Rapide',
-    title: 'Premier Sang',
-    cardClass: 'assassin',
+    id: 'Groot',
+    name: 'Groot',
+    title: 'Le Colosse',
+    cardClass: 'guardian',
     rarity: 'common',
-    theme: 'shadow',
-    quote: '"Vite fait, bien fait."',
-    imageUrl: 'https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?w=800&q=80',
-    baseStats: { strength: 60, endurance: 50, speed: 85, technique: 75, power: 55 },
+    theme: 'nature',
+    quote: '"Je s\'appelle Groot."',
+    videoUrl: `${VIDEO_BASE_URL}/Groot.webm`,
+    imageUrl: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=800&q=80',
+    baseStats: { strength: 85, endurance: 90, speed: 40, technique: 50, power: 75 },
     colors: {
-      primary: '#27272a',
-      secondary: '#71717a',
-      accent: '#a1a1aa',
-      glow: '#52525b'
+      primary: '#2e1a0e',
+      secondary: '#228b22',
+      accent: '#90ee90',
+      glow: '#32cd32'
     },
-    effects: { particles: 'none', aura: false, holographic: false, animated: false }
+    effects: { particles: 'sparkles', aura: false, holographic: false, animated: false },
+    universe: 'marvel'
   },
   {
-    id: 'apprentice-mage',
-    name: 'Apprenti Mage',
-    title: 'Etudiant',
+    id: 'R2D2',
+    name: 'R2-D2',
+    title: 'Le Droide Astromech',
     cardClass: 'mage',
     rarity: 'common',
-    theme: 'cosmic',
-    quote: '"Je progresse chaque jour."',
-    imageUrl: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&q=80',
-    baseStats: { strength: 45, endurance: 55, speed: 65, technique: 80, power: 70 },
+    theme: 'lightning',
+    quote: '"*Bip boop bip*"',
+    videoUrl: `${VIDEO_BASE_URL}/R2D2.webm`,
+    imageUrl: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&q=80',
+    baseStats: { strength: 30, endurance: 80, speed: 60, technique: 100, power: 50 },
     colors: {
-      primary: '#3730a3',
-      secondary: '#818cf8',
-      accent: '#c7d2fe',
-      glow: '#6366f1'
+      primary: '#e8e8e8',
+      secondary: '#4169e1',
+      accent: '#c0c0c0',
+      glow: '#87ceeb'
     },
-    effects: { particles: 'sparkles', aura: false, holographic: false, animated: false }
+    effects: { particles: 'lightning', aura: false, holographic: false, animated: false },
+    universe: 'star-wars'
   },
 
   // ============ STARTER - Les Debutants ============
   {
-    id: 'rookie-fighter',
-    name: 'Combattant Rookie',
-    title: 'Premiere Bataille',
-    cardClass: 'warrior',
-    rarity: 'starter',
-    theme: 'light',
-    quote: '"C\'est mon premier jour!"',
-    imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&q=80',
-    baseStats: { strength: 50, endurance: 50, speed: 50, technique: 50, power: 50 },
-    colors: {
-      primary: '#64748b',
-      secondary: '#94a3b8',
-      accent: '#cbd5e1',
-      glow: '#475569'
-    },
-    effects: { particles: 'none', aura: false, holographic: false, animated: false }
-  },
-  {
-    id: 'trainee',
-    name: 'Stagiaire',
-    title: 'En Formation',
+    id: 'frodon',
+    name: 'Frodon',
+    title: 'Le Porteur de l\'Anneau',
     cardClass: 'paladin',
     rarity: 'starter',
     theme: 'light',
-    quote: '"Un jour, je serai legendaire."',
-    imageUrl: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80',
-    baseStats: { strength: 45, endurance: 55, speed: 45, technique: 45, power: 40 },
+    quote: '"Je vais le faire. Je vais porter l\'Anneau."',
+    videoUrl: `${VIDEO_BASE_URL}/frodon.webm`,
+    imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&q=80',
+    baseStats: { strength: 40, endurance: 70, speed: 60, technique: 50, power: 45 },
     colors: {
-      primary: '#78716c',
-      secondary: '#a8a29e',
-      accent: '#d6d3d1',
-      glow: '#57534e'
+      primary: '#2c3e50',
+      secondary: '#8b4513',
+      accent: '#ffd700',
+      glow: '#95a5a6'
     },
-    effects: { particles: 'none', aura: false, holographic: false, animated: false }
+    effects: { particles: 'none', aura: false, holographic: false, animated: false },
+    universe: 'lotr'
+  },
+  {
+    id: 'babygroot',
+    name: 'Baby Groot',
+    title: 'Le Petit Arbre',
+    cardClass: 'guardian',
+    rarity: 'starter',
+    theme: 'nature',
+    quote: '"Je s\'appelle Groot!"',
+    videoUrl: `${VIDEO_BASE_URL}/babygroot.webm`,
+    imageUrl: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=800&q=80',
+    baseStats: { strength: 30, endurance: 50, speed: 55, technique: 40, power: 35 },
+    colors: {
+      primary: '#2e1a0e',
+      secondary: '#90ee90',
+      accent: '#ffffff',
+      glow: '#32cd32'
+    },
+    effects: { particles: 'sparkles', aura: false, holographic: false, animated: false },
+    universe: 'marvel'
+  },
+  {
+    id: 'C3PO',
+    name: 'C-3PO',
+    title: 'Droide de Protocole',
+    cardClass: 'mage',
+    rarity: 'starter',
+    theme: 'light',
+    quote: '"Les probabilites de survie sont de 3720 contre 1!"',
+    videoUrl: `${VIDEO_BASE_URL}/C3PO.webm`,
+    imageUrl: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&q=80',
+    baseStats: { strength: 20, endurance: 60, speed: 40, technique: 90, power: 30 },
+    colors: {
+      primary: '#ffd700',
+      secondary: '#daa520',
+      accent: '#ffffff',
+      glow: '#ffdf00'
+    },
+    effects: { particles: 'none', aura: false, holographic: false, animated: false },
+    universe: 'star-wars'
   }
 ]
-
-/**
- * EPIC_CHARACTERS avec videoUrl generee automatiquement
- * Les videos doivent etre dans /public/videos/cards/{id}.webm
- */
-export const EPIC_CHARACTERS: EpicCharacter[] = CHARACTERS_DATA.map(char => ({
-  ...char,
-  videoUrl: getVideoUrl(char.id)
-}))
 
 /**
  * Determine la rarete selon le percentile de performance
@@ -554,32 +615,42 @@ export function getRarityFromPercentile(percentile: number): CardRarity {
 }
 
 /**
- * Assigne un personnage selon les stats du membre
+ * Assigne un personnage ALEATOIREMENT selon la rarete
+ * Change a chaque appel (nouvelle performance = nouvelle carte)
  */
-export function assignCharacter(
-  percentile: number,
-  primaryStatType?: keyof EpicCharacter['baseStats']
-): EpicCharacter {
+export function assignRandomCharacter(percentile: number): EpicCharacter {
   const rarity = getRarityFromPercentile(percentile)
 
   // Filtre par rarete
-  let candidates = EPIC_CHARACTERS.filter(c => c.rarity === rarity)
+  const candidates = EPIC_CHARACTERS.filter(c => c.rarity === rarity)
 
-  // Si stat principale specifiee, priorise la classe correspondante
-  if (primaryStatType) {
-    const matchingClass = Object.entries(CLASS_CONFIG).find(
-      ([, config]) => config.primaryStat === primaryStatType
-    )
-    if (matchingClass) {
-      const classCandidates = candidates.filter(c => c.cardClass === matchingClass[0])
-      if (classCandidates.length > 0) {
-        candidates = classCandidates
-      }
-    }
-  }
+  // Si pas de candidats pour cette rarete, prend tous
+  const pool = candidates.length > 0 ? candidates : EPIC_CHARACTERS
 
-  // Random parmi les candidats
-  return candidates[Math.floor(Math.random() * candidates.length)] || candidates[0]
+  // Selection aleatoire
+  const randomIndex = Math.floor(Math.random() * pool.length)
+  return pool[randomIndex]
+}
+
+/**
+ * Assigne un personnage specifique par ID
+ */
+export function getCharacterById(characterId: string): EpicCharacter | undefined {
+  return EPIC_CHARACTERS.find(c => c.id === characterId)
+}
+
+/**
+ * Retourne tous les personnages d'une rarete donnee
+ */
+export function getCharactersByRarity(rarity: CardRarity): EpicCharacter[] {
+  return EPIC_CHARACTERS.filter(c => c.rarity === rarity)
+}
+
+/**
+ * Retourne tous les personnages d'un univers donne
+ */
+export function getCharactersByUniverse(universe: EpicCharacter['universe']): EpicCharacter[] {
+  return EPIC_CHARACTERS.filter(c => c.universe === universe)
 }
 
 /**
@@ -611,4 +682,15 @@ export const THEME_OPTIONS = [
   { id: 'light', name: 'Lumiere', emoji: '✨', color: '#fbbf24' },
   { id: 'cosmic', name: 'Cosmique', emoji: '🌌', color: '#818cf8' },
   { id: 'blood', name: 'Sang', emoji: '🩸', color: '#dc2626' }
+] as const
+
+/**
+ * Univers disponibles
+ */
+export const UNIVERSE_OPTIONS = [
+  { id: 'star-wars', name: 'Star Wars', emoji: '⭐' },
+  { id: 'marvel', name: 'Marvel', emoji: '🦸' },
+  { id: 'lotr', name: 'Seigneur des Anneaux', emoji: '💍' },
+  { id: 'dc', name: 'DC Comics', emoji: '🦇' },
+  { id: 'other', name: 'Autre', emoji: '🌟' }
 ] as const

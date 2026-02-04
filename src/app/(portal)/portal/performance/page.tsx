@@ -125,7 +125,7 @@ function StatBar({ label, value, maxValue = 100, color }: { label: string; value
 }
 
 export default function PerformancePage() {
-  const { linkedMember, epicCharacter, memberStats, refreshStats } = usePortalStore()
+  const { linkedMember, epicCharacter, memberStats, refreshStats, rerollCharacter } = usePortalStore()
   const [prs, setPrs] = useState<PersonalRecord[]>([])
   const [progress, setProgress] = useState<ProgressData[]>([])
   const [activeTab, setActiveTab] = useState('card')
@@ -216,7 +216,7 @@ export default function PerformancePage() {
               size="lg"
             />
 
-            <div className="flex justify-center">
+            <div className="flex justify-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -224,7 +224,16 @@ export default function PerformancePage() {
                 onClick={refreshStats}
               >
                 <Shuffle className="h-4 w-4" />
-                Rafraichir stats
+                Rafraichir
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+                onClick={rerollCharacter}
+              >
+                <Dumbbell className="h-4 w-4" />
+                Nouveau heros
               </Button>
             </div>
 

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import {
   EpicCharacter,
   CardTheme,
-  assignCharacter,
+  assignRandomCharacter,
   getRarityFromPercentile,
   RARITY_CONFIG,
   THEME_OPTIONS
@@ -31,6 +31,8 @@ interface LinkedMember {
   created_at?: string
   // Preferences utilisateur
   preferred_theme?: CardTheme
+  // Dernier nombre de PRs (pour detecter les nouveaux PRs)
+  lastPrCount?: number
 }
 
 // Systeme de stats pour les cartes epiques
@@ -81,6 +83,8 @@ interface PortalStore {
   linkMemberToDiscord: (memberId: string) => Promise<boolean>
   setPreferredTheme: (theme: CardTheme) => void
   refreshStats: () => Promise<void>
+  // Nouvelle action: force une nouvelle carte aleatoire
+  rerollCharacter: () => void
 }
 
 // Recupere les stats du membre depuis l'API
@@ -111,21 +115,6 @@ const getDefaultStats = (): MemberStats => ({
   sessionCount: 0,
   prCount: 0
 })
-
-// Trouve la stat principale du membre
-type StatKey = 'strength' | 'endurance' | 'speed' | 'technique' | 'power'
-
-const getPrimaryStat = (stats: MemberStats): StatKey => {
-  const statValues: { key: StatKey; value: number }[] = [
-    { key: 'strength', value: stats.strength },
-    { key: 'endurance', value: stats.endurance },
-    { key: 'speed', value: stats.speed },
-    { key: 'technique', value: stats.technique },
-    { key: 'power', value: stats.power }
-  ]
-  statValues.sort((a, b) => b.value - a.value)
-  return statValues[0].key
-}
 
 export const usePortalStore = create<PortalStore>((set, get) => ({
   currentUser: null,
@@ -183,8 +172,12 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
 
           // Recuperer les vraies stats depuis l'API
           memberStats = await fetchMemberStats() || getDefaultStats()
-          const primaryStat = getPrimaryStat(memberStats)
-          epicCharacter = assignCharacter(memberStats.percentile, primaryStat)
+
+          // Assigner un personnage aleatoire selon le percentile
+          epicCharacter = assignRandomCharacter(memberStats.percentile)
+
+          // Stocker le nombre de PRs actuel
+          linkedMember.lastPrCount = memberStats.prCount
         }
 
         set({
@@ -214,11 +207,12 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
       set({ linkedMember: member })
       // Recuperer les vraies stats depuis l'API
       const stats = await fetchMemberStats() || getDefaultStats()
-      const primaryStat = getPrimaryStat(stats)
-      const character = assignCharacter(stats.percentile, primaryStat)
+      // Assigner un personnage aleatoire selon le percentile
+      const character = assignRandomCharacter(stats.percentile)
       set({
         memberStats: stats,
-        epicCharacter: character
+        epicCharacter: character,
+        linkedMember: { ...member, lastPrCount: stats.prCount }
       })
     } else {
       set({
@@ -233,8 +227,8 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
     const { linkedMember, memberStats } = get()
     if (linkedMember && memberStats) {
       const updatedMember = { ...linkedMember, preferred_theme: theme }
-      const primaryStat = getPrimaryStat(memberStats)
-      const character = assignCharacter(memberStats.percentile, primaryStat)
+      // Nouvelle carte aleatoire quand on change de theme
+      const character = assignRandomCharacter(memberStats.percentile)
       set({
         linkedMember: updatedMember,
         epicCharacter: character
@@ -251,15 +245,31 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
       // Appeler /api/portal/stats pour recuperer les vraies stats
       const stats = await fetchMemberStats()
       if (stats) {
-        const primaryStat = getPrimaryStat(stats)
-        const character = assignCharacter(stats.percentile, primaryStat)
+        const previousPrCount = linkedMember.lastPrCount || 0
+        const hasNewPr = stats.prCount > previousPrCount
+
+        // Si nouveau PR detecte, nouvelle carte aleatoire!
+        const character = hasNewPr
+          ? assignRandomCharacter(stats.percentile)
+          : get().epicCharacter || assignRandomCharacter(stats.percentile)
+
         set({
           memberStats: stats,
-          epicCharacter: character
+          epicCharacter: character,
+          linkedMember: { ...linkedMember, lastPrCount: stats.prCount }
         })
       }
     } catch (error) {
       console.error('Failed to refresh stats:', error)
+    }
+  },
+
+  // Force une nouvelle carte aleatoire (bouton "Reroll")
+  rerollCharacter: () => {
+    const { memberStats } = get()
+    if (memberStats) {
+      const character = assignRandomCharacter(memberStats.percentile)
+      set({ epicCharacter: character })
     }
   },
 
@@ -277,11 +287,12 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
           set({ linkedMember: data.member })
           // Recuperer les vraies stats depuis l'API
           const stats = await fetchMemberStats() || getDefaultStats()
-          const primaryStat = getPrimaryStat(stats)
-          const character = assignCharacter(stats.percentile, primaryStat)
+          // Assigner un personnage aleatoire selon le percentile
+          const character = assignRandomCharacter(stats.percentile)
           set({
             memberStats: stats,
-            epicCharacter: character
+            epicCharacter: character,
+            linkedMember: { ...data.member, lastPrCount: stats.prCount }
           })
           return true
         }
