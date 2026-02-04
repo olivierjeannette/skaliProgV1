@@ -582,7 +582,10 @@ export function EpicCard({
                       transition: 'transform 0.5s ease-out'
                     }}
                   >
-                    <source src={character.videoUrl} type="video/mp4" />
+                    {/* WebM VP9 en priorité (meilleur ratio qualité/taille) */}
+                    <source src={character.videoUrl.replace(/\.(mp4|webm)$/, '.webm')} type="video/webm" />
+                    {/* Fallback MP4 H.264 (compatibilité maximale) */}
+                    <source src={character.videoUrl.replace(/\.(mp4|webm)$/, '.mp4')} type="video/mp4" />
                   </video>
                 ) : (
                   <Image

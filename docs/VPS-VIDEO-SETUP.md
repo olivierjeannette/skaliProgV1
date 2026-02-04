@@ -57,14 +57,14 @@ server {
     # Vidéos des cartes
     location /cards/ {
         # CORS - permet à skali-prog de charger les vidéos
-        add_header Access-Control-Allow-Origin "*";
-        add_header Access-Control-Allow-Methods "GET, OPTIONS";
-        add_header Access-Control-Allow-Headers "Range";
+        add_header Access-Control-Allow-Origin "*" always;
+        add_header Access-Control-Allow-Methods "GET, HEAD, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Range, Accept-Encoding" always;
 
-        # Cache navigateur (1 an pour les vidéos)
-        add_header Cache-Control "public, max-age=31536000, immutable";
+        # Cache navigateur (1 an pour les vidéos - immutable)
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
 
-        # Types MIME
+        # Types MIME (WebM + MP4)
         types {
             video/mp4 mp4;
             video/webm webm;
@@ -73,8 +73,17 @@ server {
         # Compression désactivée pour vidéos (déjà compressées)
         gzip off;
 
-        # Activer byte-range (streaming)
-        add_header Accept-Ranges bytes;
+        # Activer byte-range (streaming / seek)
+        add_header Accept-Ranges bytes always;
+
+        # Preflight OPTIONS (pour CORS)
+        if ($request_method = 'OPTIONS') {
+            add_header Access-Control-Allow-Origin "*";
+            add_header Access-Control-Allow-Methods "GET, HEAD, OPTIONS";
+            add_header Access-Control-Max-Age 86400;
+            add_header Content-Length 0;
+            return 204;
+        }
     }
 }
 ```
@@ -100,29 +109,67 @@ systemctl reload nginx
 2. Extraire dans `C:\ffmpeg`
 3. Ajouter `C:\ffmpeg\bin` au PATH Windows
 
-### Compresser les vidéos
+### Compression recommandée: WebM VP9 (MEILLEUR)
 
-Ouvrir PowerShell dans le dossier des vidéos:
+Le format WebM VP9 offre le meilleur ratio qualité/taille (~60% plus léger que H.264).
 
 ```powershell
-# Vidéo unique
-ffmpeg -i original.mp4 -c:v libx264 -crf 28 -preset slow -vf "scale=720:-2" -an -movflags +faststart compressed.mp4
+# WebM VP9 - Qualité excellente, fichiers très légers
+ffmpeg -i original.mp4 -c:v libvpx-vp9 -crf 30 -b:v 0 -vf "scale=720:-2" -an output.webm
 
-# Toutes les vidéos du dossier
+# Toutes les vidéos du dossier en WebM
 Get-ChildItem -Filter *.mp4 | ForEach-Object {
-    $output = "compressed_$($_.Name)"
-    ffmpeg -i $_.FullName -c:v libx264 -crf 28 -preset slow -vf "scale=720:-2" -an -movflags +faststart $output
+    $output = $_.BaseName + ".webm"
+    ffmpeg -i $_.FullName -c:v libvpx-vp9 -crf 30 -b:v 0 -vf "scale=720:-2" -an $output
 }
 ```
 
-**Paramètres:**
-- `-crf 28`: Qualité (18=très haute qualité, 28=web, 35=basse)
-- `-preset slow`: Meilleure compression (plus lent à encoder)
-- `-vf "scale=720:-2"`: Largeur 720px (suffisant pour cartes)
-- `-an`: Supprime l'audio (pas besoin pour cartes)
-- `-movflags +faststart`: Permet lecture streaming
+**Résultat:** 7-12 MB → **300-800 KB** (qualité top!)
 
-**Résultat attendu:** 7-12 MB → 500 KB - 1.5 MB
+### Fallback MP4 H.264 (compatibilité)
+
+Créer aussi une version MP4 pour les vieux navigateurs:
+
+```powershell
+# MP4 H.264 - Fallback compatibilité
+ffmpeg -i original.mp4 -c:v libx264 -crf 26 -preset veryslow -tune film -vf "scale=720:-2" -an -movflags +faststart output.mp4
+
+# Toutes les vidéos
+Get-ChildItem -Filter *.mp4 -Exclude *_compressed* | ForEach-Object {
+    $output = $_.BaseName + "_web.mp4"
+    ffmpeg -i $_.FullName -c:v libx264 -crf 26 -preset veryslow -tune film -vf "scale=720:-2" -an -movflags +faststart $output
+}
+```
+
+**Résultat:** 7-12 MB → **500 KB - 1.2 MB**
+
+### Script complet (crée les 2 formats)
+
+```powershell
+# Créer WebM + MP4 pour chaque vidéo
+Get-ChildItem -Filter *.mp4 | ForEach-Object {
+    $baseName = $_.BaseName
+
+    # WebM VP9 (priorité navigateur)
+    Write-Host "Compression WebM: $baseName"
+    ffmpeg -i $_.FullName -c:v libvpx-vp9 -crf 30 -b:v 0 -vf "scale=720:-2" -an "$baseName.webm"
+
+    # MP4 H.264 (fallback)
+    Write-Host "Compression MP4: $baseName"
+    ffmpeg -i $_.FullName -c:v libx264 -crf 26 -preset slow -vf "scale=720:-2" -an -movflags +faststart "$baseName-web.mp4"
+}
+```
+
+**Paramètres WebM:**
+- `-c:v libvpx-vp9`: Codec VP9 (moderne, efficace)
+- `-crf 30`: Qualité (23=haute, 30=web optimisé, 40=basse)
+- `-b:v 0`: Bitrate variable (laisse VP9 optimiser)
+
+**Paramètres MP4:**
+- `-crf 26`: Qualité (18=très haute, 26=web, 35=basse)
+- `-preset veryslow`: Meilleure compression
+- `-tune film`: Optimisé pour vidéos fluides
+- `-movflags +faststart`: Streaming instantané
 
 ## 6. Upload des vidéos sur le VPS
 
@@ -144,19 +191,30 @@ scp *.mp4 root@TON_IP_VPS:/var/www/static/cards/
 
 ## 7. Nommer les fichiers vidéo
 
-Convention de nommage pour correspondre aux classes Epic Card:
+Convention de nommage pour correspondre aux classes Epic Card.
+**IMPORTANT:** Uploader les 2 formats (WebM + MP4) avec le même nom de base:
 
 ```
 /var/www/static/cards/
-├── warrior-fire.mp4
+├── warrior-fire.webm      # Priorité (léger, moderne)
+├── warrior-fire.mp4       # Fallback (compatibilité)
+├── mage-ice.webm
 ├── mage-ice.mp4
+├── ranger-nature.webm
 ├── ranger-nature.mp4
+├── paladin-light.webm
 ├── paladin-light.mp4
+├── assassin-shadow.webm
 ├── assassin-shadow.mp4
+├── berserker-blood.webm
 ├── berserker-blood.mp4
+├── guardian-cosmic.webm
 ├── guardian-cosmic.mp4
+├── mystic-lightning.webm
 └── mystic-lightning.mp4
 ```
+
+Le navigateur choisira automatiquement WebM s'il le supporte, sinon MP4.
 
 ## 8. Tester
 
