@@ -108,7 +108,7 @@ AUTH_SECRET=<générer avec: openssl rand -base64 32>
 | TV Mode | `/tv` | Affichage 1080p/4K |
 | Member Portal | `/portal` | Auth Discord 2 étapes, liaison membre, carte Epic |
 | Portal Planning | `/portal/planning` | Calendrier séances + Mode TV smartphone (PWA) |
-| Portal Workouts | `/portal/workouts` | Historique WODs + détails blocs (PWA) |
+| Portal Workouts | `/portal/workouts` | Historique WODs + création séances perso (PWA) |
 | Portal Performance | `/portal/performance` | Carte Epic, PRs, progression (PWA) |
 | Portal Profile | `/portal/profile` | Profil complet + paramètres (PWA) |
 | Settings | `/settings/api-keys` | Gestion clés API |
@@ -409,6 +409,25 @@ npm run lint         # ESLint
     - Bouton fermer pour revenir à la liste
   - **Couleurs par type de bloc:** Config BLOCK_TYPE_CONFIG utilisée
 - Build vérifié ✅
+
+### Session 22 - 2026-02-04
+
+- **Séances personnelles - Adhérents peuvent créer leurs propres WODs:**
+  - **Migration SQL:** `docs/sql/migrations/012_personal_workouts.sql`
+    - Table `personal_workouts` avec date, titre, type, durée, blocs, score, notes, feeling
+    - RPCs: `create_personal_workout()`, `update_personal_workout()`, `delete_personal_workout()`, `get_personal_workouts()`
+    - Mise à jour `get_member_workouts()` pour inclure les séances perso
+  - **Nouvelle API:** `/api/portal/personal-workouts` (GET/POST/PUT/DELETE)
+  - **Page workouts refaite:**
+    - Bouton "Créer une séance perso" en haut
+    - Formulaire complet: titre, date, type, durée, score, ressenti (1-5 étoiles)
+    - Système de blocs (échauffement, force, WOD, skill, accessoire, cooldown)
+    - Nouveau filtre "Perso" dans les onglets
+    - Badge "Perso" sur les cartes de séances personnelles
+    - Possibilité de supprimer ses séances perso
+- Build vérifié ✅
+- **À faire dans Supabase:**
+  - Exécuter `docs/sql/migrations/012_personal_workouts.sql`
 
 ---
 
