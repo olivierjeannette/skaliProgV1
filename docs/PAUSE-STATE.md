@@ -106,7 +106,11 @@ AUTH_SECRET=<générer avec: openssl rand -base64 32>
 | Teams | `/teams` | TeamBuilder Pro |
 | CRM | `/crm` | 8 onglets, gestion leads |
 | TV Mode | `/tv` | Affichage 1080p/4K |
-| Member Portal | `/portal` | Auth Discord 2 étapes, liaison membre, carte Pokemon |
+| Member Portal | `/portal` | Auth Discord 2 étapes, liaison membre, carte Epic |
+| Portal Planning | `/portal/planning` | Calendrier séances + réservation (PWA) |
+| Portal Workouts | `/portal/workouts` | Historique WODs + détails blocs (PWA) |
+| Portal Performance | `/portal/performance` | Carte Epic, PRs, progression (PWA) |
+| Portal Profile | `/portal/profile` | Profil complet + paramètres (PWA) |
 | Settings | `/settings/api-keys` | Gestion clés API |
 | PWA Config | `/pwa-config` | Config app mobile adhérents |
 | Login | `/login` | Authentification |
@@ -268,7 +272,41 @@ npm run lint         # ESLint
 - **Store mis à jour:** `portal-store.ts` supporte le nouveau système (epicCharacter, memberStats)
 - **Page portal refaite:** Utilise EpicCard + sélecteur d'univers
 - Build vérifié ✅
-- **À FAIRE:** Développer les vraies pages PWA (/portal/planning, /portal/workouts, etc.)
+
+### Session 16 - 2026-02-04
+
+- **Pages PWA Portail Membre - COMPLÈTES:**
+  - **`/portal/planning`** - Calendrier des séances
+    - Navigation semaine (prev/next)
+    - Mini calendrier avec indicateurs de séances
+    - Cartes séances par jour avec heure, type, coach, places
+    - Bouton réservation + badge "Inscrit"
+    - Scroll smooth vers le jour sélectionné
+  - **`/portal/workouts`** - Historique des entraînements
+    - Stats rapides (ce mois, temps total, total séances)
+    - Filtres par type (Tous, Cross, Muscu, Hyrox)
+    - Liste des WODs avec score et badge PR
+    - Vue détaillée avec blocs (échauffement, force, WOD, accessoire, cooldown)
+  - **`/portal/performance`** - Stats et performances
+    - Onglet Carte Epic avec sélecteur d'univers
+    - Onglet PRs avec liste des records personnels
+    - Onglet Progrès avec stats mensuelles, niveau, XP
+    - Barres de progression pour chaque stat
+  - **`/portal/profile`** - Profil complet
+    - Header avec avatar Discord, badges niveau/séances/PRs
+    - Infos personnelles (éditable): email, tel, poids, taille
+    - Paramètres notifications (rappels, PRs, actualités)
+    - Paramètres confidentialité (leaderboard, partage stats)
+    - Déconnexion avec confirmation
+- **Nouveaux composants:**
+  - `src/components/portal/PortalNav.tsx` - Navigation bottom bar
+  - `src/components/portal/PortalHeader.tsx` - Header réutilisable
+- **Page d'accueil portal refaite:**
+  - Carte Epic Hero en vedette
+  - Aperçu prochaine séance du jour
+  - Accès rapides vers toutes les pages
+  - Stats résumées (niveau, séances, PRs)
+- Build vérifié ✅
 
 ---
 
