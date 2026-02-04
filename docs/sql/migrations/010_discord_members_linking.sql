@@ -75,6 +75,9 @@ LEFT JOIN members m ON dm.member_id = m.id;
 -- 4. RPC: Lier un Discord à un Membre (depuis Portal ou Admin)
 -- ================================
 
+-- Drop existing function if return type differs
+DROP FUNCTION IF EXISTS link_discord_to_member(TEXT, UUID, TEXT);
+
 CREATE OR REPLACE FUNCTION link_discord_to_member(
   p_discord_id TEXT,
   p_member_id UUID,
@@ -157,6 +160,9 @@ $$;
 -- 5. RPC: Délier un Discord d'un Membre
 -- ================================
 
+-- Drop existing function if return type differs
+DROP FUNCTION IF EXISTS unlink_discord_from_member(TEXT);
+
 CREATE OR REPLACE FUNCTION unlink_discord_from_member(
   p_discord_id TEXT
 )
@@ -204,6 +210,9 @@ $$;
 -- 6. RPC: Rechercher des membres (pour liaison)
 -- ================================
 
+-- Drop existing function if return type differs
+DROP FUNCTION IF EXISTS search_members_for_linking(TEXT, INT);
+
 CREATE OR REPLACE FUNCTION search_members_for_linking(
   p_query TEXT,
   p_limit INT DEFAULT 10
@@ -244,6 +253,9 @@ $$;
 -- ================================
 -- 7. RPC: Obtenir un membre par ID avec stats (pour Portal)
 -- ================================
+
+-- Drop existing function if return type differs
+DROP FUNCTION IF EXISTS get_member_for_portal(UUID);
 
 CREATE OR REPLACE FUNCTION get_member_for_portal(
   p_member_id UUID
