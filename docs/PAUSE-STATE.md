@@ -98,7 +98,7 @@ AUTH_SECRET=<générer avec: openssl rand -base64 32>
 | Module | Route | Description |
 |--------|-------|-------------|
 | Dashboard | `/dashboard` | Page d'accueil admin |
-| Discord | `/discord` | 4 onglets (Notifs, Morning, Liaison, Bot) |
+| Discord | `/discord` | 3 onglets (Liaison Membres, Configuration, Notifications) |
 | Inventory | `/inventory` | 4 onglets (Config, Inventaire, Métho, Mouvements) |
 | Members | `/members` | Liste, fiche détaillée, édition |
 | Calendar | `/calendar` | Vue mois, CRUD sessions |
@@ -106,7 +106,7 @@ AUTH_SECRET=<générer avec: openssl rand -base64 32>
 | Teams | `/teams` | TeamBuilder Pro |
 | CRM | `/crm` | 8 onglets, gestion leads |
 | TV Mode | `/tv` | Affichage 1080p/4K |
-| Member Portal | `/portal` | Auth Discord, carte Pokemon |
+| Member Portal | `/portal` | Auth Discord 2 étapes, liaison membre, carte Pokemon |
 | Settings | `/settings/api-keys` | Gestion clés API |
 | PWA Config | `/pwa-config` | Config app mobile adhérents |
 | Login | `/login` | Authentification |
@@ -225,6 +225,32 @@ npm run lint         # ESLint
   - Exécuter `docs/sql/migrations/009_auth_passwords.sql`
   - **IMPORTANT:** Changer les mots de passe par défaut!
   - Ajouter `SUPABASE_SERVICE_ROLE_KEY` dans Vercel
+
+### Session 14 - 2026-02-04
+
+- **Refonte complète système liaison Discord ↔ Adhérents:**
+  - **Flow en 2 étapes:** Discord OAuth → Recherche membre → Liaison compte
+  - **Migration SQL:** `010_discord_members_linking.sql`
+    - Table `discord_members` avec liaison vers `members`
+    - View `discord_members_full` pour jointure complète
+    - RPC `link_discord_to_member()` - lier un compte
+    - RPC `unlink_discord_from_member()` - délier un compte
+    - RPC `search_members_for_linking()` - rechercher membres actifs
+    - RPC `get_member_for_portal()` - récupérer membre avec stats
+  - **Nouvelles API routes:**
+    - `/api/members/search` - recherche membres pour liaison
+    - `/api/members/link-discord` - liaison Discord ↔ Membre
+    - `/api/members/[id]` - récupérer détails membre
+  - **PortalLogin refait:** UI 2 étapes claire, recherche avec badges
+  - **Discord callback amélioré:** Vérifie liaison existante
+- **Refonte page admin Discord:**
+  - UI plus propre avec stats cards
+  - 3 onglets: Liaison Membres, Configuration, Notifications
+  - Config sauvegardée dans Supabase (table `settings`)
+  - Quick link vers portail PWA
+- Build vérifié ✅
+- **À faire dans Supabase:**
+  - Exécuter `docs/sql/migrations/010_discord_members_linking.sql`
 
 ---
 
