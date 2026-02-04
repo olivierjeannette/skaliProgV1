@@ -1,9 +1,11 @@
 name: Peppy Sync
 
 on:
-  # Toutes les heures de 6h à 21h (heures d'ouverture box)
   schedule:
-    - cron: '0 6-21 * * *'  # UTC, donc 7h-22h en France
+    # Lundi-Vendredi: 9h à 19h (UTC: 8h à 18h) - chaque heure
+    - cron: '0 8-18 * * 1-5'
+    # Samedi: 11h uniquement (UTC: 10h)
+    - cron: '0 10 * * 6'
   # Permet de lancer manuellement
   workflow_dispatch:
     inputs:
