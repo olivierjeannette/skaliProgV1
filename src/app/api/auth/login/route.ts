@@ -2,13 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { UserRole } from '@/types';
 
+// Mots de passe par défaut pour le développement local UNIQUEMENT
+// En production, SUPABASE_SERVICE_ROLE_KEY doit être défini
+const DEV_PASSWORDS: Record<string, string> = {
+  admin: 'skaliprog',
+  coach: 'coach2024',
+  athlete: 'athlete2024',
+};
+
 // Créer un client Supabase avec la clé service pour accéder aux settings
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !serviceKey) {
-    throw new Error('Missing Supabase configuration');
+    return null; // Retourne null si pas de service key
   }
 
   return createClient(url, serviceKey);
@@ -44,24 +52,40 @@ export async function POST(request: NextRequest) {
 
     // Récupérer le mot de passe depuis Supabase settings
     const supabase = getSupabaseAdmin();
+    let storedPassword: string | null = null;
 
-    const settingKey = `auth_password_${role.toLowerCase()}`;
-    const { data: setting, error } = await supabase
-      .from('settings')
-      .select('setting_value')
-      .eq('setting_key', settingKey)
-      .single();
+    if (supabase) {
+      // Production: récupérer depuis Supabase
+      const settingKey = `auth_password_${role.toLowerCase()}`;
+      const { data: setting, error } = await supabase
+        .from('settings')
+        .select('setting_value')
+        .eq('setting_key', settingKey)
+        .single();
 
-    if (error || !setting) {
-      console.error('Error fetching password setting:', error);
+      if (error || !setting) {
+        console.error('Error fetching password setting:', error);
+        return NextResponse.json(
+          { success: false, message: 'Configuration manquante. Contactez l\'administrateur.' },
+          { status: 500 }
+        );
+      }
+      storedPassword = setting.setting_value;
+    } else {
+      // Dev local: utiliser les mots de passe par défaut
+      console.warn('⚠️ Mode dev: utilisation des mots de passe par défaut');
+      storedPassword = DEV_PASSWORDS[role.toLowerCase()] || null;
+    }
+
+    if (!storedPassword) {
       return NextResponse.json(
-        { success: false, message: 'Configuration manquante. Contactez l\'administrateur.' },
+        { success: false, message: 'Configuration manquante' },
         { status: 500 }
       );
     }
 
     // Vérifier le mot de passe
-    const isValid = await verifyPassword(password, setting.setting_value);
+    const isValid = await verifyPassword(password, storedPassword);
 
     if (!isValid) {
       return NextResponse.json(
