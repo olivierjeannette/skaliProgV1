@@ -16,8 +16,14 @@ import {
   ArrowLeft,
   Loader2,
   Dumbbell,
-  LogIn,
 } from 'lucide-react'
+
+// Types
+interface LinkedMember {
+  id: string
+  name: string
+  discord_id?: string
+}
 
 // Discord icon SVG
 const DiscordIcon = ({ className }: { className?: string }) => (
@@ -27,11 +33,12 @@ const DiscordIcon = ({ className }: { className?: string }) => (
 )
 
 export function PortalLogin() {
-  const { login, linkMemberToDiscord, currentUser, error } = usePortalStore()
+  const { linkMemberToDiscord, currentUser } = usePortalStore()
   const [step, setStep] = useState<'login' | 'link'>('login')
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<ReturnType<typeof searchMembers>>([])
+  const [searchResults, setSearchResults] = useState<LinkedMember[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isSearching, setIsSearching] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
 
   // Check for OAuth errors in URL
@@ -71,10 +78,18 @@ export function PortalLogin() {
     window.location.href = '/api/auth/discord'
   }
 
-  const handleSearch = (query: string) => {
+  const handleSearch = async (query: string) => {
     setSearchQuery(query)
     if (query.length >= 2) {
-      setSearchResults(searchMembers(query))
+      setIsSearching(true)
+      try {
+        const results = await searchMembers(query)
+        setSearchResults(results)
+      } catch {
+        setSearchResults([])
+      } finally {
+        setIsSearching(false)
+      }
     } else {
       setSearchResults([])
     }
@@ -83,11 +98,7 @@ export function PortalLogin() {
   const handleLinkMember = async (memberId: string) => {
     if (!currentUser) return
 
-    const success = await linkMemberToDiscord(
-      memberId,
-      currentUser.discordId,
-      currentUser.username
-    )
+    const success = await linkMemberToDiscord(memberId)
 
     if (success) {
       // Reload to show the portal
@@ -229,7 +240,12 @@ export function PortalLogin() {
 
           {/* Results */}
           <div className="space-y-2 max-h-60 overflow-y-auto">
-            {searchQuery.length < 2 ? (
+            {isSearching ? (
+              <div className="text-center py-6 text-slate-500">
+                <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin" />
+                <p className="text-sm">Recherche...</p>
+              </div>
+            ) : searchQuery.length < 2 ? (
               <div className="text-center py-6 text-slate-500">
                 <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p className="text-sm">Tapez au moins 2 caractères...</p>

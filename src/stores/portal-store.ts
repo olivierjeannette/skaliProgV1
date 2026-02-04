@@ -58,132 +58,36 @@ interface PortalStore {
   error: string | null
 
   // Actions
-  login: (discordId: string) => Promise<boolean>
   logout: () => Promise<void>
   checkSession: () => Promise<void>
   setLinkedMember: (member: LinkedMember | null) => void
   setPokemonStats: (stats: PokemonStats | null) => void
-  linkMemberToDiscord: (memberId: string, discordId: string, username: string) => Promise<boolean>
+  linkMemberToDiscord: (memberId: string) => Promise<boolean>
 }
 
-// Mock données pour la démo (fallback si pas connecté à Supabase)
-const mockMembers: LinkedMember[] = [
-  {
-    id: '1',
-    name: 'Jean Dupont',
-    firstName: 'Jean',
-    lastName: 'Dupont',
-    email: 'jean@example.com',
-    phone: '0612345678',
-    gender: 'M',
-    birthDate: '1990-05-15',
-    weight: 80,
-    height: 180,
-    discord_id: '123456789012345678',
-    discord_username: 'JeanD',
-    status: 'active',
-    created_at: '2024-01-15'
-  },
-  {
-    id: '2',
-    name: 'Marie Martin',
-    firstName: 'Marie',
-    lastName: 'Martin',
-    email: 'marie@example.com',
-    phone: '0687654321',
-    gender: 'F',
-    birthDate: '1995-08-22',
-    weight: 60,
-    height: 165,
-    status: 'active',
-    created_at: '2024-02-01'
-  },
-  {
-    id: '3',
-    name: 'Pierre Bernard',
-    firstName: 'Pierre',
-    lastName: 'Bernard',
-    email: 'pierre@example.com',
-    gender: 'M',
-    weight: 85,
-    height: 175,
-    status: 'active',
-    created_at: '2024-03-10'
-  }
-]
-
-// Simuler les stats Pokémon basées sur le membre
+// Génère les stats Pokemon basées sur les performances du membre (depuis l'API)
 const generatePokemonStats = (member: LinkedMember): PokemonStats => {
-  // Calcul basé sur des performances fictives
-  const baseLevel = Math.floor(Math.random() * 30) + 20
+  // TODO: Récupérer les vraies stats depuis l'API /api/portal/stats
+  // Pour l'instant, valeurs par défaut
   return {
-    atk: Math.floor(Math.random() * 40) + 60, // 60-100
-    def: Math.floor(Math.random() * 40) + 60,
-    spd: Math.floor(Math.random() * 40) + 60,
-    end: Math.floor(Math.random() * 40) + 60,
-    tec: Math.floor(Math.random() * 40) + 60,
-    level: baseLevel,
-    xp: Math.floor(Math.random() * 1000),
-    type: ['Force', 'Cardio', 'Hybrid', 'Endurance', 'Technique'][Math.floor(Math.random() * 5)],
-    rarity: baseLevel > 40 ? 'Rare' : baseLevel > 25 ? 'Peu Commun' : 'Commun'
+    atk: 50,
+    def: 50,
+    spd: 50,
+    end: 50,
+    tec: 50,
+    level: 1,
+    xp: 0,
+    type: 'Débutant',
+    rarity: 'Commun'
   }
 }
 
-export const usePortalStore = create<PortalStore>((set, get) => ({
+export const usePortalStore = create<PortalStore>((set) => ({
   currentUser: null,
   linkedMember: null,
   pokemonStats: null,
   isLoading: true,
   error: null,
-
-  // Legacy login (kept for backward compatibility, but OAuth is preferred)
-  login: async (discordId: string) => {
-    set({ isLoading: true, error: null })
-
-    try {
-      if (!/^[0-9]{17,19}$/.test(discordId)) {
-        set({ error: 'Discord ID invalide (17-19 chiffres)', isLoading: false })
-        return false
-      }
-
-      const linkedMember = mockMembers.find(m => m.discord_id === discordId)
-
-      if (linkedMember) {
-        const user: PortalUser = {
-          discordId,
-          username: linkedMember.discord_username || `User${discordId.slice(-4)}`
-        }
-
-        const stats = generatePokemonStats(linkedMember)
-
-        set({
-          currentUser: user,
-          linkedMember,
-          pokemonStats: stats,
-          isLoading: false
-        })
-
-        return true
-      }
-
-      const user: PortalUser = {
-        discordId,
-        username: `User${discordId.slice(-4)}`
-      }
-
-      set({
-        currentUser: user,
-        linkedMember: null,
-        pokemonStats: null,
-        isLoading: false
-      })
-
-      return true
-    } catch (error) {
-      set({ error: 'Erreur de connexion', isLoading: false })
-      return false
-    }
-  },
 
   logout: async () => {
     try {
@@ -262,13 +166,12 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
 
   setPokemonStats: (stats) => set({ pokemonStats: stats }),
 
-  linkMemberToDiscord: async (memberId, discordId, username) => {
+  linkMemberToDiscord: async (memberId) => {
     try {
-      // Try to link via Supabase RPC
       const response = await fetch('/api/members/link-discord', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ memberId, discordId, username })
+        body: JSON.stringify({ memberId })
       })
 
       if (response.ok) {
@@ -283,46 +186,36 @@ export const usePortalStore = create<PortalStore>((set, get) => ({
         }
       }
 
-      // Fallback to mock data for demo
-      const member = mockMembers.find(m => m.id === memberId)
-      if (member) {
-        member.discord_id = discordId
-        member.discord_username = username
-
-        const stats = generatePokemonStats(member)
-        set({
-          linkedMember: member,
-          pokemonStats: stats
-        })
-        return true
-      }
-
       return false
     } catch {
-      // Fallback to mock
-      const member = mockMembers.find(m => m.id === memberId)
-      if (member) {
-        member.discord_id = discordId
-        member.discord_username = username
-        const stats = generatePokemonStats(member)
-        set({ linkedMember: member, pokemonStats: stats })
-        return true
-      }
       return false
     }
   }
 }))
 
-// Export des mock members pour la recherche
-export const searchMembers = (query: string): LinkedMember[] => {
-  const searchLower = query.toLowerCase()
-  return mockMembers.filter(m =>
-    m.name.toLowerCase().includes(searchLower) ||
-    m.firstName?.toLowerCase().includes(searchLower) ||
-    m.lastName?.toLowerCase().includes(searchLower)
-  )
+// Recherche de membres via l'API (plus de mocks)
+export const searchMembers = async (query: string): Promise<LinkedMember[]> => {
+  try {
+    const response = await fetch(`/api/members/search?q=${encodeURIComponent(query)}`)
+    if (response.ok) {
+      const data = await response.json()
+      return data.members || []
+    }
+  } catch {
+    // Ignore errors
+  }
+  return []
 }
 
-export const getMemberById = (id: string): LinkedMember | undefined => {
-  return mockMembers.find(m => m.id === id)
+export const getMemberById = async (id: string): Promise<LinkedMember | null> => {
+  try {
+    const response = await fetch(`/api/members/${id}`)
+    if (response.ok) {
+      const data = await response.json()
+      return data.member || null
+    }
+  } catch {
+    // Ignore errors
+  }
+  return null
 }

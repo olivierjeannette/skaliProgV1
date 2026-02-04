@@ -80,65 +80,8 @@ const SERVICE_ICONS: Record<LeadService, typeof Dumbbell> = {
   teambuilding: Building,
 };
 
-// Mock data for development (would come from Supabase in production)
-const MOCK_LEADS: Lead[] = [
-  {
-    id: '1',
-    name: 'Jean Dupont',
-    email: 'jean.dupont@email.com',
-    phone: '06 12 34 56 78',
-    service: 'fitness',
-    status: 'prospect',
-    message: 'Intéressé par un abonnement fitness',
-    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '2',
-    name: 'Marie Martin',
-    email: 'marie.martin@email.com',
-    phone: '06 98 76 54 32',
-    service: 'pilates',
-    status: 'contacte_attente',
-    message: 'Souhaite essayer le Pilates',
-    notes: 'Rappelée le 01/02, attend confirmation horaires',
-    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    contacted_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '3',
-    name: 'Pierre Durand',
-    email: 'pierre.durand@email.com',
-    phone: '06 11 22 33 44',
-    service: 'coaching',
-    status: 'rdv_essai',
-    message: 'Coaching personnel pour préparation marathon',
-    created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '4',
-    name: 'Sophie Bernard',
-    email: 'sophie.b@email.com',
-    phone: '06 55 66 77 88',
-    service: 'fitness',
-    status: 'converti_abonnement',
-    message: 'Abonnement annuel fitness',
-    created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-    converted_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '5',
-    name: 'Luc Petit',
-    email: 'luc.petit@email.com',
-    service: 'teambuilding',
-    status: 'non_converti_prix',
-    message: 'Team building pour entreprise de 20 personnes',
-    notes: 'Budget trop serré pour le moment',
-    created_at: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
-
 export default function CRMPage() {
-  const [leads, setLeads] = useState<Lead[]>(MOCK_LEADS);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [activeTab, setActiveTab] = useState('home');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -157,10 +100,11 @@ export default function CRMPage() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (!error && data && data.length > 0) {
-        setLeads(data as Lead[]);
+      if (error) {
+        console.error('Error loading leads:', error);
+      } else {
+        setLeads(data as Lead[] || []);
       }
-      // If no data from Supabase, keep mock data for demo
     } catch (err) {
       console.error('Error loading leads:', err);
     } finally {

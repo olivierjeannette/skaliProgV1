@@ -1,6 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DEFAULT_PASSWORDS } from '@/config/roles';
+import { createClient } from '@supabase/supabase-js';
 import type { UserRole } from '@/types';
+
+// Créer un client Supabase avec la clé service pour accéder aux settings
+function getSupabaseAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !serviceKey) {
+    throw new Error('Missing Supabase configuration');
+  }
+
+  return createClient(url, serviceKey);
+}
+
+// Simple hash comparison (en production, utiliser bcrypt)
+async function verifyPassword(input: string, storedHash: string): Promise<boolean> {
+  // Si le hash stocké commence par '$2', c'est un hash bcrypt
+  // Sinon, on compare en clair (pour la migration)
+  if (storedHash.startsWith('$2')) {
+    // TODO: Implémenter bcrypt.compare quand le package est installé
+    // Pour l'instant, on refuse la connexion si c'est hashé
+    return false;
+  }
+
+  // Comparaison simple pour la phase de migration
+  // IMPORTANT: Remplacer par bcrypt une fois les passwords migrés
+  return input === storedHash;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,11 +42,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Vérifier le mot de passe
-    // TODO: Récupérer les mots de passe depuis Supabase settings
-    const expectedPassword = DEFAULT_PASSWORDS[role];
+    // Récupérer le mot de passe depuis Supabase settings
+    const supabase = getSupabaseAdmin();
 
-    if (password !== expectedPassword) {
+    const settingKey = `auth_password_${role.toLowerCase()}`;
+    const { data: setting, error } = await supabase
+      .from('settings')
+      .select('setting_value')
+      .eq('setting_key', settingKey)
+      .single();
+
+    if (error || !setting) {
+      console.error('Error fetching password setting:', error);
+      return NextResponse.json(
+        { success: false, message: 'Configuration manquante. Contactez l\'administrateur.' },
+        { status: 500 }
+      );
+    }
+
+    // Vérifier le mot de passe
+    const isValid = await verifyPassword(password, setting.setting_value);
+
+    if (!isValid) {
       return NextResponse.json(
         { success: false, message: 'Mot de passe incorrect' },
         { status: 401 }

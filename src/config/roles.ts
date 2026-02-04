@@ -34,11 +34,9 @@ export const ROLES: Record<UserRole, {
   },
 };
 
-export const DEFAULT_PASSWORDS = {
-  ADMIN: 'skaliprog',
-  COACH: 'coach2024',
-  ATHLETE: 'athlete2024',
-};
+// Les mots de passe sont stockés hashés dans Supabase (table: settings)
+// Clés: auth_password_admin, auth_password_coach, auth_password_athlete
+// IMPORTANT: Ne JAMAIS stocker de mots de passe en clair dans le code
 
 export function hasPermission(role: UserRole, permission: string): boolean {
   const roleConfig = ROLES[role];

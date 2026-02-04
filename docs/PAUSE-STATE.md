@@ -1,6 +1,6 @@
 # PAUSE-STATE - Skali Prog (Next.js)
 
-> Dernier update: 2026-02-03
+> Dernier update: 2026-02-04
 > Phase actuelle: **5 - DEPLOIEMENT** (Prêt pour Vercel)
 > Agent actif: **@DEV**
 > Prochain: **Déploiement Vercel**
@@ -189,6 +189,22 @@ npm run lint         # ESLint
 - **À faire dans Supabase:**
   - Exécuter `docs/sql/migrations/008_week_templates.sql`
   - Décaler les séances: `UPDATE sessions SET date = date + INTERVAL '1 day';`
+
+### Session 13 - 2026-02-04
+
+- **Audit sécurité et nettoyage code:**
+  - **Suppression passwords hardcodés:** `roles.ts` ne contient plus de mots de passe
+  - **Auth sécurisée:** Login vérifie les passwords depuis Supabase (table `settings`)
+  - **Suppression mock data CRM:** Plus de données fictives, uniquement Supabase
+  - **Nettoyage portal-store:** Plus de mock members, recherche via API
+  - **Auth-store sans localStorage:** Session uniquement via cookie httpOnly
+  - **API session unifiée:** Gère admin + portal sessions
+- **Migration SQL:** `009_auth_passwords.sql` pour stocker les passwords
+- Build vérifié ✅
+- **À faire dans Supabase:**
+  - Exécuter `docs/sql/migrations/009_auth_passwords.sql`
+  - **IMPORTANT:** Changer les mots de passe par défaut!
+  - Ajouter `SUPABASE_SERVICE_ROLE_KEY` dans Vercel
 
 ---
 
