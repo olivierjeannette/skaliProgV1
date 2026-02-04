@@ -71,14 +71,16 @@ function TVModeContent() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [manualZoom, setManualZoom] = useState(1); // Local zoom override
+  const [contentZoom, setContentZoom] = useState(1); // Zoom pour le contenu des blocs uniquement
   const [showControls, setShowControls] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCasting, setIsCasting] = useState(false);
 
-  // Computed zoom (combines settings + manual adjustments)
-  const effectiveZoom = (layoutSettings.globalZoom / 100) * manualZoom;
+  // Base zoom from settings (for header, block titles)
+  const baseZoom = layoutSettings.globalZoom / 100;
+  // Content zoom adds manual adjustment (for block content only)
+  const effectiveContentZoom = baseZoom * contentZoom;
 
   // Clock update
   useEffect(() => {
@@ -280,7 +282,7 @@ function TVModeContent() {
               <h1
                 className={`tracking-tight text-black truncate ${textSettings.titleBold ? 'font-extrabold' : 'font-medium'} ${textSettings.titleUppercase ? 'uppercase' : ''}`}
                 style={{
-                  fontSize: `${2.4 * textSettings.titleSize * effectiveZoom}rem`,
+                  fontSize: `${2.4 * textSettings.titleSize * baseZoom}rem`,
                   fontFamily: FONT_FAMILY_MAP[textSettings.fontFamily],
                 }}
               >
@@ -290,7 +292,7 @@ function TVModeContent() {
                 <div className="flex items-center gap-3 mt-1">
                   <span
                     className="font-semibold text-black/70 capitalize"
-                    style={{ fontSize: `${1.1 * textSettings.contentSize * effectiveZoom}rem` }}
+                    style={{ fontSize: `${1.1 * textSettings.contentSize * baseZoom}rem` }}
                   >
                     {formatDate(session.date)}
                   </span>
@@ -299,7 +301,7 @@ function TVModeContent() {
                       className="flex items-center gap-2 px-3 py-1 rounded-full font-bold text-white"
                       style={{
                         backgroundColor: category.color,
-                        fontSize: `${0.9 * textSettings.contentSize * effectiveZoom}rem`,
+                        fontSize: `${0.9 * textSettings.contentSize * baseZoom}rem`,
                       }}
                     >
                       <CategoryIcon className="w-4 h-4" />
@@ -316,7 +318,7 @@ function TVModeContent() {
                 <div
                   className="font-black tabular-nums"
                   style={{
-                    fontSize: `${5 * textSettings.clockSize * effectiveZoom}rem`,
+                    fontSize: `${5 * textSettings.clockSize * baseZoom}rem`,
                     lineHeight: 1,
                     color: colorSettings.clockColor,
                     fontFamily: FONT_FAMILY_MAP[textSettings.fontFamily],
@@ -331,7 +333,7 @@ function TVModeContent() {
             {behaviorSettings.showTimingInfo && (
               <div className="flex flex-col items-end">
                 {session.work_duration && (
-                  <div className="flex items-center gap-2 text-black/80" style={{ fontSize: `${1.2 * textSettings.contentSize * effectiveZoom}rem` }}>
+                  <div className="flex items-center gap-2 text-black/80" style={{ fontSize: `${1.2 * textSettings.contentSize * baseZoom}rem` }}>
                     <Clock className="w-5 h-5" />
                     <span className="font-bold">{session.work_duration}s travail</span>
                     {session.rest_duration && (
@@ -340,7 +342,7 @@ function TVModeContent() {
                   </div>
                 )}
                 {session.rounds && (
-                  <div className="text-black/60 font-semibold" style={{ fontSize: `${1 * textSettings.contentSize * effectiveZoom}rem` }}>
+                  <div className="text-black/60 font-semibold" style={{ fontSize: `${1 * textSettings.contentSize * baseZoom}rem` }}>
                     {session.rounds} rounds
                   </div>
                 )}
@@ -387,11 +389,11 @@ function TVModeContent() {
                       backgroundColor: `${blockColors.border}15`,
                     }}
                   >
-                    <span style={{ fontSize: `${1.6 * textSettings.titleSize * effectiveZoom}rem` }}>{blockConfig.icon}</span>
+                    <span style={{ fontSize: `${1.6 * textSettings.titleSize * baseZoom}rem` }}>{blockConfig.icon}</span>
                     <h2
                       className={`flex-1 ${textSettings.titleBold ? 'font-bold' : 'font-medium'} ${textSettings.titleUppercase ? 'uppercase' : ''} tracking-wide`}
                       style={{
-                        fontSize: `${1.6 * textSettings.titleSize * effectiveZoom}rem`,
+                        fontSize: `${1.6 * textSettings.titleSize * baseZoom}rem`,
                         color: blockColors.text,
                         fontFamily: FONT_FAMILY_MAP[textSettings.fontFamily],
                       }}
@@ -400,12 +402,12 @@ function TVModeContent() {
                     </h2>
                   </div>
 
-                  {/* Block Content */}
+                  {/* Block Content - uses effectiveContentZoom for manual zoom buttons */}
                   <div className="flex-1 p-4 overflow-auto">
                     <div
                       className={`whitespace-pre-wrap ${textSettings.contentBold ? 'font-semibold' : ''}`}
                       style={{
-                        fontSize: `${1.3 * textSettings.contentSize * effectiveZoom}rem`,
+                        fontSize: `${1.3 * textSettings.contentSize * effectiveContentZoom}rem`,
                         color: blockColors.text,
                         lineHeight: textSettings.lineHeight,
                         fontFamily: FONT_FAMILY_MAP[textSettings.fontFamily],
@@ -457,7 +459,7 @@ function TVModeContent() {
               <h1
                 className={`tracking-tight text-black ${textSettings.titleBold ? 'font-extrabold' : 'font-medium'} ${textSettings.titleUppercase ? 'uppercase' : ''}`}
                 style={{
-                  fontSize: `${2.4 * textSettings.titleSize * effectiveZoom}rem`,
+                  fontSize: `${2.4 * textSettings.titleSize * baseZoom}rem`,
                   fontFamily: FONT_FAMILY_MAP[textSettings.fontFamily],
                 }}
               >
@@ -470,7 +472,7 @@ function TVModeContent() {
                 <div
                   className="font-black tabular-nums"
                   style={{
-                    fontSize: `${5 * textSettings.clockSize * effectiveZoom}rem`,
+                    fontSize: `${5 * textSettings.clockSize * baseZoom}rem`,
                     lineHeight: 1,
                     color: colorSettings.clockColor,
                   }}
@@ -484,7 +486,7 @@ function TVModeContent() {
               <Trophy className="w-8 h-8 text-yellow-500" />
               <span
                 className="font-bold text-black/80"
-                style={{ fontSize: `${1.4 * textSettings.contentSize * effectiveZoom}rem` }}
+                style={{ fontSize: `${1.4 * textSettings.contentSize * baseZoom}rem` }}
               >
                 {teams.length} équipes
               </span>
@@ -526,7 +528,7 @@ function TVModeContent() {
                   <h2
                     className={`text-black ${textSettings.titleBold ? 'font-bold' : 'font-medium'}`}
                     style={{
-                      fontSize: `${1.8 * textSettings.titleSize * effectiveZoom}rem`,
+                      fontSize: `${1.8 * textSettings.titleSize * baseZoom}rem`,
                       fontFamily: FONT_FAMILY_MAP[textSettings.fontFamily],
                     }}
                   >
@@ -536,14 +538,14 @@ function TVModeContent() {
                     className="font-bold px-3 py-1 rounded-full text-white"
                     style={{
                       backgroundColor: TEAM_COLORS[index % TEAM_COLORS.length],
-                      fontSize: `${1 * textSettings.contentSize * effectiveZoom}rem`,
+                      fontSize: `${1 * textSettings.contentSize * baseZoom}rem`,
                     }}
                   >
                     {team.totalPoints} pts
                   </span>
                 </div>
 
-                {/* Team Members */}
+                {/* Team Members - uses effectiveContentZoom for manual zoom */}
                 <div className="flex-1 p-4 overflow-auto">
                   <ul className="space-y-2">
                     {team.participants.map((p) => (
@@ -551,7 +553,7 @@ function TVModeContent() {
                         key={p.id}
                         className="flex items-center gap-3 py-2 px-3 rounded-lg bg-black/5"
                         style={{
-                          fontSize: `${1.3 * textSettings.contentSize * effectiveZoom}rem`,
+                          fontSize: `${1.3 * textSettings.contentSize * effectiveContentZoom}rem`,
                           fontFamily: FONT_FAMILY_MAP[textSettings.fontFamily],
                         }}
                       >
@@ -573,7 +575,7 @@ function TVModeContent() {
                   className="px-4 py-2 border-t text-black/60 flex justify-center gap-4"
                   style={{
                     borderColor: `${TEAM_COLORS[index % TEAM_COLORS.length]}20`,
-                    fontSize: `${0.9 * textSettings.contentSize * effectiveZoom}rem`,
+                    fontSize: `${0.9 * textSettings.contentSize * baseZoom}rem`,
                   }}
                 >
                   <span className="text-blue-500">M {team.maleCount}</span>
@@ -656,8 +658,8 @@ function TVModeContent() {
           </Button>
         </Link>
 
-        <Link href="/settings" target="_blank">
-          <Button variant="secondary" size="icon" className="shadow-lg" title="Paramètres TV">
+        <Link href="/tv/config">
+          <Button variant="secondary" size="icon" className="shadow-lg" title="Configurer l'affichage TV">
             <Settings className="w-5 h-5" />
           </Button>
         </Link>
@@ -686,8 +688,8 @@ function TVModeContent() {
           variant="secondary"
           size="icon"
           className="shadow-lg"
-          onClick={() => setManualZoom(z => Math.max(0.5, z - 0.1))}
-          title="Réduire le texte"
+          onClick={() => setContentZoom(z => Math.max(0.5, z - 0.1))}
+          title="Réduire le contenu"
         >
           <ZoomOut className="w-5 h-5" />
         </Button>
@@ -695,8 +697,8 @@ function TVModeContent() {
           variant="secondary"
           size="icon"
           className="shadow-lg"
-          onClick={() => setManualZoom(z => Math.min(2, z + 0.1))}
-          title="Agrandir le texte"
+          onClick={() => setContentZoom(z => Math.min(2, z + 0.1))}
+          title="Agrandir le contenu"
         >
           <ZoomIn className="w-5 h-5" />
         </Button>
@@ -733,7 +735,7 @@ function TVModeContent() {
           </div>
 
           <div className="px-3 py-1 bg-black/50 text-white rounded-full text-sm font-medium ml-2">
-            Zoom: {Math.round(effectiveZoom * 100)}%
+            Contenu: {Math.round(contentZoom * 100)}%
           </div>
         </div>
       )}

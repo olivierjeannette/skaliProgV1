@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useEffect, useState } from 'react';
 
 // Types pour les settings TV
 export interface TVTextSettings {
@@ -161,3 +162,29 @@ export const useTVSettingsStore = create<TVSettingsStore>()(
 
 // Export des defaults pour la page settings
 export { defaultSettings };
+
+// Hook pour éviter les problèmes d'hydratation avec persist
+// Retourne les settings avec garantie de synchronisation client
+export function useTVSettingsHydrated() {
+  const store = useTVSettingsStore();
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    // Le store est hydraté après le premier render côté client
+    setHydrated(true);
+  }, []);
+
+  // Pendant l'hydratation, retourner les defaults pour éviter les mismatches
+  if (!hydrated) {
+    return {
+      ...store,
+      settings: defaultSettings,
+      isHydrated: false,
+    };
+  }
+
+  return {
+    ...store,
+    isHydrated: true,
+  };
+}
