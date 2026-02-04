@@ -10,7 +10,7 @@ export default function PortalLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { currentUser, isLoading, checkSession } = usePortalStore()
+  const { currentUser, linkedMember, isLoading, checkSession } = usePortalStore()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -29,10 +29,17 @@ export default function PortalLayout({
     )
   }
 
+  // Pas connecté avec Discord -> afficher login
   if (!currentUser) {
     return <PortalLogin />
   }
 
+  // Connecté avec Discord mais pas lié à un adhérent -> afficher étape de liaison
+  if (!linkedMember) {
+    return <PortalLogin />
+  }
+
+  // Connecté ET lié -> afficher le portal
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <InstallPrompt />

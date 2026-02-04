@@ -10,13 +10,25 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { getSupabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import {
-  MessageSquare,
   Bell,
-  Sun,
   Link2,
   Bot,
   Save,
@@ -28,14 +40,20 @@ import {
   UserCheck,
   UserX,
   AlertTriangle,
-  Play,
-  Terminal,
   Search,
   Link,
   Unlink,
   CheckCircle,
   XCircle,
   Loader2,
+  Settings,
+  Webhook,
+  Clock,
+  Smartphone,
+  ExternalLink,
+  Copy,
+  Info,
+  Zap,
 } from 'lucide-react';
 
 // Types
@@ -47,10 +65,12 @@ interface DiscordMember {
   server_nickname?: string;
   member_id?: string;
   member_name?: string;
-  firstname?: string;
-  lastname?: string;
+  first_name?: string;
+  last_name?: string;
   is_active: boolean;
   last_sync?: string;
+  linked_at?: string;
+  linked_by?: string;
 }
 
 interface Member {
@@ -60,18 +80,26 @@ interface Member {
   discord_id?: string;
 }
 
-interface NotificationConfig {
+interface DiscordConfig {
   webhookUrl: string;
   weatherApiKey: string;
   weatherCity: string;
-  sendTime: string;
-  enabled: boolean;
+  guildId: string;
+  botToken: string;
+  notificationsEnabled: boolean;
 }
 
 type FilterType = 'all' | 'linked' | 'unlinked' | 'inactive';
 
+// Discord icon SVG
+const DiscordIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+  </svg>
+);
+
 export default function DiscordPage() {
-  const [currentTab, setCurrentTab] = useState('notifications');
+  const [currentTab, setCurrentTab] = useState('liaison');
   const [discordMembers, setDiscordMembers] = useState<DiscordMember[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -79,16 +107,17 @@ export default function DiscordPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [botStatus, setBotStatus] = useState<'checking' | 'active' | 'inactive' | 'error'>('checking');
   const [lastSyncMinutes, setLastSyncMinutes] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
-  // Notification config state
-  const [notifConfig, setNotifConfig] = useState<NotificationConfig>({
+  // Config state
+  const [config, setConfig] = useState<DiscordConfig>({
     webhookUrl: '',
     weatherApiKey: '',
     weatherCity: 'Laval,FR',
-    sendTime: '07:00',
-    enabled: false,
+    guildId: '',
+    botToken: '',
+    notificationsEnabled: false,
   });
-  const [isSaving, setIsSaving] = useState(false);
 
   // Load data
   const loadData = useCallback(async () => {
@@ -102,17 +131,55 @@ export default function DiscordPage() {
         .select('*')
         .order('discord_username');
 
-      if (discordError) throw discordError;
-      setDiscordMembers(discordData || []);
+      if (discordError) {
+        console.warn('View discord_members_full not found, using fallback');
+        // Fallback: load from discord_members directly
+        const { data: fallbackData } = await supabase
+          .from('discord_members')
+          .select('*')
+          .order('discord_username');
+        setDiscordMembers(fallbackData || []);
+      } else {
+        setDiscordMembers(discordData || []);
+      }
 
       // Load members
       const { data: membersData, error: membersError } = await supabase
         .from('members')
         .select('id, name, email, discord_id')
+        .eq('is_active', true)
         .order('name');
 
-      if (membersError) throw membersError;
-      setMembers(membersData || []);
+      if (!membersError) {
+        setMembers(membersData || []);
+      }
+
+      // Load config from settings
+      const { data: settingsData } = await supabase
+        .from('settings')
+        .select('key, value')
+        .in('key', [
+          'discord_webhook_url',
+          'discord_guild_id',
+          'discord_bot_token',
+          'discord_notifications_enabled',
+          'weather_api_key',
+          'weather_city',
+        ]);
+
+      if (settingsData) {
+        const settingsMap = Object.fromEntries(
+          settingsData.map((s) => [s.key, s.value])
+        );
+        setConfig({
+          webhookUrl: settingsMap.discord_webhook_url || '',
+          guildId: settingsMap.discord_guild_id || '',
+          botToken: settingsMap.discord_bot_token || '',
+          notificationsEnabled: settingsMap.discord_notifications_enabled === 'true',
+          weatherApiKey: settingsMap.weather_api_key || '',
+          weatherCity: settingsMap.weather_city || 'Laval,FR',
+        });
+      }
 
       // Check bot status
       const { data: syncData } = await supabase
@@ -121,7 +188,7 @@ export default function DiscordPage() {
         .order('last_sync', { ascending: false })
         .limit(1);
 
-      if (syncData && syncData.length > 0) {
+      if (syncData && syncData.length > 0 && syncData[0].last_sync) {
         const lastSync = new Date(syncData[0].last_sync);
         const now = new Date();
         const diffMinutes = Math.floor((now.getTime() - lastSync.getTime()) / 1000 / 60);
@@ -132,7 +199,7 @@ export default function DiscordPage() {
       }
     } catch (error) {
       console.error('Error loading data:', error);
-      toast.error('Erreur lors du chargement des données');
+      toast.error('Erreur lors du chargement');
       setBotStatus('error');
     } finally {
       setIsLoading(false);
@@ -160,8 +227,8 @@ export default function DiscordPage() {
         dm.server_nickname?.toLowerCase().includes(query);
       const matchMember =
         dm.member_name?.toLowerCase().includes(query) ||
-        dm.firstname?.toLowerCase().includes(query) ||
-        dm.lastname?.toLowerCase().includes(query);
+        dm.first_name?.toLowerCase().includes(query) ||
+        dm.last_name?.toLowerCase().includes(query);
       return matchDiscord || matchMember;
     }
 
@@ -169,7 +236,8 @@ export default function DiscordPage() {
   });
 
   // Stats
-  const linkedCount = discordMembers.filter((dm) => dm.member_id).length;
+  const totalCount = discordMembers.filter((dm) => dm.is_active).length;
+  const linkedCount = discordMembers.filter((dm) => dm.member_id && dm.is_active).length;
   const unlinkedCount = discordMembers.filter((dm) => !dm.member_id && dm.is_active).length;
   const inactiveCount = discordMembers.filter((dm) => !dm.is_active).length;
 
@@ -181,22 +249,33 @@ export default function DiscordPage() {
       const { error } = await supabase.rpc('link_discord_to_member', {
         p_discord_id: discordId,
         p_member_id: memberId,
-        p_linked_by: 'Admin',
+        p_linked_by: 'admin',
       });
 
-      if (error) throw error;
+      if (error) {
+        // Fallback si RPC n'existe pas
+        console.warn('RPC failed, using fallback');
+        await supabase
+          .from('discord_members')
+          .update({ member_id: memberId, linked_at: new Date().toISOString(), linked_by: 'admin' })
+          .eq('discord_id', discordId);
+        await supabase
+          .from('members')
+          .update({ discord_id: discordId })
+          .eq('id', memberId);
+      }
 
-      toast.success(`${discordUsername} lié à ${memberName}`);
+      toast.success(`${discordUsername} lie a ${memberName}`);
       loadData();
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
+      const message = error instanceof Error ? error.message : 'Erreur';
       toast.error('Erreur: ' + message);
     }
   };
 
   // Unlink member
   const handleUnlink = async (discordId: string, memberName: string, discordUsername: string) => {
-    if (!confirm(`Délier ${discordUsername} de ${memberName} ?`)) return;
+    if (!confirm(`Delier ${discordUsername} de ${memberName} ?`)) return;
 
     const supabase = getSupabase();
 
@@ -205,23 +284,56 @@ export default function DiscordPage() {
         p_discord_id: discordId,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Fallback
+        const { data: dm } = await supabase
+          .from('discord_members')
+          .select('member_id')
+          .eq('discord_id', discordId)
+          .single();
 
-      toast.success(`${discordUsername} délié de ${memberName}`);
+        if (dm?.member_id) {
+          await supabase
+            .from('members')
+            .update({ discord_id: null })
+            .eq('id', dm.member_id);
+        }
+        await supabase
+          .from('discord_members')
+          .update({ member_id: null, linked_at: null, linked_by: null })
+          .eq('discord_id', discordId);
+      }
+
+      toast.success(`${discordUsername} delie`);
       loadData();
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
+      const message = error instanceof Error ? error.message : 'Erreur';
       toast.error('Erreur: ' + message);
     }
   };
 
-  // Save notification config
-  const saveNotificationConfig = async () => {
+  // Save config
+  const saveConfig = async () => {
     setIsSaving(true);
+    const supabase = getSupabase();
+
     try {
-      // Save to localStorage for now (could be saved to Supabase)
-      localStorage.setItem('discord_notif_config', JSON.stringify(notifConfig));
-      toast.success('Configuration sauvegardée');
+      const settings = [
+        { key: 'discord_webhook_url', value: config.webhookUrl },
+        { key: 'discord_guild_id', value: config.guildId },
+        { key: 'discord_bot_token', value: config.botToken },
+        { key: 'discord_notifications_enabled', value: config.notificationsEnabled.toString() },
+        { key: 'weather_api_key', value: config.weatherApiKey },
+        { key: 'weather_city', value: config.weatherCity },
+      ];
+
+      for (const setting of settings) {
+        await supabase
+          .from('settings')
+          .upsert({ key: setting.key, value: setting.value }, { onConflict: 'key' });
+      }
+
+      toast.success('Configuration sauvegardee');
     } catch {
       toast.error('Erreur lors de la sauvegarde');
     } finally {
@@ -231,343 +343,329 @@ export default function DiscordPage() {
 
   // Test weather
   const testWeather = async () => {
-    if (!notifConfig.weatherApiKey) {
-      toast.error('Clé API météo non configurée');
+    if (!config.weatherApiKey) {
+      toast.error('Cle API meteo non configuree');
       return;
     }
 
     try {
       const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?q=${notifConfig.weatherCity}&appid=${notifConfig.weatherApiKey}&units=metric&lang=fr`
+        `https://api.openweathermap.org/data/2.5/weather?q=${config.weatherCity}&appid=${config.weatherApiKey}&units=metric&lang=fr`
       );
       const data = await response.json();
 
       if (data.cod === 200) {
-        toast.success(`${data.weather[0].description} - ${Math.round(data.main.temp)}°C à ${notifConfig.weatherCity}`);
+        toast.success(`${data.weather[0].description} - ${Math.round(data.main.temp)}C a ${config.weatherCity}`);
       } else {
-        toast.error('Erreur météo: ' + data.message);
+        toast.error('Erreur meteo: ' + data.message);
       }
     } catch {
-      toast.error('Erreur lors du test météo');
+      toast.error('Erreur lors du test meteo');
     }
+  };
+
+  // Test webhook
+  const testWebhook = async () => {
+    if (!config.webhookUrl) {
+      toast.error('Webhook URL non configuree');
+      return;
+    }
+
+    try {
+      const response = await fetch(config.webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          embeds: [{
+            title: 'Test Skali Prog',
+            description: 'Webhook fonctionne correctement !',
+            color: 0x228B22,
+            timestamp: new Date().toISOString(),
+          }],
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Message test envoye sur Discord !');
+      } else {
+        toast.error('Erreur webhook: ' + response.status);
+      }
+    } catch {
+      toast.error('Erreur lors du test webhook');
+    }
+  };
+
+  const copyPortalUrl = () => {
+    const url = typeof window !== 'undefined' ? `${window.location.origin}/portal` : '';
+    navigator.clipboard.writeText(url);
+    toast.success('URL copiee !');
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold flex items-center gap-3">
-          <MessageSquare className="h-8 w-8 text-indigo-500" />
-          Gestion Discord
-        </h1>
-        <p className="text-muted-foreground">
-          Contrôle du bot, liaison membres et notifications
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold sm:text-3xl flex items-center gap-3">
+            <DiscordIcon className="h-8 w-8 text-indigo-500" />
+            Discord & PWA
+          </h1>
+          <p className="text-muted-foreground">
+            Gestion de la liaison membres et configuration Discord
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={loadData} disabled={isLoading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Actualiser
+          </Button>
+          <Button variant="outline" onClick={copyPortalUrl}>
+            <Smartphone className="h-4 w-4 mr-2" />
+            Lien Portal
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <Card className="bg-gradient-to-br from-indigo-500/10 to-indigo-500/5 border-indigo-500/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Membres Discord</p>
+                <p className="text-3xl font-bold">{totalCount}</p>
+              </div>
+              <Users className="h-10 w-10 text-indigo-500 opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Lies</p>
+                <p className="text-3xl font-bold">{linkedCount}</p>
+              </div>
+              <UserCheck className="h-10 w-10 text-green-500 opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border-yellow-500/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">A lier</p>
+                <p className="text-3xl font-bold">{unlinkedCount}</p>
+              </div>
+              <UserX className="h-10 w-10 text-yellow-500 opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-gray-500/10 to-gray-500/5 border-gray-500/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Inactifs</p>
+                <p className="text-3xl font-bold">{inactiveCount}</p>
+              </div>
+              <AlertTriangle className="h-10 w-10 text-gray-500 opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className={`border-2 ${
+          botStatus === 'active' ? 'border-green-500/50 bg-green-500/5' :
+          botStatus === 'inactive' ? 'border-yellow-500/50 bg-yellow-500/5' :
+          'border-red-500/50 bg-red-500/5'
+        }`}>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Bot Status</p>
+                <div className="flex items-center gap-2">
+                  {botStatus === 'checking' && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {botStatus === 'active' && <CheckCircle className="h-4 w-4 text-green-500" />}
+                  {botStatus === 'inactive' && <AlertTriangle className="h-4 w-4 text-yellow-500" />}
+                  {botStatus === 'error' && <XCircle className="h-4 w-4 text-red-500" />}
+                  <span className="text-lg font-bold">
+                    {botStatus === 'active' ? 'Actif' : botStatus === 'inactive' ? 'Inactif' : botStatus === 'error' ? 'Erreur' : '...'}
+                  </span>
+                </div>
+                {lastSyncMinutes !== null && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Sync il y a {lastSyncMinutes} min
+                  </p>
+                )}
+              </div>
+              <Bot className="h-10 w-10 text-muted-foreground opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Tabs */}
-      <Tabs value={currentTab} onValueChange={setCurrentTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="notifications" className="flex items-center gap-2">
-            <Bell className="h-4 w-4" />
-            Notifications
-          </TabsTrigger>
-          <TabsTrigger value="morning" className="flex items-center gap-2">
-            <Sun className="h-4 w-4" />
-            Morning Routine
-          </TabsTrigger>
+      <Tabs value={currentTab} onValueChange={setCurrentTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-3 lg:w-auto">
           <TabsTrigger value="liaison" className="flex items-center gap-2">
             <Link2 className="h-4 w-4" />
-            Liaison Membres
+            <span className="hidden sm:inline">Liaison Membres</span>
+            <span className="sm:hidden">Liaison</span>
           </TabsTrigger>
-          <TabsTrigger value="bot" className="flex items-center gap-2">
-            <Bot className="h-4 w-4" />
-            Bot Discord
+          <TabsTrigger value="config" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            <span className="hidden sm:inline">Configuration</span>
+            <span className="sm:hidden">Config</span>
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            <span className="hidden sm:inline">Notifications</span>
+            <span className="sm:hidden">Notifs</span>
           </TabsTrigger>
         </TabsList>
 
-        {/* Notifications Tab */}
-        <TabsContent value="notifications" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="h-5 w-5 text-green-500" />
-                Configuration des notifications
-              </CardTitle>
-              <CardDescription>
-                Configurez les webhooks Discord et la météo
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Webhook URL */}
-              <div className="space-y-2">
-                <Label htmlFor="webhook">Webhook Discord</Label>
-                <Input
-                  id="webhook"
-                  placeholder="https://discord.com/api/webhooks/..."
-                  value={notifConfig.webhookUrl}
-                  onChange={(e) => setNotifConfig({ ...notifConfig, webhookUrl: e.target.value })}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Créez un webhook dans les paramètres de votre canal Discord
-                </p>
-              </div>
-
-              {/* Weather */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="weatherKey">Clé API OpenWeatherMap</Label>
-                  <Input
-                    id="weatherKey"
-                    type="password"
-                    placeholder="Clé API"
-                    value={notifConfig.weatherApiKey}
-                    onChange={(e) => setNotifConfig({ ...notifConfig, weatherApiKey: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="city">Ville</Label>
-                  <Input
-                    id="city"
-                    placeholder="Laval,FR"
-                    value={notifConfig.weatherCity}
-                    onChange={(e) => setNotifConfig({ ...notifConfig, weatherCity: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              {/* Schedule */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="sendTime">Heure d&apos;envoi quotidien</Label>
-                  <Input
-                    id="sendTime"
-                    type="time"
-                    value={notifConfig.sendTime}
-                    onChange={(e) => setNotifConfig({ ...notifConfig, sendTime: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Envoi automatique</Label>
-                  <div className="flex items-center space-x-2 pt-2">
-                    <Switch
-                      checked={notifConfig.enabled}
-                      onCheckedChange={(checked) => setNotifConfig({ ...notifConfig, enabled: checked })}
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      {notifConfig.enabled ? 'Activé' : 'Désactivé'}
-                    </span>
+        {/* LIAISON TAB */}
+        <TabsContent value="liaison" className="space-y-4">
+          {/* Info PWA */}
+          <Card className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border-emerald-500/20">
+            <CardContent className="pt-6">
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-full bg-emerald-500/20">
+                    <Smartphone className="h-6 w-6 text-emerald-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Portail Membre PWA</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Les adherents peuvent se connecter avec Discord et lier leur compte
+                    </p>
                   </div>
                 </div>
-              </div>
-
-              <Button onClick={saveNotificationConfig} disabled={isSaving} className="w-full">
-                <Save className="h-4 w-4 mr-2" />
-                {isSaving ? 'Sauvegarde...' : 'Sauvegarder la configuration'}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Preview & Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Cloud className="h-5 w-5 text-purple-500" />
-                Actions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <Button variant="outline" onClick={testWeather}>
-                  <TestTube className="h-4 w-4 mr-2" />
-                  Test Météo
-                </Button>
-                <Button onClick={() => toast.info('Fonctionnalité à implémenter')}>
-                  <Send className="h-4 w-4 mr-2" />
-                  Envoyer maintenant
-                </Button>
+                <div className="flex gap-2 ml-auto">
+                  <Button variant="outline" size="sm" onClick={copyPortalUrl}>
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copier URL
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open('/portal', '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Ouvrir
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        {/* Morning Routine Tab */}
-        <TabsContent value="morning" className="space-y-6">
-          <Card className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-yellow-500/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sun className="h-5 w-5 text-yellow-500" />
-                Morning Coach
-              </CardTitle>
-              <CardDescription>
-                Envoi automatique de la routine matinale générée par IA
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Cette fonctionnalité sera migrée prochainement. Elle permet de générer et envoyer
-                automatiquement une routine d&apos;échauffement personnalisée chaque matin.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Liaison Tab */}
-        <TabsContent value="liaison" className="space-y-6">
-          {/* Stats */}
-          <div className="grid grid-cols-4 gap-4">
-            <Card className="bg-gradient-to-br from-indigo-500/10 to-indigo-500/5">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Membres Discord</p>
-                    <p className="text-3xl font-bold">{discordMembers.length}</p>
-                  </div>
-                  <Users className="h-10 w-10 text-indigo-500 opacity-50" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Liés</p>
-                    <p className="text-3xl font-bold">{linkedCount}</p>
-                  </div>
-                  <UserCheck className="h-10 w-10 text-green-500 opacity-50" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-yellow-500/10 to-yellow-500/5">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">À lier</p>
-                    <p className="text-3xl font-bold">{unlinkedCount}</p>
-                  </div>
-                  <UserX className="h-10 w-10 text-yellow-500 opacity-50" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-gray-500/10 to-gray-500/5">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Inactifs</p>
-                    <p className="text-3xl font-bold">{inactiveCount}</p>
-                  </div>
-                  <AlertTriangle className="h-10 w-10 text-gray-500 opacity-50" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
 
           {/* Filters & Search */}
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Rechercher un membre Discord ou adhérent..."
+                  placeholder="Rechercher un membre..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
                 />
               </div>
             </div>
-
-            <div className="flex gap-2">
-              {(['all', 'linked', 'unlinked', 'inactive'] as FilterType[]).map((f) => (
-                <Button
-                  key={f}
-                  variant={filter === f ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setFilter(f)}
-                >
-                  {f === 'all' && 'Tous'}
-                  {f === 'linked' && 'Liés'}
-                  {f === 'unlinked' && 'Non liés'}
-                  {f === 'inactive' && 'Inactifs'}
-                </Button>
-              ))}
-            </div>
-
-            <Button variant="outline" onClick={loadData} disabled={isLoading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              Sync
-            </Button>
+            <Select value={filter} onValueChange={(v) => setFilter(v as FilterType)}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Filtrer" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les actifs</SelectItem>
+                <SelectItem value="linked">Lies seulement</SelectItem>
+                <SelectItem value="unlinked">Non lies</SelectItem>
+                <SelectItem value="inactive">Inactifs</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Members List */}
-          <ScrollArea className="h-[500px]">
-            <div className="space-y-3">
-              {isLoading ? (
-                <div className="text-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
-                  <p className="text-muted-foreground mt-2">Chargement...</p>
-                </div>
-              ) : filteredMembers.length === 0 ? (
-                <div className="text-center py-12">
-                  <Users className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
-                  <p className="text-xl font-semibold mt-4">Aucun membre trouvé</p>
-                  <p className="text-muted-foreground">Essayez un autre filtre ou recherche</p>
-                </div>
-              ) : (
-                filteredMembers.map((dm) => (
-                  <Card key={dm.discord_id} className={dm.member_id ? 'border-green-500/30' : ''}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">
+                  Membres Discord ({filteredMembers.length})
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[500px] pr-4">
+                <div className="space-y-3">
+                  {isLoading ? (
+                    <div className="text-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+                      <p className="text-muted-foreground mt-2">Chargement...</p>
+                    </div>
+                  ) : filteredMembers.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Users className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
+                      <p className="text-xl font-semibold mt-4">Aucun membre trouve</p>
+                      <p className="text-muted-foreground">Essayez un autre filtre</p>
+                    </div>
+                  ) : (
+                    filteredMembers.map((dm) => (
+                      <div
+                        key={dm.discord_id}
+                        className={`flex items-center gap-4 p-4 rounded-lg border transition-colors ${
+                          dm.member_id
+                            ? 'border-green-500/30 bg-green-500/5'
+                            : 'border-border hover:border-muted-foreground/30'
+                        }`}
+                      >
                         {/* Avatar */}
-                        <div className="flex-shrink-0">
-                          {dm.discord_avatar ? (
-                            <img
-                              src={dm.discord_avatar}
-                              alt={dm.discord_username}
-                              className={`w-14 h-14 rounded-full border-2 ${dm.member_id ? 'border-green-500' : 'border-border'}`}
-                            />
-                          ) : (
-                            <div className={`w-14 h-14 rounded-full bg-indigo-500/20 flex items-center justify-center border-2 ${dm.member_id ? 'border-green-500' : 'border-border'}`}>
-                              <MessageSquare className="h-6 w-6 text-indigo-500" />
-                            </div>
-                          )}
-                        </div>
+                        {dm.discord_avatar ? (
+                          <img
+                            src={dm.discord_avatar}
+                            alt={dm.discord_username}
+                            className={`w-12 h-12 rounded-full border-2 ${
+                              dm.member_id ? 'border-green-500' : 'border-border'
+                            }`}
+                          />
+                        ) : (
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                            dm.member_id ? 'bg-green-500/20' : 'bg-muted'
+                          }`}>
+                            <DiscordIcon className="h-6 w-6 text-indigo-500" />
+                          </div>
+                        )}
 
                         {/* Info */}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <h3 className="font-semibold truncate">
                               {dm.server_nickname || dm.discord_global_name || dm.discord_username}
                             </h3>
                             {!dm.is_active && (
-                              <Badge variant="secondary">Inactif</Badge>
+                              <Badge variant="secondary" className="text-xs">Inactif</Badge>
                             )}
                             {dm.member_id ? (
-                              <Badge className="bg-green-500">
+                              <Badge className="bg-green-500/20 text-green-600 border-green-500/30 text-xs">
                                 <Link className="h-3 w-3 mr-1" />
-                                Lié
+                                Lie
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="border-yellow-500 text-yellow-500">
+                              <Badge variant="outline" className="border-yellow-500/50 text-yellow-600 text-xs">
                                 <Unlink className="h-3 w-3 mr-1" />
-                                Non lié
+                                Non lie
                               </Badge>
                             )}
                           </div>
-
                           <p className="text-sm text-muted-foreground font-mono">
                             @{dm.discord_username}
                           </p>
-
-                          {dm.member_id && (
-                            <div className="mt-2 p-2 bg-green-500/10 border border-green-500/30 rounded">
-                              <p className="text-sm font-semibold text-green-400">
-                                <UserCheck className="h-4 w-4 inline mr-1" />
-                                {dm.member_name || dm.firstname || 'Adhérent'}
-                              </p>
-                            </div>
+                          {dm.member_name && (
+                            <p className="text-sm text-green-600 mt-1 flex items-center gap-1">
+                              <UserCheck className="h-3 w-3" />
+                              {dm.member_name}
+                            </p>
                           )}
                         </div>
 
@@ -580,7 +678,7 @@ export default function DiscordPage() {
                               onClick={() => handleUnlink(dm.discord_id, dm.member_name || '', dm.discord_username)}
                             >
                               <Unlink className="h-4 w-4 mr-1" />
-                              Délier
+                              Delier
                             </Button>
                           ) : dm.is_active ? (
                             <LinkMemberDialog
@@ -592,153 +690,232 @@ export default function DiscordPage() {
                           ) : null}
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-          </ScrollArea>
-        </TabsContent>
-
-        {/* Bot Tab */}
-        <TabsContent value="bot" className="space-y-6">
-          {/* Status Card */}
-          <Card className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border-indigo-500/20">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Status du Bot</p>
-                  <div className="text-2xl font-bold flex items-center gap-2">
-                    {botStatus === 'checking' && (
-                      <>
-                        <Loader2 className="h-6 w-6 animate-spin" />
-                        <span className="text-muted-foreground">Vérification...</span>
-                      </>
-                    )}
-                    {botStatus === 'active' && (
-                      <>
-                        <CheckCircle className="h-6 w-6 text-green-500" />
-                        <span className="text-green-500">Actif</span>
-                        <span className="text-sm text-muted-foreground ml-2">
-                          (sync il y a {lastSyncMinutes}min)
-                        </span>
-                      </>
-                    )}
-                    {botStatus === 'inactive' && (
-                      <>
-                        <AlertTriangle className="h-6 w-6 text-yellow-500" />
-                        <span className="text-yellow-500">Inactif</span>
-                        {lastSyncMinutes !== null && (
-                          <span className="text-sm text-muted-foreground ml-2">
-                            (dernière sync: {lastSyncMinutes}min)
-                          </span>
-                        )}
-                      </>
-                    )}
-                    {botStatus === 'error' && (
-                      <>
-                        <XCircle className="h-6 w-6 text-red-500" />
-                        <span className="text-red-500">Erreur</span>
-                      </>
-                    )}
-                  </div>
+                    ))
+                  )}
                 </div>
-                <Bot className="h-16 w-16 text-indigo-500 opacity-30" />
-              </div>
+              </ScrollArea>
             </CardContent>
           </Card>
+        </TabsContent>
 
-          {/* Actions */}
-          <div className="grid grid-cols-2 gap-4">
+        {/* CONFIG TAB */}
+        <TabsContent value="config" className="space-y-4">
+          <div className="grid gap-4 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Play className="h-5 w-5 text-green-500" />
-                  Démarrer le Bot
+                <CardTitle className="flex items-center gap-2">
+                  <DiscordIcon className="h-5 w-5 text-indigo-500" />
+                  Discord OAuth
                 </CardTitle>
                 <CardDescription>
-                  Lance le bot manuellement via le fichier .bat
+                  Configuration pour l&apos;authentification Discord
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <Button className="w-full" variant="outline">
-                  Ouvrir start-bot.bat
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="guildId">Guild ID (Serveur)</Label>
+                  <Input
+                    id="guildId"
+                    placeholder="123456789012345678"
+                    value={config.guildId}
+                    onChange={(e) => setConfig({ ...config, guildId: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    ID du serveur Discord La Skali
+                  </p>
+                </div>
+                <Separator />
+                <div className="rounded-lg border bg-muted/50 p-4">
+                  <h4 className="font-medium mb-2 flex items-center gap-2">
+                    <Info className="h-4 w-4" />
+                    Variables d&apos;environnement
+                  </h4>
+                  <div className="space-y-1 text-xs font-mono text-muted-foreground">
+                    <p>DISCORD_CLIENT_ID=...</p>
+                    <p>DISCORD_CLIENT_SECRET=...</p>
+                    <p>DISCORD_REDIRECT_URI=.../api/auth/discord/callback</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Webhook className="h-5 w-5 text-purple-500" />
+                  Webhook Discord
+                </CardTitle>
+                <CardDescription>
+                  Pour envoyer des notifications automatiques
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="webhook">URL du Webhook</Label>
+                  <Input
+                    id="webhook"
+                    type="password"
+                    placeholder="https://discord.com/api/webhooks/..."
+                    value={config.webhookUrl}
+                    onChange={(e) => setConfig({ ...config, webhookUrl: e.target.value })}
+                  />
+                </div>
+                <Button variant="outline" onClick={testWebhook} className="w-full">
+                  <TestTube className="h-4 w-4 mr-2" />
+                  Tester le webhook
                 </Button>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <RefreshCw className="h-5 w-5 text-blue-500" />
-                  Synchronisation Manuelle
+                <CardTitle className="flex items-center gap-2">
+                  <Cloud className="h-5 w-5 text-blue-500" />
+                  Meteo (Morning Routine)
                 </CardTitle>
                 <CardDescription>
-                  Force une synchronisation (nécessite bot actif)
+                  API OpenWeatherMap pour les routines matinales
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <Button className="w-full" variant="outline" onClick={loadData}>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Synchroniser
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="weatherKey">Cle API OpenWeatherMap</Label>
+                  <Input
+                    id="weatherKey"
+                    type="password"
+                    placeholder="Cle API"
+                    value={config.weatherApiKey}
+                    onChange={(e) => setConfig({ ...config, weatherApiKey: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="city">Ville</Label>
+                  <Input
+                    id="city"
+                    placeholder="Laval,FR"
+                    value={config.weatherCity}
+                    onChange={(e) => setConfig({ ...config, weatherCity: e.target.value })}
+                  />
+                </div>
+                <Button variant="outline" onClick={testWeather} className="w-full">
+                  <TestTube className="h-4 w-4 mr-2" />
+                  Tester la meteo
                 </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bot className="h-5 w-5 text-green-500" />
+                  Bot Discord (Sync)
+                </CardTitle>
+                <CardDescription>
+                  Token du bot pour synchroniser les membres
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="botToken">Bot Token</Label>
+                  <Input
+                    id="botToken"
+                    type="password"
+                    placeholder="Token du bot Discord"
+                    value={config.botToken}
+                    onChange={(e) => setConfig({ ...config, botToken: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Necessaire pour la sync automatique des membres
+                  </p>
+                </div>
+                <Separator />
+                <div className="rounded-lg border bg-muted/50 p-3 text-xs">
+                  <p className="font-medium mb-2">Demarrer le bot avec PM2:</p>
+                  <code className="text-emerald-500">pm2 start sync-members.js --name discord-bot</code>
+                </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* PM2 Instructions */}
+          <div className="flex justify-end">
+            <Button onClick={saveConfig} disabled={isSaving}>
+              <Save className="h-4 w-4 mr-2" />
+              {isSaving ? 'Sauvegarde...' : 'Sauvegarder la configuration'}
+            </Button>
+          </div>
+        </TabsContent>
+
+        {/* NOTIFICATIONS TAB */}
+        <TabsContent value="notifications" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Terminal className="h-5 w-5 text-purple-500" />
-                Démarrage Automatique avec PM2
+                <Bell className="h-5 w-5 text-orange-500" />
+                Notifications automatiques
               </CardTitle>
               <CardDescription>
-                PM2 garde le bot actif 24/7 et le redémarre automatiquement
+                Configurez les notifications envoyees automatiquement sur Discord
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="bg-muted rounded-lg p-4 font-mono text-sm space-y-2">
-                <p className="text-muted-foreground"># Installer PM2</p>
-                <p className="text-green-400">npm install -g pm2</p>
-                <Separator className="my-2" />
-                <p className="text-muted-foreground"># Démarrer le bot</p>
-                <p className="text-green-400">cd discord-bot</p>
-                <p className="text-green-400">pm2 start sync-members.js --name &quot;discord-bot-skali&quot;</p>
-                <Separator className="my-2" />
-                <p className="text-muted-foreground"># Auto-start au démarrage</p>
-                <p className="text-green-400">pm2 startup</p>
-                <p className="text-green-400">pm2 save</p>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Activer les notifications</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Envoie automatique des notifications programmees
+                  </p>
+                </div>
+                <Switch
+                  checked={config.notificationsEnabled}
+                  onCheckedChange={(checked) =>
+                    setConfig({ ...config, notificationsEnabled: checked })
+                  }
+                />
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Useful Commands */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Terminal className="h-5 w-5 text-yellow-500" />
-                Commandes Utiles
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-muted rounded-lg p-3">
-                  <p className="text-sm text-muted-foreground mb-2">Voir les logs</p>
-                  <code className="text-xs text-green-400">pm2 logs discord-bot-skali</code>
-                </div>
-                <div className="bg-muted rounded-lg p-3">
-                  <p className="text-sm text-muted-foreground mb-2">Redémarrer</p>
-                  <code className="text-xs text-green-400">pm2 restart discord-bot-skali</code>
-                </div>
-                <div className="bg-muted rounded-lg p-3">
-                  <p className="text-sm text-muted-foreground mb-2">Vérifier status</p>
-                  <code className="text-xs text-green-400">pm2 status</code>
-                </div>
-                <div className="bg-muted rounded-lg p-3">
-                  <p className="text-sm text-muted-foreground mb-2">Arrêter</p>
-                  <code className="text-xs text-green-400">pm2 stop discord-bot-skali</code>
-                </div>
+              <Separator />
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Card className="border-dashed">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-lg bg-yellow-500/20">
+                        <Zap className="h-5 w-5 text-yellow-500" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium">Morning Routine</h4>
+                        <p className="text-xs text-muted-foreground">Echauffement quotidien</p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="text-xs">Bientot disponible</Badge>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-dashed">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-lg bg-blue-500/20">
+                        <Clock className="h-5 w-5 text-blue-500" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium">Rappels seances</h4>
+                        <p className="text-xs text-muted-foreground">Rappel 1h avant</p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="text-xs">Bientot disponible</Badge>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={testWebhook}>
+                  <Send className="h-4 w-4 mr-2" />
+                  Envoyer un test
+                </Button>
+                <Button onClick={saveConfig} disabled={isSaving}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Sauvegarder
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -768,10 +945,8 @@ function LinkMemberDialog({
   );
 
   const handleSelect = (member: Member) => {
-    if (confirm(`Confirmer la liaison :\n\n${discordUsername} <-> ${member.name}`)) {
-      onLink(discordId, member.id, member.name, discordUsername);
-      setOpen(false);
-    }
+    onLink(discordId, member.id, member.name, discordUsername);
+    setOpen(false);
   };
 
   return (
@@ -784,19 +959,21 @@ function LinkMemberDialog({
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>
-            Lier {discordUsername} à un adhérent
-          </DialogTitle>
+          <DialogTitle>Lier a un adherent</DialogTitle>
+          <DialogDescription>
+            Selectionnez l&apos;adherent a lier a @{discordUsername}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Rechercher un adhérent..."
+              placeholder="Rechercher..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
+              autoFocus
             />
           </div>
 
@@ -804,27 +981,25 @@ function LinkMemberDialog({
             <div className="space-y-2">
               {filteredMembers.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">
-                  Aucun adhérent disponible
+                  Aucun adherent disponible
                 </p>
               ) : (
                 filteredMembers.map((member) => (
-                  <div
+                  <button
                     key={member.id}
-                    className="p-3 rounded-lg border hover:bg-accent cursor-pointer transition-colors"
+                    className="w-full p-3 rounded-lg border hover:bg-accent cursor-pointer transition-colors text-left flex items-center gap-3"
                     onClick={() => handleSelect(member)}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                        <UserCheck className="h-5 w-5 text-green-500" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-semibold">{member.name}</p>
-                        {member.email && (
-                          <p className="text-xs text-muted-foreground">{member.email}</p>
-                        )}
-                      </div>
+                    <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                      <UserCheck className="h-5 w-5 text-emerald-500" />
                     </div>
-                  </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold truncate">{member.name}</p>
+                      {member.email && (
+                        <p className="text-xs text-muted-foreground truncate">{member.email}</p>
+                      )}
+                    </div>
+                  </button>
                 ))
               )}
             </div>

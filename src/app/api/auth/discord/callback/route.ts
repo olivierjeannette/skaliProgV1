@@ -23,6 +23,18 @@ interface DiscordUser {
   email?: string;
 }
 
+interface LinkedMember {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  gender: string | null;
+  birthdate: string | null;
+  weight: number | null;
+  height: number | null;
+  is_active: boolean;
+}
+
 async function exchangeCodeForToken(code: string): Promise<DiscordTokenResponse> {
   const response = await fetch('https://discord.com/api/oauth2/token', {
     method: 'POST',
@@ -107,18 +119,12 @@ export async function GET(request: NextRequest) {
     // Create Supabase client
     const supabase = await createClient();
 
-    // Check if this Discord user exists in our discord_members table
-    const { data: discordMember } = await supabase
-      .from('discord_members')
-      .select('*, members(*)')
-      .eq('discord_id', discordUser.id)
-      .single();
-
-    // Update or insert Discord member info
+    // Avatar URL
     const avatarUrl = discordUser.avatar
       ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
       : null;
 
+    // Update or insert Discord member info
     await supabase
       .from('discord_members')
       .upsert({
@@ -131,12 +137,70 @@ export async function GET(request: NextRequest) {
         onConflict: 'discord_id',
       });
 
+    // Check if this Discord user is already linked to a member
+    // First check discord_members table
+    const { data: discordMemberData } = await supabase
+      .from('discord_members')
+      .select('member_id')
+      .eq('discord_id', discordUser.id)
+      .single();
+
+    let linkedMember: LinkedMember | null = null;
+
+    // If member_id exists in discord_members, fetch the member
+    if (discordMemberData?.member_id) {
+      const { data: memberData } = await supabase
+        .from('members')
+        .select('id, name, email, phone, gender, birthdate, weight, height, is_active')
+        .eq('id', discordMemberData.member_id)
+        .single();
+
+      if (memberData) {
+        linkedMember = memberData;
+      }
+    } else {
+      // Fallback: check members table for discord_id
+      const { data: memberByDiscordId } = await supabase
+        .from('members')
+        .select('id, name, email, phone, gender, birthdate, weight, height, is_active')
+        .eq('discord_id', discordUser.id)
+        .single();
+
+      if (memberByDiscordId) {
+        linkedMember = memberByDiscordId;
+
+        // Sync: update discord_members.member_id
+        await supabase
+          .from('discord_members')
+          .update({ member_id: memberByDiscordId.id })
+          .eq('discord_id', discordUser.id);
+      }
+    }
+
+    // Format member for session
+    let sessionMember = null;
+    if (linkedMember) {
+      const nameParts = linkedMember.name.split(' ');
+      sessionMember = {
+        id: linkedMember.id,
+        first_name: nameParts[0] || '',
+        last_name: nameParts.slice(1).join(' ') || nameParts[0] || '',
+        email: linkedMember.email,
+        phone: linkedMember.phone,
+        gender: linkedMember.gender,
+        birthdate: linkedMember.birthdate,
+        weight: linkedMember.weight,
+        height: linkedMember.height,
+        is_active: linkedMember.is_active,
+      };
+    }
+
     // Create session data
     const sessionData = {
       discord_id: discordUser.id,
       discord_username: discordUser.global_name || discordUser.username,
       discord_avatar: avatarUrl,
-      member: discordMember?.members || null,
+      member: sessionMember,
       access_token: tokenData.access_token,
       expires_at: Date.now() + tokenData.expires_in * 1000,
     };

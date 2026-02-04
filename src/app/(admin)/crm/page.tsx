@@ -73,12 +73,15 @@ const TABS = [
 ];
 
 // Service icons
-const SERVICE_ICONS: Record<LeadService, typeof Dumbbell> = {
+const SERVICE_ICONS: Record<string, typeof Dumbbell> = {
   fitness: Dumbbell,
   pilates: Sparkles,
   coaching: Users,
   teambuilding: Building,
 };
+
+// Default icon for unknown services
+const DEFAULT_SERVICE_ICON = Dumbbell;
 
 export default function CRMPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -331,7 +334,7 @@ export default function CRMPage() {
                   </TableHeader>
                   <TableBody>
                     {filteredLeads.map(lead => {
-                      const ServiceIcon = SERVICE_ICONS[lead.service];
+                      const ServiceIcon = SERVICE_ICONS[lead.service] || DEFAULT_SERVICE_ICON;
                       return (
                         <TableRow key={lead.id}>
                           <TableCell className="font-medium">{lead.name}</TableCell>

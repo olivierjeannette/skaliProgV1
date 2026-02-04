@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { usePortalStore, searchMembers } from '@/stores/portal-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   User,
   Search,
@@ -16,13 +17,19 @@ import {
   ArrowLeft,
   Loader2,
   Dumbbell,
+  UserCheck,
+  Info,
 } from 'lucide-react'
 
 // Types
-interface LinkedMember {
+interface SearchMember {
   id: string
   name: string
+  first_name?: string
+  last_name?: string
+  email?: string
   discord_id?: string
+  is_linked?: boolean
 }
 
 // Discord icon SVG
@@ -33,13 +40,14 @@ const DiscordIcon = ({ className }: { className?: string }) => (
 )
 
 export function PortalLogin() {
-  const { linkMemberToDiscord, currentUser } = usePortalStore()
-  const [step, setStep] = useState<'login' | 'link'>('login')
+  const { linkMemberToDiscord, currentUser, logout } = usePortalStore()
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<LinkedMember[]>([])
+  const [searchResults, setSearchResults] = useState<SearchMember[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
+  const [isLinking, setIsLinking] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
+  const [linkError, setLinkError] = useState<string | null>(null)
 
   // Check for OAuth errors in URL
   useEffect(() => {
@@ -48,13 +56,16 @@ export function PortalLogin() {
     if (errorParam) {
       switch (errorParam) {
         case 'access_denied':
-          setAuthError('Vous avez refusé l\'autorisation Discord')
+          setAuthError('Vous avez refus\u00e9 l\'autorisation Discord')
           break
         case 'invalid_state':
-          setAuthError('Erreur de sécurité. Veuillez réessayer.')
+          setAuthError('Erreur de s\u00e9curit\u00e9. Veuillez r\u00e9essayer.')
           break
         case 'auth_failed':
-          setAuthError('Échec de l\'authentification Discord')
+          setAuthError('\u00c9chec de l\'authentification Discord')
+          break
+        case 'not_guild_member':
+          setAuthError('Vous devez \u00eatre membre du serveur Discord La Sk\u00e0li')
           break
         default:
           setAuthError('Erreur de connexion')
@@ -64,258 +75,324 @@ export function PortalLogin() {
     }
   }, [])
 
-  // Check if user came back from OAuth but needs linking
-  useEffect(() => {
-    if (currentUser && !usePortalStore.getState().linkedMember) {
-      setStep('link')
+  // Debounced search
+  const handleSearch = useCallback(async (query: string) => {
+    setSearchQuery(query)
+    setLinkError(null)
+
+    if (query.length < 2) {
+      setSearchResults([])
+      return
     }
-  }, [currentUser])
+
+    setIsSearching(true)
+    try {
+      const results = await searchMembers(query)
+      setSearchResults(results)
+    } catch {
+      setSearchResults([])
+    } finally {
+      setIsSearching(false)
+    }
+  }, [])
 
   const handleDiscordLogin = () => {
     setIsLoading(true)
     setAuthError(null)
-    // Redirect to Discord OAuth
     window.location.href = '/api/auth/discord'
   }
 
-  const handleSearch = async (query: string) => {
-    setSearchQuery(query)
-    if (query.length >= 2) {
-      setIsSearching(true)
-      try {
-        const results = await searchMembers(query)
-        setSearchResults(results)
-      } catch {
-        setSearchResults([])
-      } finally {
-        setIsSearching(false)
-      }
-    } else {
-      setSearchResults([])
-    }
-  }
-
-  const handleLinkMember = async (memberId: string) => {
+  const handleLinkMember = async (member: SearchMember) => {
     if (!currentUser) return
 
-    const success = await linkMemberToDiscord(memberId)
+    setIsLinking(true)
+    setLinkError(null)
 
-    if (success) {
-      // Reload to show the portal
-      window.location.reload()
+    try {
+      const success = await linkMemberToDiscord(member.id)
+
+      if (success) {
+        // Reload to show the portal
+        window.location.reload()
+      } else {
+        setLinkError('Impossible de lier ce profil. Veuillez r\u00e9essayer.')
+      }
+    } catch {
+      setLinkError('Erreur lors de la liaison. Veuillez r\u00e9essayer.')
+    } finally {
+      setIsLinking(false)
     }
   }
 
-  // Login screen with Discord OAuth
-  if (step === 'login') {
+  const handleLogout = async () => {
+    await logout()
+    window.location.href = '/portal'
+  }
+
+  // Si l'utilisateur est connect\u00e9 avec Discord mais pas li\u00e9 -> Afficher l'\u00e9tape de liaison
+  if (currentUser) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-slate-800/80 border-slate-700 backdrop-blur-xl overflow-hidden">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-[#228B22] to-emerald-600 p-8 text-center">
-            <div className="flex justify-center mb-4">
-              <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
-                <Dumbbell className="h-12 w-12 text-white" />
+        <Card className="w-full max-w-md bg-slate-800/80 border-slate-700 backdrop-blur-xl">
+          {/* Header with Discord user */}
+          <div className="bg-gradient-to-r from-[#228B22] to-emerald-600 p-6 rounded-t-lg">
+            <div className="flex items-center gap-3">
+              {currentUser.avatar ? (
+                <img
+                  src={currentUser.avatar}
+                  alt={currentUser.username}
+                  className="h-14 w-14 rounded-full border-3 border-white/30 shadow-lg"
+                />
+              ) : (
+                <div className="h-14 w-14 rounded-full bg-white/20 flex items-center justify-center">
+                  <User className="h-7 w-7 text-white" />
+                </div>
+              )}
+              <div className="flex-1">
+                <h1 className="text-xl font-bold text-white">Bienvenue !</h1>
+                <p className="text-emerald-100 text-sm flex items-center gap-1">
+                  <DiscordIcon className="h-4 w-4" />
+                  {currentUser.username}
+                </p>
+              </div>
+              <div className="bg-white/20 px-3 py-1 rounded-full">
+                <span className="text-xs text-white font-medium">\u00c9tape 2/2</span>
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-white">Skali Prog</h1>
-            <p className="text-emerald-100 mt-2">Espace Membre</p>
           </div>
 
-          <CardContent className="p-6 space-y-6">
-            {/* Error display */}
-            {authError && (
+          <CardContent className="p-6 space-y-5">
+            {/* Info box */}
+            <Alert className="bg-emerald-500/10 border-emerald-500/30">
+              <Info className="h-4 w-4 text-emerald-400" />
+              <AlertDescription className="text-slate-300 text-sm">
+                <p className="font-semibold mb-1">Derni\u00e8re \u00e9tape !</p>
+                <p className="text-slate-400 text-xs">
+                  Recherchez votre nom pour lier votre profil adh\u00e9rent \u00e0 votre compte Discord.
+                  Ceci permet d&apos;acc\u00e9der \u00e0 vos donn\u00e9es et performances.
+                </p>
+              </AlertDescription>
+            </Alert>
+
+            {/* Link error */}
+            {linkError && (
               <Alert className="bg-red-500/10 border-red-500/30">
                 <AlertCircle className="h-4 w-4 text-red-400" />
-                <AlertDescription className="text-red-300">{authError}</AlertDescription>
+                <AlertDescription className="text-red-300 text-sm">{linkError}</AlertDescription>
               </Alert>
             )}
 
-            {/* Discord OAuth Button */}
-            <Button
-              onClick={handleDiscordLogin}
-              disabled={isLoading}
-              size="lg"
-              className="w-full h-14 bg-[#5865F2] hover:bg-[#4752C4] text-white text-lg font-semibold"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-5 w-5 mr-3 animate-spin" />
-                  Connexion en cours...
-                </>
-              ) : (
-                <>
-                  <DiscordIcon className="h-6 w-6 mr-3" />
-                  Se connecter avec Discord
-                </>
-              )}
-            </Button>
-
-            {/* Info */}
-            <div className="space-y-3 pt-4 border-t border-slate-700">
-              <p className="text-center text-sm text-slate-400">
-                Connectez-vous avec votre compte Discord pour accéder à :
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-xs text-slate-500">
-                <div className="flex items-center gap-2 bg-slate-900/50 p-2 rounded-lg">
-                  <CheckCircle className="h-4 w-4 text-emerald-500" />
-                  <span>Planning des séances</span>
-                </div>
-                <div className="flex items-center gap-2 bg-slate-900/50 p-2 rounded-lg">
-                  <CheckCircle className="h-4 w-4 text-emerald-500" />
-                  <span>Vos performances</span>
-                </div>
-                <div className="flex items-center gap-2 bg-slate-900/50 p-2 rounded-lg">
-                  <CheckCircle className="h-4 w-4 text-emerald-500" />
-                  <span>Carte Pokemon</span>
-                </div>
-                <div className="flex items-center gap-2 bg-slate-900/50 p-2 rounded-lg">
-                  <CheckCircle className="h-4 w-4 text-emerald-500" />
-                  <span>Notifications</span>
-                </div>
-              </div>
+            {/* Search */}
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-2">
+                <Search className="h-4 w-4 text-emerald-400" />
+                Rechercher votre nom
+              </label>
+              <Input
+                type="text"
+                placeholder="Pr\u00e9nom ou nom de famille..."
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-500 h-12 text-base"
+                autoFocus
+                disabled={isLinking}
+              />
             </div>
 
-            <p className="text-center text-xs text-slate-600">
-              Vous devez être membre du serveur Discord La Skali
-            </p>
+            {/* Results */}
+            <ScrollArea className="h-[280px]">
+              <div className="space-y-2">
+                {isSearching ? (
+                  <div className="text-center py-10 text-slate-500">
+                    <Loader2 className="h-10 w-10 mx-auto mb-3 animate-spin text-emerald-500" />
+                    <p className="text-sm">Recherche en cours...</p>
+                  </div>
+                ) : searchQuery.length < 2 ? (
+                  <div className="text-center py-10 text-slate-500">
+                    <Search className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                    <p className="text-sm font-medium">Tapez au moins 2 caract\u00e8res</p>
+                    <p className="text-xs text-slate-600 mt-1">pour rechercher votre profil</p>
+                  </div>
+                ) : searchResults.length === 0 ? (
+                  <div className="text-center py-10 text-slate-500">
+                    <User className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                    <p className="text-sm font-medium">Aucun adh\u00e9rent trouv\u00e9</p>
+                    <p className="text-xs text-slate-600 mt-1">
+                      V\u00e9rifiez l&apos;orthographe ou contactez un coach
+                    </p>
+                  </div>
+                ) : (
+                  searchResults.map((member) => {
+                    const isLinkedToOther = member.discord_id && member.discord_id !== currentUser.discordId
+                    const isLinkedToMe = member.discord_id === currentUser.discordId
+                    const canSelect = !isLinkedToOther && !isLinking
+
+                    return (
+                      <button
+                        key={member.id}
+                        onClick={() => canSelect && handleLinkMember(member)}
+                        disabled={!canSelect}
+                        className={`w-full p-4 rounded-xl border transition-all flex items-center gap-4 text-left ${
+                          isLinkedToMe
+                            ? 'bg-emerald-500/10 border-emerald-500/50 cursor-pointer'
+                            : canSelect
+                            ? 'bg-slate-900/50 border-slate-600 hover:border-emerald-500 hover:bg-slate-800 cursor-pointer'
+                            : 'bg-slate-900/30 border-red-500/30 opacity-60 cursor-not-allowed'
+                        }`}
+                      >
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          isLinkedToMe
+                            ? 'bg-gradient-to-br from-emerald-500 to-teal-500'
+                            : canSelect
+                            ? 'bg-gradient-to-br from-slate-600 to-slate-700'
+                            : 'bg-gradient-to-br from-red-500/50 to-rose-500/50'
+                        }`}>
+                          {isLinkedToMe ? (
+                            <UserCheck className="h-6 w-6 text-white" />
+                          ) : (
+                            <User className="h-6 w-6 text-white" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-white truncate text-base">
+                            {member.name}
+                          </h4>
+                          {member.email && (
+                            <p className="text-xs text-slate-500 truncate">{member.email}</p>
+                          )}
+                          {isLinkedToOther ? (
+                            <p className="text-xs text-red-400 flex items-center gap-1 mt-1">
+                              <Lock className="h-3 w-3" />
+                              D\u00e9j\u00e0 li\u00e9 \u00e0 un autre compte
+                            </p>
+                          ) : isLinkedToMe ? (
+                            <p className="text-xs text-emerald-400 flex items-center gap-1 mt-1">
+                              <CheckCircle className="h-3 w-3" />
+                              Votre profil (cliquez pour confirmer)
+                            </p>
+                          ) : (
+                            <p className="text-xs text-emerald-400 flex items-center gap-1 mt-1">
+                              <CheckCircle className="h-3 w-3" />
+                              Disponible
+                            </p>
+                          )}
+                        </div>
+                        {canSelect ? (
+                          isLinking ? (
+                            <Loader2 className="h-5 w-5 text-emerald-500 animate-spin" />
+                          ) : (
+                            <ChevronRight className="h-5 w-5 text-slate-500" />
+                          )
+                        ) : (
+                          <Lock className="h-5 w-5 text-red-400" />
+                        )}
+                      </button>
+                    )
+                  })
+                )}
+              </div>
+            </ScrollArea>
+
+            {/* Logout button */}
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+              disabled={isLinking}
+              className="w-full border-slate-600 text-slate-300 hover:bg-slate-700"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Utiliser un autre compte Discord
+            </Button>
           </CardContent>
         </Card>
       </div>
     )
   }
 
-  // Link profile screen
+  // Login screen with Discord OAuth (Step 1)
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-slate-800/80 border-slate-700 backdrop-blur-xl">
+      <Card className="w-full max-w-md bg-slate-800/80 border-slate-700 backdrop-blur-xl overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#228B22] to-emerald-600 p-6 rounded-t-lg">
-          <div className="flex items-center gap-3">
-            {currentUser?.avatar ? (
-              <img
-                src={currentUser.avatar}
-                alt={currentUser.username}
-                className="h-12 w-12 rounded-full border-2 border-white/30"
-              />
-            ) : (
-              <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
-                <User className="h-6 w-6 text-white" />
+        <div className="bg-gradient-to-r from-[#228B22] to-emerald-600 p-8 text-center relative overflow-hidden">
+          {/* Background pattern */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-4 left-4 w-20 h-20 border-2 border-white rounded-full" />
+            <div className="absolute bottom-4 right-4 w-16 h-16 border-2 border-white rounded-full" />
+            <div className="absolute top-1/2 right-8 w-8 h-8 border-2 border-white rounded-full" />
+          </div>
+
+          <div className="relative">
+            <div className="flex justify-center mb-4">
+              <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm shadow-xl">
+                <Dumbbell className="h-12 w-12 text-white" />
               </div>
-            )}
-            <div>
-              <h1 className="text-xl font-bold text-white">Bienvenue !</h1>
-              <p className="text-emerald-100 text-sm">{currentUser?.username}</p>
+            </div>
+            <h1 className="text-3xl font-bold text-white">Sk\u00e0li Prog</h1>
+            <p className="text-emerald-100 mt-2">Espace Membre</p>
+            <div className="mt-3 bg-white/20 px-3 py-1 rounded-full inline-block">
+              <span className="text-xs text-white font-medium">\u00c9tape 1/2</span>
             </div>
           </div>
         </div>
 
-        <CardContent className="p-6 space-y-4">
-          {/* Info */}
-          <Alert className="bg-yellow-500/10 border-yellow-500/30">
-            <AlertCircle className="h-4 w-4 text-yellow-400" />
-            <AlertDescription className="text-slate-300 text-sm">
-              <p className="font-semibold">Première connexion</p>
-              <p className="text-slate-400 text-xs">
-                Recherchez et sélectionnez votre profil adhérent pour le lier à votre Discord.
-              </p>
-            </AlertDescription>
-          </Alert>
+        <CardContent className="p-6 space-y-6">
+          {/* Error display */}
+          {authError && (
+            <Alert className="bg-red-500/10 border-red-500/30">
+              <AlertCircle className="h-4 w-4 text-red-400" />
+              <AlertDescription className="text-red-300">{authError}</AlertDescription>
+            </Alert>
+          )}
 
-          {/* Search */}
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-2">
-              <Search className="h-4 w-4 text-emerald-400" />
-              Rechercher votre nom
-            </label>
-            <Input
-              type="text"
-              placeholder="Nom ou prénom..."
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="bg-slate-900/50 border-slate-600 text-white"
-              autoFocus
-            />
-          </div>
-
-          {/* Results */}
-          <div className="space-y-2 max-h-60 overflow-y-auto">
-            {isSearching ? (
-              <div className="text-center py-6 text-slate-500">
-                <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin" />
-                <p className="text-sm">Recherche...</p>
-              </div>
-            ) : searchQuery.length < 2 ? (
-              <div className="text-center py-6 text-slate-500">
-                <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Tapez au moins 2 caractères...</p>
-              </div>
-            ) : searchResults.length === 0 ? (
-              <div className="text-center py-6 text-slate-500">
-                <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm font-medium">Aucun adhérent trouvé</p>
-                <p className="text-xs">Vérifiez l&apos;orthographe</p>
-              </div>
-            ) : (
-              searchResults.map((member) => {
-                const isLinked = !!member.discord_id && member.discord_id !== currentUser?.discordId
-                const canSelect = !isLinked
-
-                return (
-                  <button
-                    key={member.id}
-                    onClick={() => canSelect && handleLinkMember(member.id)}
-                    disabled={!canSelect}
-                    className={`w-full p-3 rounded-lg border transition-all flex items-center gap-3 text-left ${
-                      canSelect
-                        ? 'bg-slate-900/50 border-slate-600 hover:border-emerald-500 hover:bg-slate-800 cursor-pointer'
-                        : 'bg-slate-900/30 border-red-500/30 opacity-60 cursor-not-allowed'
-                    }`}
-                  >
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      canSelect
-                        ? 'bg-gradient-to-br from-emerald-500 to-teal-500'
-                        : 'bg-gradient-to-br from-red-500 to-rose-500'
-                    }`}>
-                      <User className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-white truncate">{member.name}</h4>
-                      {isLinked ? (
-                        <p className="text-xs text-red-400 flex items-center gap-1">
-                          <Lock className="h-3 w-3" />
-                          Déjà lié à un autre Discord
-                        </p>
-                      ) : (
-                        <p className="text-xs text-emerald-400 flex items-center gap-1">
-                          <CheckCircle className="h-3 w-3" />
-                          Disponible
-                        </p>
-                      )}
-                    </div>
-                    {canSelect ? (
-                      <ChevronRight className="h-5 w-5 text-slate-500" />
-                    ) : (
-                      <Lock className="h-5 w-5 text-red-400" />
-                    )}
-                  </button>
-                )
-              })
-            )}
-          </div>
-
+          {/* Discord OAuth Button */}
           <Button
-            variant="outline"
-            onClick={() => {
-              // Logout and go back
-              fetch('/api/auth/logout', { method: 'POST' })
-              window.location.href = '/portal'
-            }}
-            className="w-full border-slate-600 text-slate-300 hover:bg-slate-700"
+            onClick={handleDiscordLogin}
+            disabled={isLoading}
+            size="lg"
+            className="w-full h-14 bg-[#5865F2] hover:bg-[#4752C4] text-white text-lg font-semibold shadow-lg shadow-indigo-500/20"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Se déconnecter
+            {isLoading ? (
+              <>
+                <Loader2 className="h-5 w-5 mr-3 animate-spin" />
+                Connexion en cours...
+              </>
+            ) : (
+              <>
+                <DiscordIcon className="h-6 w-6 mr-3" />
+                Se connecter avec Discord
+              </>
+            )}
           </Button>
+
+          {/* Info */}
+          <div className="space-y-3 pt-4 border-t border-slate-700">
+            <p className="text-center text-sm text-slate-400">
+              Connectez-vous pour acc\u00e9der \u00e0 :
+            </p>
+            <div className="grid grid-cols-2 gap-2 text-xs text-slate-500">
+              <div className="flex items-center gap-2 bg-slate-900/50 p-3 rounded-lg">
+                <CheckCircle className="h-4 w-4 text-emerald-500" />
+                <span>Planning des s\u00e9ances</span>
+              </div>
+              <div className="flex items-center gap-2 bg-slate-900/50 p-3 rounded-lg">
+                <CheckCircle className="h-4 w-4 text-emerald-500" />
+                <span>Vos performances</span>
+              </div>
+              <div className="flex items-center gap-2 bg-slate-900/50 p-3 rounded-lg">
+                <CheckCircle className="h-4 w-4 text-emerald-500" />
+                <span>Carte Pok\u00e9mon</span>
+              </div>
+              <div className="flex items-center gap-2 bg-slate-900/50 p-3 rounded-lg">
+                <CheckCircle className="h-4 w-4 text-emerald-500" />
+                <span>Notifications</span>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-center text-xs text-slate-600">
+            Vous devez \u00eatre membre du serveur Discord La Sk\u00e0li
+          </p>
         </CardContent>
       </Card>
     </div>

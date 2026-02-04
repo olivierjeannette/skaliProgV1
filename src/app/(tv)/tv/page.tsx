@@ -15,13 +15,13 @@ import {
   Heart,
   Flame,
   Footprints,
-  Leaf,
   Users,
   Trophy,
   Home,
   Cast,
   Monitor,
   Settings,
+  GripVertical,
 } from 'lucide-react';
 import { type TrainingSession, type SessionCategory, type Team, type SessionBlock, type BlockType, BLOCK_TYPE_CONFIG } from '@/types';
 import { createClient } from '@/lib/supabase/client';
@@ -71,7 +71,9 @@ function TVModeContent() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [contentZoom, setContentZoom] = useState(1); // Zoom pour le contenu des blocs uniquement
+  const [blockZooms, setBlockZooms] = useState<Record<string, number>>({}); // Zoom par bloc
+  const [blockOrder, setBlockOrder] = useState<string[]>([]); // Ordre personnalisé des blocs
+  const [draggedBlock, setDraggedBlock] = useState<string | null>(null); // Bloc en cours de drag
   const [showControls, setShowControls] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,8 +81,44 @@ function TVModeContent() {
 
   // Base zoom from settings (for header, block titles)
   const baseZoom = layoutSettings.globalZoom / 100;
-  // Content zoom adds manual adjustment (for block content only)
-  const effectiveContentZoom = baseZoom * contentZoom;
+
+  // Get zoom for a specific block (default 1)
+  const getBlockZoom = (blockId: string) => blockZooms[blockId] ?? 1;
+
+  // Adjust zoom for a specific block
+  const adjustBlockZoom = (blockId: string, delta: number) => {
+    setBlockZooms(prev => ({
+      ...prev,
+      [blockId]: Math.max(0.5, Math.min(2, (prev[blockId] ?? 1) + delta))
+    }));
+  };
+
+  // Drag & Drop handlers
+  const handleDragStart = (blockId: string) => {
+    setDraggedBlock(blockId);
+  };
+
+  const handleDragOver = (e: React.DragEvent, targetBlockId: string) => {
+    e.preventDefault();
+    if (!draggedBlock || draggedBlock === targetBlockId) return;
+
+    setBlockOrder(prevOrder => {
+      const currentOrder = prevOrder.length > 0 ? prevOrder : blockOrder;
+      const draggedIndex = currentOrder.indexOf(draggedBlock);
+      const targetIndex = currentOrder.indexOf(targetBlockId);
+
+      if (draggedIndex === -1 || targetIndex === -1) return prevOrder;
+
+      const newOrder = [...currentOrder];
+      newOrder.splice(draggedIndex, 1);
+      newOrder.splice(targetIndex, 0, draggedBlock);
+      return newOrder;
+    });
+  };
+
+  const handleDragEnd = () => {
+    setDraggedBlock(null);
+  };
 
   // Clock update
   useEffect(() => {
@@ -231,12 +269,12 @@ function TVModeContent() {
     });
   };
 
-  // Parse blocks
+  // Parse blocks and apply custom order
   const parseBlocks = (session: TrainingSession): SessionBlock[] => {
     if (!session.blocks || !Array.isArray(session.blocks)) return [];
     const blocks = session.blocks as Array<SessionBlock | { name: string; content: string }>;
 
-    return blocks.map((block, index) => {
+    const parsedBlocks = blocks.map((block, index) => {
       if ('type' in block && 'id' in block) return block as SessionBlock;
       const oldBlock = block as { name: string; content: string };
       return {
@@ -247,7 +285,28 @@ function TVModeContent() {
         order: index,
       };
     }).sort((a, b) => a.order - b.order);
+
+    // If we have a custom order, apply it
+    if (blockOrder.length > 0) {
+      return blockOrder
+        .map(id => parsedBlocks.find(b => b.id === id))
+        .filter((b): b is SessionBlock => b !== undefined);
+    }
+
+    return parsedBlocks;
   };
+
+  // Initialize block order when session changes
+  useEffect(() => {
+    if (session?.blocks && Array.isArray(session.blocks)) {
+      const blocks = session.blocks as Array<SessionBlock | { name: string; content: string }>;
+      const ids = blocks.map((block, index) => {
+        if ('id' in block) return (block as SessionBlock).id;
+        return `legacy-${index}`;
+      });
+      setBlockOrder(ids);
+    }
+  }, [session?.id]);
 
   // Compute background style
   const backgroundStyle = colorSettings.useGradient
@@ -368,27 +427,44 @@ function TVModeContent() {
             {blocks.map((block) => {
               const blockConfig = BLOCK_TYPE_CONFIG[block.type] || BLOCK_TYPE_CONFIG.custom;
               const blockColors = BLOCK_TYPE_COLORS[block.type] || BLOCK_TYPE_COLORS.custom;
+              const blockZoom = getBlockZoom(block.id);
+              const isDragging = draggedBlock === block.id;
 
               return (
                 <div
                   key={block.id}
-                  className="border-2 shadow-lg overflow-hidden flex flex-col"
+                  draggable
+                  onDragStart={() => handleDragStart(block.id)}
+                  onDragOver={(e) => handleDragOver(e, block.id)}
+                  onDragEnd={handleDragEnd}
+                  className={`border-2 shadow-lg overflow-hidden flex flex-col relative group transition-all ${
+                    isDragging ? 'opacity-50 scale-95' : ''
+                  }`}
                   style={{
                     backgroundColor: blockColors.bg,
                     borderColor: `${blockColors.border}40`,
                     borderTopColor: blockColors.border,
                     borderTopWidth: '4px',
                     borderRadius: `${layoutSettings.blockRadius}px`,
+                    cursor: 'grab',
                   }}
                 >
                   {/* Block Header */}
                   <div
-                    className="px-4 py-3 border-b flex items-center gap-3"
+                    className="px-4 py-3 border-b flex items-center gap-2"
                     style={{
                       borderColor: `${blockColors.border}30`,
                       backgroundColor: `${blockColors.border}15`,
                     }}
                   >
+                    {/* Drag handle */}
+                    <div
+                      className={`flex items-center justify-center text-black/30 hover:text-black/60 cursor-grab transition-opacity ${showControls ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                      title="Glisser pour réorganiser"
+                    >
+                      <GripVertical className="w-5 h-5" />
+                    </div>
+
                     <span style={{ fontSize: `${1.6 * textSettings.titleSize * baseZoom}rem` }}>{blockConfig.icon}</span>
                     <h2
                       className={`flex-1 ${textSettings.titleBold ? 'font-bold' : 'font-medium'} ${textSettings.titleUppercase ? 'uppercase' : ''} tracking-wide`}
@@ -400,14 +476,35 @@ function TVModeContent() {
                     >
                       {block.title}
                     </h2>
+
+                    {/* Zoom controls per block - visible on hover or when controls shown */}
+                    <div className={`flex items-center gap-1 transition-opacity ${showControls ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); adjustBlockZoom(block.id, -0.1); }}
+                        className="w-7 h-7 rounded bg-black/10 hover:bg-black/20 flex items-center justify-center text-black/70 hover:text-black transition-colors"
+                        title="Réduire le texte"
+                      >
+                        <ZoomOut className="w-4 h-4" />
+                      </button>
+                      <span className="text-xs text-black/50 min-w-8 text-center">
+                        {Math.round(blockZoom * 100)}%
+                      </span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); adjustBlockZoom(block.id, 0.1); }}
+                        className="w-7 h-7 rounded bg-black/10 hover:bg-black/20 flex items-center justify-center text-black/70 hover:text-black transition-colors"
+                        title="Agrandir le texte"
+                      >
+                        <ZoomIn className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Block Content - uses effectiveContentZoom for manual zoom buttons */}
+                  {/* Block Content - uses per-block zoom */}
                   <div className="flex-1 p-4 overflow-auto">
                     <div
                       className={`whitespace-pre-wrap ${textSettings.contentBold ? 'font-semibold' : ''}`}
                       style={{
-                        fontSize: `${1.3 * textSettings.contentSize * effectiveContentZoom}rem`,
+                        fontSize: `${1.3 * textSettings.contentSize * baseZoom * blockZoom}rem`,
                         color: blockColors.text,
                         lineHeight: textSettings.lineHeight,
                         fontFamily: FONT_FAMILY_MAP[textSettings.fontFamily],
@@ -545,7 +642,7 @@ function TVModeContent() {
                   </span>
                 </div>
 
-                {/* Team Members - uses effectiveContentZoom for manual zoom */}
+                {/* Team Members */}
                 <div className="flex-1 p-4 overflow-auto">
                   <ul className="space-y-2">
                     {team.participants.map((p) => (
@@ -553,7 +650,7 @@ function TVModeContent() {
                         key={p.id}
                         className="flex items-center gap-3 py-2 px-3 rounded-lg bg-black/5"
                         style={{
-                          fontSize: `${1.3 * textSettings.contentSize * effectiveContentZoom}rem`,
+                          fontSize: `${1.3 * textSettings.contentSize * baseZoom}rem`,
                           fontFamily: FONT_FAMILY_MAP[textSettings.fontFamily],
                         }}
                       >
@@ -688,24 +785,6 @@ function TVModeContent() {
           variant="secondary"
           size="icon"
           className="shadow-lg"
-          onClick={() => setContentZoom(z => Math.max(0.5, z - 0.1))}
-          title="Réduire le contenu"
-        >
-          <ZoomOut className="w-5 h-5" />
-        </Button>
-        <Button
-          variant="secondary"
-          size="icon"
-          className="shadow-lg"
-          onClick={() => setContentZoom(z => Math.min(2, z + 0.1))}
-          title="Agrandir le contenu"
-        >
-          <ZoomIn className="w-5 h-5" />
-        </Button>
-        <Button
-          variant="secondary"
-          size="icon"
-          className="shadow-lg"
           onClick={toggleFullscreen}
           title={isFullscreen ? 'Quitter plein écran' : 'Plein écran'}
         >
@@ -732,10 +811,6 @@ function TVModeContent() {
 
           <div className="px-3 py-1 bg-black/30 text-white rounded-full text-xs font-medium ml-auto">
             {typeof window !== 'undefined' ? window.location.host : ''}/tv
-          </div>
-
-          <div className="px-3 py-1 bg-black/50 text-white rounded-full text-sm font-medium ml-2">
-            Contenu: {Math.round(contentZoom * 100)}%
           </div>
         </div>
       )}
