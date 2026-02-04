@@ -46,6 +46,26 @@ skaliProgV1/                    ← DÉPLOYER CE DOSSIER (racine)
 
 ---
 
+## DISCORD OAUTH (PWA)
+
+**Authentification Discord pour le portail membre**
+
+| Élément | Valeur |
+|---------|--------|
+| Application ID | `1401161063717666826` |
+| Callback URL | `https://skali-prog-v1.vercel.app/api/auth/discord/callback` |
+| Routes | `/api/auth/discord` + `/api/auth/discord/callback` |
+| Scopes | `identify`, `guilds.members.read` |
+
+**Variables Vercel requises:**
+```
+DISCORD_CLIENT_ID=1401161063717666826
+DISCORD_CLIENT_SECRET=M0wBtMssVOvIMVj3Q9aQLyLI87kd0sVU
+DISCORD_REDIRECT_URI=https://skali-prog-v1.vercel.app/api/auth/discord/callback
+```
+
+---
+
 ## DÉPLOIEMENT VERCEL
 
 ### Configuration Simplifiée
