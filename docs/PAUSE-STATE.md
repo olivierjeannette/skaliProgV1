@@ -429,6 +429,34 @@ npm run lint         # ESLint
 - **À faire dans Supabase:**
   - Exécuter `docs/sql/migrations/012_personal_workouts.sql`
 
+### Session 23 - 2026-02-04
+
+- **Refonte complète Dashboard Admin:**
+  - **Migration SQL:** `docs/sql/migrations/013_dashboard_errors_tasks.sql`
+    - Table `app_errors` pour logging des erreurs (type, message, stack, url, metadata, resolved)
+    - Table `tasks` pour tâches/idées (titre, description, priorité, statut, catégorie)
+    - RPC `get_dashboard_stats()` pour stats agrégées
+    - RPC `get_today_sessions()` et `get_recent_prs()`
+  - **Nouvelles API routes:**
+    - `/api/dashboard` - Stats complètes (membres, PRs, leads, erreurs, tâches)
+    - `/api/errors` - CRUD erreurs (GET/POST/PATCH/DELETE)
+    - `/api/tasks` - CRUD tâches (GET/POST/PATCH/DELETE)
+  - **Nouveaux blocs Dashboard:**
+    - **Séance du jour** - Sessions programmées avec heure, coach, catégorie
+    - **Leads à traiter** - Prospects + Contactés en attente
+    - **PRs récents** - Derniers records personnels avec membre et valeur
+    - **Taux de conversion** - Graphique circulaire % conversion CRM
+    - **Tâches & Idées** - Todo list avec catégories (task, idea, bug, feature) et priorités
+    - **Erreurs** - Tableau des erreurs non résolues avec actions (résoudre, supprimer)
+  - **ErrorLogger global:**
+    - `src/lib/error-logger.ts` - Singleton pour logging erreurs
+    - `src/components/error-boundary.tsx` - ErrorBoundary + init automatique
+    - Capture automatique `window.onerror` et `unhandledrejection`
+    - Intégré dans Providers (capture erreurs React)
+- Build vérifié ✅
+- **À faire dans Supabase:**
+  - Exécuter `docs/sql/migrations/013_dashboard_errors_tasks.sql`
+
 ---
 
 *Skali Prog - Next.js 16 + Supabase*

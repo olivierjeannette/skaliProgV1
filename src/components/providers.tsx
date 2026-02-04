@@ -1,6 +1,7 @@
 'use client';
 
 import { ThemeProvider } from 'next-themes';
+import { ErrorLoggerInit, ErrorBoundary } from './error-boundary';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -10,7 +11,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
       enableSystem
       disableTransitionOnChange
     >
-      {children}
+      <ErrorLoggerInit />
+      <ErrorBoundary>
+        {children}
+      </ErrorBoundary>
     </ThemeProvider>
   );
 }
