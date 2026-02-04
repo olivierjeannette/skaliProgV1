@@ -23,6 +23,8 @@ import {
   UserCheck,
   Layers,
   Scale,
+  Download,
+  Loader2,
 } from 'lucide-react';
 import {
   type TeamParticipant,
@@ -65,6 +67,13 @@ export default function TeamsPage() {
   const [membersCache, setMembersCache] = useState<Member[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [isPeppyLoading, setIsPeppyLoading] = useState(false);
+  const [peppySession, setPeppySession] = useState<{
+    sessionName: string;
+    startTime: string;
+    endTime: string;
+    participantCount: number;
+  } | null>(null);
 
   // Load members cache on mount
   useEffect(() => {
@@ -188,6 +197,37 @@ export default function TeamsPage() {
     setParticipants([]);
     setTeams([]);
     setShowResults(false);
+    setPeppySession(null);
+  };
+
+  // Import from Peppy
+  const importFromPeppy = async () => {
+    setIsPeppyLoading(true);
+    try {
+      const response = await fetch('/api/peppy/sync?refresh=true');
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        const session = data.data;
+        setPeppySession({
+          sessionName: session.sessionName,
+          startTime: session.startTime,
+          endTime: session.endTime,
+          participantCount: session.participantCount
+        });
+
+        // Extraire les noms des participants et les ajouter au textarea
+        const names = session.participants.map((p: { name: string }) => p.name).join('\n');
+        setInputText(names);
+      } else {
+        alert(data.error || 'Erreur lors de la récupération des participants Peppy');
+      }
+    } catch (error) {
+      console.error('Peppy import error:', error);
+      alert('Erreur de connexion à Peppy');
+    } finally {
+      setIsPeppyLoading(false);
+    }
   };
 
   // Generate teams
@@ -396,7 +436,20 @@ Pierre Durand"
           />
 
           {/* Action buttons */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <Button
+              variant="default"
+              onClick={importFromPeppy}
+              disabled={isPeppyLoading}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {isPeppyLoading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4 mr-2" />
+              )}
+              Import Peppy
+            </Button>
             <Button variant="outline" onClick={() => loadMembersCache()}>
               <Database className="h-4 w-4 mr-2" />
               Sync BDD
@@ -410,6 +463,25 @@ Pierre Durand"
               Tout effacer
             </Button>
           </div>
+
+          {/* Peppy session info */}
+          {peppySession && (
+            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Download className="h-5 w-5 text-emerald-500" />
+                <div>
+                  <span className="font-medium text-emerald-600">{peppySession.sessionName}</span>
+                  <span className="text-muted-foreground mx-2">|</span>
+                  <span className="text-sm text-muted-foreground">
+                    {peppySession.startTime} - {peppySession.endTime}
+                  </span>
+                </div>
+              </div>
+              <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-600">
+                {peppySession.participantCount} inscrits Peppy
+              </Badge>
+            </div>
+          )}
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4">
