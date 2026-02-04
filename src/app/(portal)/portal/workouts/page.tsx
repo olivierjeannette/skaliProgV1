@@ -7,7 +7,16 @@ import { PortalNav } from '@/components/portal/PortalNav'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Clock,
   Flame,
@@ -20,7 +29,13 @@ import {
   CheckCircle2,
   Target,
   Activity,
-  Loader2
+  Loader2,
+  Plus,
+  X,
+  Trash2,
+  Save,
+  User,
+  Star
 } from 'lucide-react'
 
 // Types
@@ -38,11 +53,13 @@ interface Workout {
   title: string
   type: string
   duration: number
-  coach: string
+  coach?: string
   completed: boolean
   score?: string
   notes?: string
   blocks?: WorkoutBlock[]
+  is_personal?: boolean
+  feeling?: number
 }
 
 interface WorkoutStats {
@@ -52,10 +69,14 @@ interface WorkoutStats {
 }
 
 // Helpers
-const getTypeConfig = (type: string) => {
+const getTypeConfig = (type: string, isPersonal?: boolean) => {
+  if (isPersonal) {
+    return { color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', icon: User, label: 'Personnel' }
+  }
   const configs: Record<string, { color: string; icon: React.ComponentType<{ className?: string }>; label: string }> = {
     crossnfit: { color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', icon: Flame, label: 'CrossTraining' },
     crosstraining: { color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', icon: Flame, label: 'CrossTraining' },
+    personal: { color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', icon: User, label: 'Personnel' },
     power: { color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: Dumbbell, label: 'Power' },
     build: { color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: Dumbbell, label: 'Build' },
     musculation: { color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: Dumbbell, label: 'Musculation' },
@@ -100,7 +121,7 @@ const formatDate = (dateStr: string) => {
 
 // Composant Workout Card
 function WorkoutCard({ workout, onSelect }: { workout: Workout; onSelect: (w: Workout) => void }) {
-  const typeConfig = getTypeConfig(workout.type)
+  const typeConfig = getTypeConfig(workout.type, workout.is_personal)
   const Icon = typeConfig.icon
 
   return (
@@ -116,6 +137,11 @@ function WorkoutCard({ workout, onSelect }: { workout: Workout; onSelect: (w: Wo
                 <Icon className="h-3 w-3 mr-1" />
                 {typeConfig.label}
               </Badge>
+              {workout.is_personal && (
+                <Badge className="text-[10px] bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                  Perso
+                </Badge>
+              )}
               <span className="text-xs text-slate-500">{formatDate(workout.date)}</span>
             </div>
             <h3 className="font-medium text-white truncate">{workout.title}</h3>
@@ -125,6 +151,16 @@ function WorkoutCard({ workout, onSelect }: { workout: Workout; onSelect: (w: Wo
                 {workout.duration} min
               </span>
               {workout.coach && <span>Coach {workout.coach}</span>}
+              {workout.feeling && (
+                <span className="flex items-center gap-0.5">
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <Star
+                      key={i}
+                      className={`h-3 w-3 ${i <= workout.feeling! ? 'text-yellow-400 fill-yellow-400' : 'text-slate-600'}`}
+                    />
+                  ))}
+                </span>
+              )}
             </div>
           </div>
 
@@ -146,24 +182,39 @@ function WorkoutCard({ workout, onSelect }: { workout: Workout; onSelect: (w: Wo
 }
 
 // Composant Workout Detail
-function WorkoutDetail({ workout, onClose }: { workout: Workout; onClose: () => void }) {
-  const typeConfig = getTypeConfig(workout.type)
+function WorkoutDetail({ workout, onClose, onDelete }: { workout: Workout; onClose: () => void; onDelete?: () => void }) {
+  const typeConfig = getTypeConfig(workout.type, workout.is_personal)
   const Icon = typeConfig.icon
 
   return (
     <div className="space-y-4">
-      <Button variant="ghost" size="sm" onClick={onClose} className="text-slate-400">
-        ← Retour a l&apos;historique
-      </Button>
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" size="sm" onClick={onClose} className="text-slate-400">
+          ← Retour
+        </Button>
+        {workout.is_personal && onDelete && (
+          <Button variant="ghost" size="sm" onClick={onDelete} className="text-red-400 hover:text-red-300">
+            <Trash2 className="h-4 w-4 mr-1" />
+            Supprimer
+          </Button>
+        )}
+      </div>
 
       <Card className="bg-slate-800/50 border-slate-700">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div>
-              <Badge className={`text-xs ${typeConfig.color} mb-2`}>
-                <Icon className="h-3 w-3 mr-1" />
-                {typeConfig.label}
-              </Badge>
+              <div className="flex items-center gap-2 mb-2">
+                <Badge className={`text-xs ${typeConfig.color}`}>
+                  <Icon className="h-3 w-3 mr-1" />
+                  {typeConfig.label}
+                </Badge>
+                {workout.is_personal && (
+                  <Badge className="text-xs bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                    Seance perso
+                  </Badge>
+                )}
+              </div>
               <CardTitle className="text-lg text-white">{workout.title}</CardTitle>
               <p className="text-sm text-slate-400 mt-1">
                 {formatDate(workout.date)} {workout.coach && `- Coach ${workout.coach}`}
@@ -179,7 +230,7 @@ function WorkoutDetail({ workout, onClose }: { workout: Workout; onClose: () => 
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex gap-4 text-sm">
+          <div className="flex gap-4 text-sm flex-wrap">
             <div className="flex items-center gap-1.5 text-slate-400">
               <Clock className="h-4 w-4" />
               <span>{workout.duration} min</span>
@@ -190,7 +241,25 @@ function WorkoutDetail({ workout, onClose }: { workout: Workout; onClose: () => 
                 <span>Complete</span>
               </div>
             )}
+            {workout.feeling && (
+              <div className="flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map(i => (
+                  <Star
+                    key={i}
+                    className={`h-4 w-4 ${i <= workout.feeling! ? 'text-yellow-400 fill-yellow-400' : 'text-slate-600'}`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
+
+          {/* Notes */}
+          {workout.notes && (
+            <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-700/50">
+              <p className="text-xs text-slate-500 mb-1">Notes</p>
+              <p className="text-sm text-slate-300">{workout.notes}</p>
+            </div>
+          )}
 
           {/* Blocks */}
           {workout.blocks && workout.blocks.length > 0 && (
@@ -226,6 +295,265 @@ function WorkoutDetail({ workout, onClose }: { workout: Workout; onClose: () => 
           )}
         </CardContent>
       </Card>
+    </div>
+  )
+}
+
+// Formulaire creation seance
+function CreateWorkoutForm({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [form, setForm] = useState({
+    title: '',
+    date: new Date().toISOString().split('T')[0],
+    category: 'personal',
+    duration: 60,
+    score: '',
+    notes: '',
+    feeling: 0,
+    blocks: [] as { type: string; title: string; content: string; result: string }[]
+  })
+
+  const addBlock = () => {
+    setForm(f => ({
+      ...f,
+      blocks: [...f.blocks, { type: 'wod', title: '', content: '', result: '' }]
+    }))
+  }
+
+  const updateBlock = (index: number, field: string, value: string) => {
+    setForm(f => ({
+      ...f,
+      blocks: f.blocks.map((b, i) => i === index ? { ...b, [field]: value } : b)
+    }))
+  }
+
+  const removeBlock = (index: number) => {
+    setForm(f => ({
+      ...f,
+      blocks: f.blocks.filter((_, i) => i !== index)
+    }))
+  }
+
+  const handleSubmit = async () => {
+    if (!form.title.trim()) return
+
+    setIsSubmitting(true)
+    try {
+      const response = await fetch('/api/portal/personal-workouts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          feeling: form.feeling || null,
+          blocks: form.blocks.filter(b => b.content.trim())
+        })
+      })
+
+      if (response.ok) {
+        onCreated()
+        onClose()
+      }
+    } catch (error) {
+      console.error('Failed to create workout:', error)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const categories = [
+    { value: 'personal', label: 'Personnel' },
+    { value: 'crosstraining', label: 'CrossTraining' },
+    { value: 'musculation', label: 'Musculation' },
+    { value: 'cardio', label: 'Cardio' },
+    { value: 'hyrox', label: 'Hyrox' },
+    { value: 'recuperation', label: 'Recuperation' }
+  ]
+
+  const blockTypes = [
+    { value: 'warmup', label: 'Echauffement' },
+    { value: 'strength', label: 'Force' },
+    { value: 'wod', label: 'WOD' },
+    { value: 'skill', label: 'Skill' },
+    { value: 'accessory', label: 'Accessoire' },
+    { value: 'cooldown', label: 'Cooldown' }
+  ]
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold text-white">Nouvelle seance</h2>
+        <Button variant="ghost" size="icon" onClick={onClose}>
+          <X className="h-5 w-5" />
+        </Button>
+      </div>
+
+      <Card className="bg-slate-800/50 border-slate-700">
+        <CardContent className="p-4 space-y-4">
+          {/* Titre */}
+          <div>
+            <label className="text-xs text-slate-400 mb-1 block">Titre *</label>
+            <Input
+              value={form.title}
+              onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+              placeholder="Ex: Seance force du matin"
+              className="bg-slate-900/50 border-slate-700"
+            />
+          </div>
+
+          {/* Date et Type */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-slate-400 mb-1 block">Date</label>
+              <Input
+                type="date"
+                value={form.date}
+                onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+                className="bg-slate-900/50 border-slate-700"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 mb-1 block">Type</label>
+              <Select value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))}>
+                <SelectTrigger className="bg-slate-900/50 border-slate-700">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map(c => (
+                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Duree et Score */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-slate-400 mb-1 block">Duree (min)</label>
+              <Input
+                type="number"
+                value={form.duration}
+                onChange={e => setForm(f => ({ ...f, duration: parseInt(e.target.value) || 60 }))}
+                className="bg-slate-900/50 border-slate-700"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 mb-1 block">Score/Temps</label>
+              <Input
+                value={form.score}
+                onChange={e => setForm(f => ({ ...f, score: e.target.value }))}
+                placeholder="Ex: 15:30 Rx"
+                className="bg-slate-900/50 border-slate-700"
+              />
+            </div>
+          </div>
+
+          {/* Ressenti */}
+          <div>
+            <label className="text-xs text-slate-400 mb-2 block">Ressenti</label>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map(i => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setForm(f => ({ ...f, feeling: f.feeling === i ? 0 : i }))}
+                  className="p-1"
+                >
+                  <Star
+                    className={`h-6 w-6 transition-colors ${
+                      i <= form.feeling ? 'text-yellow-400 fill-yellow-400' : 'text-slate-600 hover:text-slate-500'
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="text-xs text-slate-400 mb-1 block">Notes</label>
+            <Textarea
+              value={form.notes}
+              onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+              placeholder="Notes personnelles..."
+              className="bg-slate-900/50 border-slate-700 min-h-[60px]"
+            />
+          </div>
+
+          {/* Blocs */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs text-slate-400">Blocs de la seance</label>
+              <Button variant="ghost" size="sm" onClick={addBlock} className="text-emerald-400 h-7">
+                <Plus className="h-4 w-4 mr-1" />
+                Ajouter
+              </Button>
+            </div>
+
+            {form.blocks.length === 0 ? (
+              <div className="text-center py-4 text-slate-500 text-sm border border-dashed border-slate-700 rounded-lg">
+                Aucun bloc. Cliquez sur Ajouter pour detailler votre seance.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {form.blocks.map((block, index) => {
+                  const blockConfig = getBlockTypeConfig(block.type)
+                  return (
+                    <div key={index} className="bg-slate-900/50 rounded-lg p-3 border border-slate-700/50">
+                      <div className="flex items-center justify-between mb-2">
+                        <Select value={block.type} onValueChange={v => updateBlock(index, 'type', v)}>
+                          <SelectTrigger className={`w-[140px] h-8 text-xs ${blockConfig.color} bg-transparent border-0`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {blockTypes.map(t => (
+                              <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeBlock(index)}>
+                          <Trash2 className="h-4 w-4 text-slate-500" />
+                        </Button>
+                      </div>
+                      <Textarea
+                        value={block.content}
+                        onChange={e => updateBlock(index, 'content', e.target.value)}
+                        placeholder="Contenu du bloc (ex: 5x5 Back Squat @80%)..."
+                        className="bg-slate-800/50 border-slate-700 min-h-[60px] text-sm"
+                      />
+                      <Input
+                        value={block.result}
+                        onChange={e => updateBlock(index, 'result', e.target.value)}
+                        placeholder="Resultat (optionnel)"
+                        className="bg-slate-800/50 border-slate-700 mt-2 text-sm"
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Actions */}
+      <div className="flex gap-3">
+        <Button variant="outline" className="flex-1" onClick={onClose}>
+          Annuler
+        </Button>
+        <Button
+          className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+          onClick={handleSubmit}
+          disabled={!form.title.trim() || isSubmitting}
+        >
+          {isSubmitting ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <Save className="h-4 w-4 mr-2" />
+          )}
+          Enregistrer
+        </Button>
+      </div>
     </div>
   )
 }
@@ -266,6 +594,7 @@ export default function WorkoutsPage() {
   const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null)
   const [activeTab, setActiveTab] = useState('all')
   const [isLoading, setIsLoading] = useState(true)
+  const [showCreateForm, setShowCreateForm] = useState(false)
 
   // Fetch workouts
   const fetchWorkouts = useCallback(async () => {
@@ -291,9 +620,27 @@ export default function WorkoutsPage() {
     }
   }, [linkedMember, fetchWorkouts])
 
+  // Delete personal workout
+  const handleDeleteWorkout = async (workoutId: string) => {
+    if (!confirm('Supprimer cette seance ?')) return
+
+    try {
+      const response = await fetch(`/api/portal/personal-workouts?id=${workoutId}`, {
+        method: 'DELETE'
+      })
+      if (response.ok) {
+        setSelectedWorkout(null)
+        fetchWorkouts()
+      }
+    } catch (error) {
+      console.error('Failed to delete workout:', error)
+    }
+  }
+
   // Filter workouts locally based on tab
   const filteredWorkouts = workouts.filter(w => {
     if (activeTab === 'all') return true
+    if (activeTab === 'perso') return w.is_personal
     const typeLower = (w.type || '').toLowerCase()
     if (activeTab === 'cross') return typeLower.includes('cross') || typeLower.includes('nfit')
     if (activeTab === 'muscu') return typeLower.includes('power') || typeLower.includes('build') || typeLower.includes('muscu')
@@ -310,20 +657,36 @@ export default function WorkoutsPage() {
       <PortalHeader title="Mes WODs" />
 
       <main className="max-w-lg mx-auto p-4 space-y-4">
-        {selectedWorkout ? (
+        {showCreateForm ? (
+          <CreateWorkoutForm
+            onClose={() => setShowCreateForm(false)}
+            onCreated={fetchWorkouts}
+          />
+        ) : selectedWorkout ? (
           <WorkoutDetail
             workout={selectedWorkout}
             onClose={() => setSelectedWorkout(null)}
+            onDelete={selectedWorkout.is_personal ? () => handleDeleteWorkout(selectedWorkout.id) : undefined}
           />
         ) : (
           <>
             {/* Quick stats */}
             <QuickStats stats={stats} />
 
+            {/* Bouton creer seance */}
+            <Button
+              className="w-full bg-emerald-600 hover:bg-emerald-700"
+              onClick={() => setShowCreateForm(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Creer une seance perso
+            </Button>
+
             {/* Filter tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-4 bg-slate-800/50">
+              <TabsList className="grid grid-cols-5 bg-slate-800/50">
                 <TabsTrigger value="all" className="text-xs">Tous</TabsTrigger>
+                <TabsTrigger value="perso" className="text-xs">Perso</TabsTrigger>
                 <TabsTrigger value="cross" className="text-xs">Cross</TabsTrigger>
                 <TabsTrigger value="muscu" className="text-xs">Muscu</TabsTrigger>
                 <TabsTrigger value="hyrox" className="text-xs">Hyrox</TabsTrigger>
@@ -344,7 +707,7 @@ export default function WorkoutsPage() {
                       <Dumbbell className="h-12 w-12 mx-auto mb-3 text-slate-600" />
                       <p className="text-slate-500">Aucun entrainement trouve</p>
                       <p className="text-xs text-slate-600 mt-1">
-                        Inscrivez-vous a une seance pour commencer!
+                        Creez votre premiere seance perso!
                       </p>
                     </CardContent>
                   </Card>
