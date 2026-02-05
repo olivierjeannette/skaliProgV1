@@ -2,9 +2,11 @@
 // Utilise le SERVICE_ROLE_KEY pour bypasser RLS
 // IMPORTANT: Ne JAMAIS utiliser ce client côté client/navigateur
 
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
-let adminClient: ReturnType<typeof createSupabaseClient> | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let adminClient: SupabaseClient<any, 'public', any> | null = null;
 
 export function createAdminClient() {
   if (adminClient) return adminClient;
@@ -18,7 +20,8 @@ export function createAdminClient() {
     );
   }
 
-  adminClient = createSupabaseClient(url, serviceRoleKey, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  adminClient = createClient<any>(url, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
