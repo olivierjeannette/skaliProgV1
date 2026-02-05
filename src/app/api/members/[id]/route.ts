@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 // GET /api/members/[id]
 // Récupère un membre avec ses stats pour le Portal
@@ -30,7 +30,7 @@ export async function GET(
   }
 
   try {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     // Essayer d'utiliser la RPC
     const { data: rpcResult, error: rpcError } = await supabase

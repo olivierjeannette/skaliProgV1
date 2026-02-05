@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export interface AppError {
   id: string;
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
   const limit = parseInt(searchParams.get('limit') || '50');
 
   try {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     let query = supabase
       .from('app_errors')
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const { data, error } = await supabase
       .from('app_errors')
@@ -123,7 +123,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const updateData: Record<string, unknown> = { resolved };
     if (resolved) {
@@ -170,7 +170,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const { error } = await supabase
       .from('app_errors')

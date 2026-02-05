@@ -58,7 +58,7 @@ import {
   Eye,
   ChevronRight,
 } from 'lucide-react';
-import type { DashboardStats, TodaySession, RecentPR } from '@/app/api/dashboard/route';
+import type { DashboardStats, TodaySession, RecentPR, CurrentPeppySession } from '@/app/api/dashboard/route';
 import type { Task } from '@/app/api/tasks/route';
 import type { AppError } from '@/app/api/errors/route';
 import type { Lead, LeadStatus } from '@/types';
@@ -91,6 +91,7 @@ export default function DashboardPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [errors, setErrors] = useState<AppError[]>([]);
+  const [currentPeppySession, setCurrentPeppySession] = useState<CurrentPeppySession | null>(null);
   const [taskFilter, setTaskFilter] = useState<'all' | 'todo' | 'in_progress' | 'done'>('all');
 
   // Dialog states
@@ -119,6 +120,7 @@ export default function DashboardPage() {
         setStats(data.stats);
         setTodaySessions(data.todaySessions || []);
         setRecentPrs(data.recentPrs || []);
+        setCurrentPeppySession(data.currentPeppySession || null);
       }
 
       // Leads - fallback direct to Supabase if API doesn't exist
@@ -390,6 +392,69 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <Badge variant="secondary">{session.category}</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Participants cours actuel (Peppy) */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-green-500" />
+                Cours en cours
+              </CardTitle>
+              <CardDescription>
+                {currentPeppySession
+                  ? `${currentPeppySession.session_name} - ${currentPeppySession.start_time} a ${currentPeppySession.end_time}`
+                  : 'Aucun cours programme'}
+              </CardDescription>
+            </div>
+            {currentPeppySession && (
+              <Badge variant="secondary" className="text-sm">
+                {currentPeppySession.participant_count}/{currentPeppySession.total_places} places
+              </Badge>
+            )}
+          </CardHeader>
+          <CardContent>
+            {!currentPeppySession ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                <p>Pas de cours en ce moment</p>
+              </div>
+            ) : currentPeppySession.participants.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                <p>Aucun participant inscrit</p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                {currentPeppySession.participants.map((participant, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                        <span className="text-sm font-bold text-green-500">
+                          {participant.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <span className="font-medium text-sm">{participant.name}</span>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={
+                        participant.status === 'Confirmé'
+                          ? 'border-green-500 text-green-500'
+                          : 'border-yellow-500 text-yellow-500'
+                      }
+                    >
+                      {participant.status === 'Confirmé' ? 'Confirme' : 'Non confirme'}
+                    </Badge>
                   </div>
                 ))}
               </div>

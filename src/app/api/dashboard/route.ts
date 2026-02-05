@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export interface DashboardStats {
   // Membres
@@ -58,10 +58,27 @@ export interface RecentPR {
   date: string;
 }
 
+export interface PeppyParticipant {
+  name: string;
+  status: string;
+}
+
+export interface CurrentPeppySession {
+  id: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  session_name: string;
+  total_places: number;
+  participant_count: number;
+  participants: PeppyParticipant[];
+  scraped_at: string;
+}
+
 // GET /api/dashboard - Récupérer toutes les stats du dashboard
 export async function GET() {
   try {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     // Dates de référence
     const today = new Date();
@@ -93,7 +110,8 @@ export async function GET() {
       discordLinkedResult,
       discordUnlinkedResult,
       todaySessionsResult,
-      recentPrsResult
+      recentPrsResult,
+      peppySessionsResult
     ] = await Promise.all([
       // Membres
       supabase.from('members').select('*', { count: 'exact', head: true }).eq('is_active', true),
@@ -134,7 +152,13 @@ export async function GET() {
         .select('id, member_id, exercise_type, category, value, unit, reps, date, members(name)')
         .eq('is_pr', true)
         .order('date', { ascending: false })
-        .limit(10)
+        .limit(10),
+
+      // Sessions Peppy du jour (participants via GitHub Action)
+      supabase.from('peppy_sessions')
+        .select('*')
+        .eq('date', todayStr)
+        .order('start_time')
     ]);
 
     // Calcul du taux de conversion
@@ -180,10 +204,51 @@ export async function GET() {
       date: pr.date as string
     }));
 
+    // Sessions Peppy du jour (avec participants)
+    const peppySessions: CurrentPeppySession[] = peppySessionsResult.data || [];
+
+    // Trouver la séance en cours ou la plus proche
+    const nowFrance = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Paris' }));
+    const currentMinutes = nowFrance.getHours() * 60 + nowFrance.getMinutes();
+
+    let currentPeppySession: CurrentPeppySession | null = null;
+    for (const ps of peppySessions) {
+      const [startH, startM] = ps.start_time.split(':').map(Number);
+      const [endH, endM] = ps.end_time.split(':').map(Number);
+      const startMin = startH * 60 + (startM || 0);
+      const endMin = endH * 60 + (endM || 0);
+
+      // Séance en cours
+      if (currentMinutes >= startMin && currentMinutes < endMin) {
+        currentPeppySession = ps;
+        break;
+      }
+      // Prochaine séance (dans l'heure qui vient)
+      if (!currentPeppySession && startMin > currentMinutes && startMin - currentMinutes <= 60) {
+        currentPeppySession = ps;
+      }
+    }
+
+    // Si rien trouvé, prendre la dernière séance passée
+    if (!currentPeppySession && peppySessions.length > 0) {
+      for (let i = peppySessions.length - 1; i >= 0; i--) {
+        const [startH] = peppySessions[i].start_time.split(':').map(Number);
+        if (startH * 60 <= currentMinutes) {
+          currentPeppySession = peppySessions[i];
+          break;
+        }
+      }
+      // Sinon prendre la première du jour
+      if (!currentPeppySession) {
+        currentPeppySession = peppySessions[0];
+      }
+    }
+
     return NextResponse.json({
       stats,
       todaySessions,
-      recentPrs
+      recentPrs,
+      currentPeppySession
     });
 
   } catch (err) {

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 interface PortalSession {
   discordId: string;
@@ -56,7 +56,7 @@ export async function GET() {
   }
 
   try {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const memberId = portalSession.memberId;
 
     // Essayer la RPC d'abord
@@ -106,7 +106,7 @@ function getDefaultStats(): MemberStats {
 
 // Calcul des stats côté serveur (fallback si RPC non disponible)
 async function calculateStatsFallback(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: Awaited<ReturnType<typeof createAdminClient>>,
   memberId: string
 ): Promise<MemberStats> {
   // 1. Récupérer toutes les performances du membre
